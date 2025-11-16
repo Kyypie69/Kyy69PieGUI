@@ -34,7 +34,7 @@ local Rebirths    = Window:AddTab({ Title = "Rebirths",         Icon = "repeat" 
 local Killer      = Window:AddTab({ Title = "Killer",           Icon = "skull" })
 local Shop        = Window:AddTab({ Title = "Crystals",         Icon = "shopping-cart" })
 local Misc        = Window:AddTab({ Title = "Miscellaneous",    Icon = "menu" })
-local Settings    = Window:AddTab({ Title = "Settings",         Icon = "lucide-save" })
+local Settings    = Window:AddTab({ Title = "Settings",         Icon = "save" })
 ------------------------------------------------------------------------------
 
 --============================================================================
@@ -64,7 +64,7 @@ if antiAFKEnabled then setupAntiAFK() end
 
 Home:AddToggle("AntiAFK", {
     Title = "Anti AFK",
-    Default = true,
+    Default = false,
     Callback = function(Value)
         antiAFKEnabled = Value
         if Value then
