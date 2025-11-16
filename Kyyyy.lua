@@ -259,13 +259,6 @@ Home:AddToggle({
     end
 })
 
-Farm:AddToggle("FAST STRENGTH", {
-    Title = "Fast Strength",
-    Default = false,
-    Callback = function(v)
-        getgenv()._AutoRepFarmEnabled = v
-    end
-})
 
 local Players = game:GetService("Players")
 local Stats = game:GetService("Stats")
@@ -330,7 +323,6 @@ local function hitRock()
     end
 end
 
--- Ã¢Å“â€¦ Loop principal
 if not getgenv()._AutoRepFarmLoop then
     getgenv()._AutoRepFarmLoop = true
 
@@ -344,7 +336,7 @@ if not getgenv()._AutoRepFarmLoop then
             if getgenv()._AutoRepFarmEnabled then
                 local ping = getPing()
                 if ping > MAX_PING then
-                    warn("[Auto Rep Farm] Ping alto ("..math.floor(ping).."ms), pausando 5s...")
+                    warn("[Auto Rep Farm] ("..math.floor(ping).."ms), pause 3s...")
                     task.wait(5)
                 else
                     if LocalPlayer:FindFirstChild("muscleEvent") then
@@ -372,8 +364,15 @@ if not getgenv()._AutoRepFarmLoop then
     end)
 end
 
+Farm:AddToggle("FAST STRENGTH", {
+    Title = "Fast Strength",
+    Default = false,
+    Callback = function(v)
+        getgenv()._AutoRepFarmEnabled = v
+    end
+})
+
 -- Session Stats UI
-do
 local player = game.Players.LocalPlayer
 local ls = player:WaitForChild("leaderstats")
 local strengthStat = ls:WaitForChild("Strength")
@@ -576,12 +575,13 @@ task.spawn(function()
     end
 end)
 
-    Home:AddToggle("ShowStats", {
-        Title = "Show Stats",
-        Default = false,
-        Callback = function(state) screenGui.Enabled = state end
-    })
-end
+Home:AddToggle("ShowStats", {
+    Title = "Show Stats",
+    Default = false,
+    Callback = function(state)
+        screenGui.Enabled = state
+    end
+})
 
 -- Block Rebirths
 Home:AddButton({
