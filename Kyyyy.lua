@@ -21,7 +21,7 @@ end
 local Window = Library:CreateWindow({
     Title = " KYYPIE HUB ",
     SubTitle = "Version 6.9 | by Markyy",
-    Size = UDim2.fromOffset(450, 335),
+    Size = UDim2.fromOffset(500, 300),
     TabWidth = 150,
     Theme = "DarkBlue",
     Acrylic = false,
