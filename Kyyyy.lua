@@ -23,7 +23,7 @@ local Window = Library:CreateWindow({
     SubTitle = "Version 6.9 | by Markyy",
     Size = UDim2.fromOffset(500, 335),
     TabWidth = 150,
-    Theme = "SkyBlue",
+    Theme = "DarkBlue",
     Acrylic = false,
 })
 
