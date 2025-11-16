@@ -151,9 +151,8 @@ Home:AddToggle("LockPosition", {
 
 local farmThread = nil   -- nil = not running
 
-Home:AddToggle({
-    Title   = "Packs Farm Rebirth",
-    Description = "230K+ A DAY",
+Home:AddToggle("Packs Farm", {
+    Title = "230K+ per day",
     Default = false,
     Callback = function(state)
         -- state == true  -> user turned it ON
