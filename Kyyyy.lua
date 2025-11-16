@@ -340,9 +340,16 @@ local killsStat = ls:WaitForChild("Kills")
 local agilityStat = player:WaitForChild("Agility")
 
 -- NEW COLOURS
-local WHITE        = Color3.fromRGB(255, 255, 255)   -- text / accents
+local WHITE        = Color3.fromRGB(255, 255, 255)   -- keep for anything you DON’T want rainbow
 local NAVY_BLUE    = Color3.fromRGB(30, 58, 138)     -- main background
-local RAINBOW_SPEED = 2                                -- seconds per full cycle
+local RAINBOW_SPEED = 2                              -- seconds per full cycle
+
+-- RAINBOW TEXT ----------------------------------------------------------
+local function RAINBOW_TEXT()          -- call every frame you want rainbow
+    local hue = (tick()/RAINBOW_SPEED)%1
+    return Color3.fromHSV(hue,0.7,1)   -- same saturation/brightness as title-bar
+end
+-------------------------------------------------------------------------
 
 local function AbbrevNumber(num)
     local abbrev = {"", "K", "M", "B", "T", "Qa", "Qi"}
@@ -399,11 +406,11 @@ local function AddLabel(text, size)
     lab.Size = UDim2.new(1, -10, 0, size + 5)
     lab.BackgroundTransparency = 1
     lab.Text = text
-    lab.TextColor3 = WHITE
+    lab.TextColor3 = RAINBOW_TEXT()   -- RAINBOW
     lab.Font = Enum.Font.SourceSans
     lab.TextSize = size
-    lab.TextXAlignment = Enum.TextXAlignment.Left   -- already there for labels
-	lab.TextYAlignment = Enum.TextYAlignment.Top    -- keeps things tidy
+    lab.TextXAlignment = Enum.TextXAlignment.Left
+    lab.TextYAlignment = Enum.TextYAlignment.Top
     lab.Parent = scroll
     return lab
 end
@@ -412,11 +419,11 @@ local function AddButton(text, callback)
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(1, -10, 0, 30)
     btn.BackgroundColor3 = NAVY_BLUE
-    btn.TextColor3 = WHITE
+    btn.TextColor3 = RAINBOW_TEXT()   -- RAINBOW
     btn.Font = Enum.Font.SourceSansBold
     btn.TextSize = 18
     btn.TextXAlignment = Enum.TextXAlignment.Left
-	btn.TextYAlignment = Enum.TextYAlignment.Top
+    btn.TextYAlignment = Enum.TextYAlignment.Top
     btn.Parent = scroll
     btn.MouseButton1Click:Connect(callback)
     return btn
@@ -451,7 +458,7 @@ local resetSession = false
 AddButton("Reset Session Stats", function() resetSession = true end)
 
 AddLabel("------------------", 14)
-AddLabel("Projected Stats", 24)
+AddLabel("Player Rebirth Stats", 24)
 local projectedStrengthLabel = AddLabel("Strength Pace: -", 18)
 local projectedDurabilityLabel = AddLabel("Durability Pace: -", 18)
 local projectedRebirthsLabel = AddLabel("Rebirth Pace: -", 18)
@@ -463,7 +470,8 @@ local rebirthsLabel = AddLabel("Rebirths: -", 18)
 local killsLabel = AddLabel("Kills: -", 18)
 
 AddLabel("------------------", 14)
-AddLabel("Player Stats", 24)
+AddLabel("Player Farm Stats", 24)
+local projectedStrengthLabel = AddLabel("Strength Pace: -", 18)
 local durabilityLabel = AddLabel("Durability: -", 18)
 local agilityLabel = AddLabel("Agility: -", 18)
 
@@ -545,6 +553,13 @@ task.spawn(function()
         end
 
         scroll.CanvasSize = UDim2.new(0, 0, 0, uiList.AbsoluteContentSize.Y + 10)
+
+        -- update rainbow text every frame
+        for _,obj in ipairs(scroll:GetChildren()) do
+            if obj:IsA("TextLabel") or obj:IsA("TextButton") then
+                obj.TextColor3 = RAINBOW_TEXT()
+            end
+        end
     end
 end)
 
