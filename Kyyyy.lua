@@ -366,13 +366,13 @@ screenGui.Parent = player:WaitForChild("PlayerGui")
 screenGui.Enabled = false
 
 local main = Instance.new("Frame")
-main.Size = UDim2.new(0, 500, 0, 350)
+main.Size = UDim2.new(0, 5000, 0, 350)
 main.Position = UDim2.new(0.5, -250, 0.5, -175)
 main.BackgroundColor3 = NAVY_BLUE
 main.BorderSizePixel = 0
 main.Parent = screenGui
 main.Active = true
-main.Draggable = true
+main.Draggable = false
 
 local titleBar = Instance.new("Frame")
 titleBar.Size = UDim2.new(1, 0, 0, 30)
@@ -406,11 +406,11 @@ local function AddLabel(text, size)
     lab.Size = UDim2.new(1, -10, 0, size + 5)
     lab.BackgroundTransparency = 1
     lab.Text = text
-    lab.TextColor3 = RAINBOW_TEXT()   -- RAINBOW
+    lab.TextColor3 = RAINBOW_TEXT()
     lab.Font = Enum.Font.SourceSans
     lab.TextSize = size
-    lab.TextXAlignment = Enum.TextXAlignment.Left
-    lab.TextYAlignment = Enum.TextYAlignment.Top
+    lab.TextXAlignment = Enum.TextXAlignment.Center   -- <-- centre horizontally
+    lab.TextYAlignment = Enum.TextYAlignment.Center   -- <-- centre vertically
     lab.Parent = scroll
     return lab
 end
@@ -419,11 +419,11 @@ local function AddButton(text, callback)
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(1, -10, 0, 30)
     btn.BackgroundColor3 = NAVY_BLUE
-    btn.TextColor3 = RAINBOW_TEXT()   -- RAINBOW
+    btn.TextColor3 = RAINBOW_TEXT()
     btn.Font = Enum.Font.SourceSansBold
     btn.TextSize = 18
-    btn.TextXAlignment = Enum.TextXAlignment.Left
-    btn.TextYAlignment = Enum.TextYAlignment.Top
+    btn.TextXAlignment = Enum.TextXAlignment.Center   -- <-- centre horizontally
+    btn.TextYAlignment = Enum.TextYAlignment.Center   -- <-- centre vertically
     btn.Parent = scroll
     btn.MouseButton1Click:Connect(callback)
     return btn
