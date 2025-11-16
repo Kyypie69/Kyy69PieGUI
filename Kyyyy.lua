@@ -339,9 +339,10 @@ local durabilityStat = player:WaitForChild("Durability")
 local killsStat = ls:WaitForChild("Kills")
 local agilityStat = player:WaitForChild("Agility")
 
-local NAVY_BLUE = Color3.fromRGB(30, 58, 138)      -- navy blue text / accents
-local GRAY_BG   = Color3.fromRGB(45, 45, 45)       -- main gray background
-local DARK_GRAY = Color3.fromRGB(35, 35, 35)       -- title-bar gray
+-- NEW COLOURS
+local WHITE        = Color3.fromRGB(255, 255, 255)   -- text / accents
+local NAVY_BLUE    = Color3.fromRGB(30, 58, 138)     -- main background
+local RAINBOW_SPEED = 2                                -- seconds per full cycle
 
 local function AbbrevNumber(num)
     local abbrev = {"", "K", "M", "B", "T", "Qa", "Qi"}
@@ -360,7 +361,7 @@ screenGui.Enabled = false
 local main = Instance.new("Frame")
 main.Size = UDim2.new(0, 500, 0, 350)
 main.Position = UDim2.new(0.5, -250, 0.5, -175)
-main.BackgroundColor3 = GRAY_BG
+main.BackgroundColor3 = NAVY_BLUE
 main.BorderSizePixel = 0
 main.Parent = screenGui
 main.Active = true
@@ -368,14 +369,14 @@ main.Draggable = true
 
 local titleBar = Instance.new("Frame")
 titleBar.Size = UDim2.new(1, 0, 0, 30)
-titleBar.BackgroundColor3 = DARK_GRAY
+titleBar.BackgroundColor3 = Color3.new(1,1,1)   -- placeholder, will be rainbow
 titleBar.Parent = main
 
 local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, 0, 1, 0)
 title.BackgroundTransparency = 1
 title.Text = "Session Stats"
-title.TextColor3 = NAVY_BLUE
+title.TextColor3 = WHITE
 title.Font = Enum.Font.SourceSansBold
 title.TextSize = 20
 title.Parent = titleBar
@@ -398,10 +399,11 @@ local function AddLabel(text, size)
     lab.Size = UDim2.new(1, -10, 0, size + 5)
     lab.BackgroundTransparency = 1
     lab.Text = text
-    lab.TextColor3 = NAVY_BLUE
+    lab.TextColor3 = WHITE
     lab.Font = Enum.Font.SourceSans
     lab.TextSize = size
-    lab.TextXAlignment = Enum.TextXAlignment.Left
+    lab.TextXAlignment = Enum.TextXAlignment.Left   -- already there for labels
+	lab.TextYAlignment = Enum.TextYAlignment.Top    -- keeps things tidy
     lab.Parent = scroll
     return lab
 end
@@ -409,11 +411,12 @@ end
 local function AddButton(text, callback)
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(1, -10, 0, 30)
-    btn.BackgroundColor3 = DARK_GRAY
-    btn.TextColor3 = NAVY_BLUE
+    btn.BackgroundColor3 = NAVY_BLUE
+    btn.TextColor3 = WHITE
     btn.Font = Enum.Font.SourceSansBold
     btn.TextSize = 18
-    btn.Text = text
+    btn.TextXAlignment = Enum.TextXAlignment.Left
+	btn.TextYAlignment = Enum.TextYAlignment.Top
     btn.Parent = scroll
     btn.MouseButton1Click:Connect(callback)
     return btn
@@ -471,6 +474,16 @@ local initialRebirths = rebirthsStat.Value
 local initialKills = killsStat.Value
 local initialAgility = agilityStat.Value
 
+-- Rainbow title-bar loop
+task.spawn(function()
+    while true do
+        local hue = (tick() / RAINBOW_SPEED) % 1
+        titleBar.BackgroundColor3 = Color3.fromHSV(hue, 0.7, 1)
+        task.wait(0.05)
+    end
+end)
+
+-- Main update loop
 task.spawn(function()
     local lastUpdate = 0
     while task.wait(0.2) do
