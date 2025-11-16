@@ -53,7 +53,7 @@ local VirtualUser = game:GetService("VirtualUser")
 local player      = Players.LocalPlayer
 
 Home:AddButton({
-    Title = "Enable Anti-AFK",
+    Title = "Anti-AFK",
     Description = "Starts the on-screen timer and prevents idle kicks.",
     Callback = function()
 
@@ -703,11 +703,11 @@ mainSection:AddToggle("Farming_StartMachine", {
 -- TOOLS
 toolsSection:AddParagraph({
     Title = "Auto Tools",
-    Content = "Automatically equip/use tools like Weight, Pushups, Punch.",
+    Content = "Automatically use tools like Weight, Pushups, Punch.",
 })
 
 _G.AutoWeight = false
-toolsSection:AddToggle("Farming_AutoWeight", {
+toolsSection:AddToggle("Farming AutoWeight", {
     Title = "Auto Weight",
     Default = false,
     Description = "Equip Weight tool and auto rep.",
@@ -742,7 +742,7 @@ toolsSection:AddToggle("Farming_AutoWeight", {
 })
 
 _G.AutoPushups = false
-toolsSection:AddToggle("Farming_AutoPushups", {
+toolsSection:AddToggle("Farming AutoPushups", {
     Title = "Auto Pushups",
     Default = false,
     Description = "Equip Pushups tool and auto rep.",
@@ -777,7 +777,7 @@ toolsSection:AddToggle("Farming_AutoPushups", {
 })
 
 local autoEquipPunch = false
-toolsSection:AddToggle("Farming_AutoPunchEquip", {
+toolsSection:AddToggle("Farming AutoPunchEquip", {
     Title = "Auto Punch Equip",
     Default = false,
     Description = "Continuously move Punch from backpack to character.",
@@ -823,7 +823,7 @@ for k, _ in pairs(rockData) do
 end
 
 local selectedRock = nil
-rocksSection:AddDropdown("Farming_RockDropdown", {
+rocksSection:AddDropdown("Farming RockDropdown", {
     Title = "Select Rock",
     Description = "Choose rock to farm",
     Values = rockValues,
@@ -846,7 +846,7 @@ local function equipAndPunch()
     end)
 end
 
-rocksSection:AddToggle("Farming_StartRocks", {
+rocksSection:AddToggle("Farming StartRocks", {
     Title = "Start Auto Rocks",
     Default = false,
     Description = "Auto interact with selected rock when durability threshold is met.",
@@ -889,7 +889,7 @@ rocksSection:AddToggle("Farming_StartRocks", {
 })
 
 -- Hide Features
-HideSection:AddToggle("Hide_Frames", {
+HideSection:AddToggle("Hide Frames", {
     Title = "Hide Frames",
     Description = "Toggle to hide or show all objects ending with 'Frame' in ReplicatedStorage.",
     Default = false,
