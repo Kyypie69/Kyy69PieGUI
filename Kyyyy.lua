@@ -1247,7 +1247,12 @@ Killer:AddToggle("AutoKill", {
     end,
 })
 
+-- keep the table that stores the names
 local targetPlayerNames = {}
+
+-- ------------------------------------------------------------------
+-- 1. ADD target (dropdown) – your original code, untouched
+-- ------------------------------------------------------------------
 local targetDropdown = Killer:AddDropdown("SelectTarget", {
     Title = "Select Target (add to list)",
     Values = {},
@@ -1256,32 +1261,65 @@ local targetDropdown = Killer:AddDropdown("SelectTarget", {
         if name and not table.find(targetPlayerNames, name) then
             table.insert(targetPlayerNames, name)
             Library:Notify({Title="Target", Content = name .. " added to target list.", Duration = 2})
+            refreshRemoveDropdown()  -- refresh the REMOVE list
         end
     end,
 })
 
-Killer:AddInput("RemoveTargetInput", {
-    Title = "Remove Target From List",
-    Default = "",
-    Placeholder = "PlayerName",
-    Callback = function(name)
-        for i, v in ipairs(targetPlayerNames) do
-            if v == name then
-                table.remove(targetPlayerNames, i)
-                Library:Notify({Title="Target", Content = name .. " removed.", Duration = 2})
-                break
+-- ------------------------------------------------------------------
+-- 2. NEW – REMOVE target (dropdown)
+-- ------------------------------------------------------------------
+local removeDropdown
+local function refreshRemoveDropdown()
+    -- build list from whatever is currently in targetPlayerNames
+    local opts = {}
+    for _, n in ipairs(targetPlayerNames) do
+        table.insert(opts, n)
+    end
+    -- create the dropdown only once; afterwards just update its values
+    if not removeDropdown then
+        removeDropdown = Killer:AddDropdown("RemoveTargetDropdown", {
+            Title = "Remove Target From List",
+            Values = opts,
+            Default = nil,
+            Callback = function(name)
+                for i, v in ipairs(targetPlayerNames) do
+                    if v == name then
+                        table.remove(targetPlayerNames, i)
+                        Library:Notify({Title="Target", Content = name .. " removed.", Duration = 2})
+                        refreshRemoveDropdown()  -- keep the dropdown in sync
+                        break
+                    end
+                end
+            end,
+        })
+    else
+        pcall(function()
+            if removeDropdown.SetValues then
+                removeDropdown:SetValues(opts)
             end
-        end
-    end,
-})
+        end)
+    end
+end
+refreshRemoveDropdown()   -- initialise it
 
+-- ------------------------------------------------------------------
+-- 3. keep the player-list dropdowns in sync
+-- ------------------------------------------------------------------
 local function refreshTargetDropdown()
     local vals = {}
     for _, plr in ipairs(game:GetService("Players"):GetPlayers()) do
-        if plr ~= game.Players.LocalPlayer then table.insert(vals, plr.Name) end
+        if plr ~= game.Players.LocalPlayer then
+            table.insert(vals, plr.Name)
+        end
     end
-    pcall(function() if targetDropdown and targetDropdown.SetValues then targetDropdown:SetValues(vals) end end)
+    pcall(function()
+        if targetDropdown and targetDropdown.SetValues then
+            targetDropdown:SetValues(vals)
+        end
+    end)
 end
+
 refreshTargetDropdown()
 game:GetService("Players").PlayerAdded:Connect(refreshTargetDropdown)
 game:GetService("Players").PlayerRemoving:Connect(refreshTargetDropdown)
@@ -1489,21 +1527,180 @@ Killer:AddToggle("AntiKnockback", {
     end,
 })
 
+
+local killSection   = Killer:AddSection("Animations")
+
+local blockedAnimations = {
+	["rbxassetid://3638729053"] = true,
+	["rbxassetid://3638767427"] = true,
+}
+
+local function stopMatchingTracks(humanoid)
+	if not humanoid then return end
+	for _, track in pairs(humanoid:GetPlayingAnimationTracks()) do
+		if track.Animation then
+			local animId = track.Animation.AnimationId or ""
+			local animName = (track.Name or ""):lower()
+			if blockedAnimations[animId] or animName:match("punch") or animName:match("attack") or animName:match("right") then
+				pcall(function() track:Stop() end)
+			end
+		end
+	end
+end
+
+local function setupAnimationBlocking()
+	local char = game.Players.LocalPlayer.Character
+	if not char or not char:FindFirstChild("Humanoid") then return end
+	local humanoid = char:FindFirstChild("Humanoid")
+
+	-- Stop existing playing tracks that match
+	stopMatchingTracks(humanoid)
+
+	if not _G.AnimBlockConnection then
+		_G.AnimBlockConnection = humanoid.AnimationPlayed:Connect(function(track)
+			if track and track.Animation then
+				local animId = track.Animation.AnimationId or ""
+				local animName = (track.Name or ""):lower()
+				if blockedAnimations[animId] or animName:match("punch") or animName:match("attack") or animName:match("right") then
+					pcall(function() track:Stop() end)
+				end
+			end
+		end)
+	end
+end
+
+-- override tool activation to immediately stop animation if it's a punch/attack tool
+local function overrideToolActivation()
+	local function processTool(tool)
+		if not tool then return end
+		if tool.Name == "Punch" or tool.Name:match("Attack") or tool.Name:match("Right") then
+			if not tool:GetAttribute("ActivatedOverride") then
+				tool:SetAttribute("ActivatedOverride", true)
+				local connection = tool.Activated:Connect(function()
+					task.wait(0.05)
+					local char = game.Players.LocalPlayer.Character
+					if char and char:FindFirstChild("Humanoid") then
+						stopMatchingTracks(char.Humanoid)
+					end
+				end)
+				if not _G.ToolConnections then _G.ToolConnections = {} end
+				_G.ToolConnections[tool] = connection
+			end
+		end
+	end
+
+	-- process existing backpack tools
+	for _, tool in pairs(game.Players.LocalPlayer.Backpack:GetChildren()) do
+		processTool(tool)
+	end
+
+	-- process character tools
+	local char = game.Players.LocalPlayer.Character
+	if char then
+		for _, tool in pairs(char:GetChildren()) do
+			if tool:IsA("Tool") then processTool(tool) end
+		end
+	end
+
+	-- connections for future tools
+	if not _G.BackpackAddedConnection then
+		_G.BackpackAddedConnection = game.Players.LocalPlayer.Backpack.ChildAdded:Connect(function(child)
+			if child:IsA("Tool") then
+				task.wait(0.1)
+				processTool(child)
+			end
+		end)
+	end
+
+	if not _G.CharacterToolAddedConnection and char then
+		_G.CharacterToolAddedConnection = char.ChildAdded:Connect(function(child)
+			if child:IsA("Tool") then
+				task.wait(0.1)
+				processTool(child)
+			end
+		end)
+	end
+end
 -- Punch animations
-Killer:AddButton({
+killSection:AddButton({
     Title = "Remove Punch Anim",
     Description = "Block punch animations",
     Callback = function()
-        -- >>>>  PASTE FULL REMOVE-PUNCH-ANIM CODE  <<<<
-    end,
+		setupAnimationBlocking()
+		overrideToolActivation()
+
+		if not _G.AnimMonitorConnection then
+			_G.AnimMonitorConnection = game:GetService("RunService").Heartbeat:Connect(function()
+				-- periodically ensure animations are stopped
+				if tick() % 0.5 < 0.01 then
+					local char = game.Players.LocalPlayer.Character
+					if char and char:FindFirstChild("Humanoid") then
+						stopMatchingTracks(char.Humanoid)
+					end
+				end
+			end)
+		end
+
+		-- handle character re-add
+		if not _G.CharacterAddedConnection then
+			_G.CharacterAddedConnection = game.Players.LocalPlayer.CharacterAdded:Connect(function(newChar)
+				task.wait(1)
+				setupAnimationBlocking()
+				overrideToolActivation()
+
+				if _G.CharacterToolAddedConnection then
+					_G.CharacterToolAddedConnection:Disconnect()
+				end
+
+				_G.CharacterToolAddedConnection = newChar.ChildAdded:Connect(function(child)
+					if child:IsA("Tool") then
+						task.wait(0.1)
+						-- processTool is local to overrideToolActivation; re-run override
+						overrideToolActivation()
+					end
+				end)
+			end)
+		end
+	end,
 })
 
-Killer:AddButton({
+-- Recovery function to disconnect all hooks/connections created by the anim blocker
+local function RecoveryPunch()
+	if _G.AnimBlockConnection then
+		pcall(function() _G.AnimBlockConnection:Disconnect() end)
+		_G.AnimBlockConnection = nil
+	end
+	if _G.AnimMonitorConnection then
+		pcall(function() _G.AnimMonitorConnection:Disconnect() end)
+		_G.AnimMonitorConnection = nil
+	end
+	if _G.ToolConnections then
+		for _, conn in pairs(_G.ToolConnections) do
+			if conn then pcall(function() conn:Disconnect() end) end
+		end
+		_G.ToolConnections = nil
+	end
+	if _G.BackpackAddedConnection then
+		pcall(function() _G.BackpackAddedConnection:Disconnect() end)
+		_G.BackpackAddedConnection = nil
+	end
+	if _G.CharacterToolAddedConnection then
+		pcall(function() _G.CharacterToolAddedConnection:Disconnect() end)
+		_G.CharacterToolAddedConnection = nil
+	end
+	if _G.CharacterAddedConnection then
+		pcall(function() _G.CharacterAddedConnection:Disconnect() end)
+		_G.CharacterAddedConnection = nil
+	end
+end
+
+killSection:AddButton({
     Title = "Recover Punch Anim",
     Description = "Restore normal behavior.",
     Callback = function()
-        -- >>>>  PASTE FULL RECOVER-PUNCH-ANIM CODE  <<<<
-    end,
+        RecoveryPunch()
+		Library:Notify({Title="Recovery", Content="Punch animation blocking removed.", Duration = 3})
+	end,
 })
 
 --============================================================================
