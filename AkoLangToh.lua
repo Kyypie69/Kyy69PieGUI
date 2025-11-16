@@ -381,9 +381,9 @@ packSection:AddToggle("Packs Farm", {
     end
 })
 
-packSection:AddToggle({
+packSection:AddToggle("Packs Farm", {
     Title = "FAST REBIRTHS",
-    Description = "Auto-farm strength & rebirth with Swift Samurai → Tribal Overlord",
+	Description = "Auto Switch Tribal + Overlord.",
     Default = false,
     Callback = function(state)
         getgenv().AutoFarming = state
