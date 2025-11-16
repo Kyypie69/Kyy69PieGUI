@@ -149,112 +149,113 @@ Home:AddToggle("LockPosition", {
     end
 })
 
-local farmThread = nil -- holds the running thread (nil = not running)
+local farmThread = nil   -- nil = not running
 
-Home:AddButton({
-    Title = "Start Packs Farm Rebirth",
+Home:AddToggle({
+    Title   = "Packs Farm Rebirth",
     Description = "230K+ A DAY",
-    Callback = function()
-        -- if already running → stop it
-        if farmThread then
-            task.cancel(farmThread)
-            farmThread = nil
-            Window:SetButtonTitle("Start Packs Farm Rebirth") -- reset label
-            return
-        end
+    Default = false,
+    Callback = function(state)
+        -- state == true  -> user turned it ON
+        -- state == false -> user turned it OFF
+        if state then   -- START
+            farmThread = task.spawn(function()
+                local a = game:GetService("ReplicatedStorage")
+                local b = game:GetService("Players")
+                local c = b.LocalPlayer
 
-        -- otherwise start the farm
-        Window:SetButtonTitle("Stop Packs Farm Rebirth")
+                local d = function()
+                    local f = c.petsFolder
+                    for _, h in pairs(f:GetChildren()) do
+                        if h:IsA("Folder") then
+                            for _, j in pairs(h:GetChildren()) do
+                                a.rEvents.equipPetEvent:FireServer("unequipPet", j)
+                            end
+                        end
+                    end
+                    task.wait(.1)
+                end
 
-        farmThread = task.spawn(function()
-            local a = game:GetService("ReplicatedStorage")
-            local b = game:GetService("Players")
-            local c = b.LocalPlayer
-
-            local d = function(e)
-                local f = c.petsFolder
-                for g, h in pairs(f:GetChildren()) do
-                    if h:IsA("Folder") then
-                        for i, j in pairs(h:GetChildren()) do
-                            a.rEvents.equipPetEvent:FireServer("unequipPet", j)
+                local k = function(petName)
+                    d()
+                    task.wait(.01)
+                    for _, n in pairs(c.petsFolder.Unique:GetChildren()) do
+                        if n.Name == petName then
+                            a.rEvents.equipPetEvent:FireServer("equipPet", n)
+                            break
                         end
                     end
                 end
-                task.wait(.1)
-            end
 
-            local k = function(l)
-                d()
-                task.wait(.01)
-                for m, n in pairs(c.petsFolder.Unique:GetChildren()) do
-                    if n.Name == l then
-                        a.rEvents.equipPetEvent:FireServer("equipPet", n)
-                    end
-                end
-            end
-
-            local o = function(p)
-                local q = workspace.machinesFolder:FindFirstChild(p)
-                if not q then
-                    for r, s in pairs(workspace:GetChildren()) do
-                        if s:IsA("Folder") and s.Name:find("machines") then
-                            q = s:FindFirstChild(p)
-                            if q then break end
+                local o = function(machine)
+                    local q = workspace.machinesFolder:FindFirstChild(machine)
+                    if not q then
+                        for _, s in pairs(workspace:GetChildren()) do
+                            if s:IsA("Folder") and s.Name:find("machines") then
+                                q = s:FindFirstChild(machine)
+                                if q then break end
+                            end
                         end
                     end
-                end
-                return q
-            end
-
-            local t = function()
-                local u = game:GetService("VirtualInputManager")
-                u:SendKeyEvent(true, "E", false, game)
-                task.wait(.1)
-                u:SendKeyEvent(false, "E", false, game)
-            end
-
-            while true do
-                local v = c.leaderstats.Rebirths.Value
-                local w = 10000 + (5000 * v)
-                if c.ultimatesFolder:FindFirstChild("Golden Rebirth") then
-                    local x = c.ultimatesFolder["Golden Rebirth"].Value
-                    w = math.floor(w * (1 - (x * 0.1)))
+                    return q
                 end
 
-                d()
-                task.wait(.1)
-                k("Swift Samurai")
+                local t = function()
+                    local vim = game:GetService("VirtualInputManager")
+                    vim:SendKeyEvent(true,  "E", false, game)
+                    task.wait(.1)
+                    vim:SendKeyEvent(false, "E", false, game)
+                end
 
-                while c.leaderstats.Strength.Value < w do
-                    for y = 1, 10 do
-                        c.muscleEvent:FireServer("rep")
+                while true do
+                    local v = c.leaderstats.Rebirths.Value
+                    local w = 10000 + (5000 * v)
+                    if c.ultimatesFolder:FindFirstChild("Golden Rebirth") then
+                        local x = c.ultimatesFolder["Golden Rebirth"].Value
+                        w = math.floor(w * (1 - (x * 0.1)))
                     end
+
+                    d()
+                    task.wait(.1)
+                    k("Swift Samurai")
+
+                    while c.leaderstats.Strength.Value < w do
+                        for _ = 1, 10 do
+                            c.muscleEvent:FireServer("rep")
+                        end
+                        task.wait()
+                    end
+
+                    d()
+                    task.wait(.1)
+                    k("Tribal Overlord")
+
+                    local z = o("Jungle Bar Lift")
+                    if z and z:FindFirstChild("interactSeat") then
+                        c.Character.HumanoidRootPart.CFrame =
+                            z.interactSeat.CFrame * CFrame.new(0, 3, 0)
+                        repeat
+                            task.wait(.1)
+                            t()
+                        until c.Character.Humanoid.Sit
+                    end
+
+                    local oldRebirths = c.leaderstats.Rebirths.Value
+                    repeat
+                        a.rEvents.rebirthRemote:InvokeServer("rebirthRequest")
+                        task.wait(.1)
+                    until c.leaderstats.Rebirths.Value > oldRebirths
+
                     task.wait()
                 end
+            end)
 
-                d()
-                task.wait(.1)
-                k("Tribal Overlord")
-
-                local z = o("Jungle Bar Lift")
-                if z and z:FindFirstChild("interactSeat") then
-                    c.Character.HumanoidRootPart.CFrame =
-                        z.interactSeat.CFrame * CFrame.new(0, 3, 0)
-                    repeat
-                        task.wait(.1)
-                        t()
-                    until c.Character.Humanoid.Sit
-                end
-
-                local A = c.leaderstats.Rebirths.Value
-                repeat
-                    a.rEvents.rebirthRemote:InvokeServer("rebirthRequest")
-                    task.wait(.1)
-                until c.leaderstats.Rebirths.Value > A
-
-                task.wait()
+        else            -- STOP
+            if farmThread then
+                task.cancel(farmThread)
+                farmThread = nil
             end
-        end)
+        end
     end
 })
 
