@@ -21,7 +21,7 @@ end
 local Window = Library:CreateWindow({
     Title = " KYYPIE HUB ",
     SubTitle = "Version 6.9 | by Markyy",
-    Size = UDim2.fromOffset(500, 335),
+    Size = UDim2.fromOffset(450, 335),
     TabWidth = 150,
     Theme = "DarkBlue",
     Acrylic = false,
@@ -129,6 +129,69 @@ Home:AddButton({
         end)
 
         print("Anti-AFK enabled.")
+    end
+})
+
+Home:AddToggle("ANTI LAG", {
+    Title       = "Anti Lag",
+    Description = "Removes effects & lighting to boost FPS",
+    Default     = false,
+    Callback    = function(State)
+        local lighting = game:GetService("Lighting")
+        local LocalPlayer = game:GetService("Players").LocalPlayer
+
+        if State then
+            -- wipe existing guis
+            for _, gui in pairs(LocalPlayer.PlayerGui:GetChildren()) do
+                if gui:IsA("ScreenGui") then gui:Destroy() end
+            end
+
+            -- wipe particles / lights
+            for _, obj in pairs(workspace:GetDescendants()) do
+                if obj:IsA("ParticleEmitter") or obj:IsA("PointLight")
+                   or obj:IsA("SpotLight") or obj:IsA("SurfaceLight") then
+                    obj:Destroy()
+                end
+            end
+
+            -- wipe skies
+            for _, v in pairs(lighting:GetChildren()) do
+                if v:IsA("Sky") then v:Destroy() end
+            end
+
+            -- create dark sky
+            local darkSky = Instance.new("Sky")
+            darkSky.Name = "DarkSky"
+            for _, face in {"SkyboxBk","SkyboxDn","SkyboxFt","SkyboxLf","SkyboxRt","SkyboxUp"} do
+                darkSky[face] = "rbxassetid://0"
+            end
+            darkSky.Parent = lighting
+
+            -- lighting settings
+            lighting.Brightness      = 0
+            lighting.ClockTime       = 0
+            lighting.TimeOfDay       = "00:00:00"
+            lighting.OutdoorAmbient  = Color3.new(0,0,0)
+            lighting.Ambient         = Color3.new(0,0,0)
+            lighting.FogColor        = Color3.new(0,0,0)
+            lighting.FogEnd          = 100
+
+            -- sky respawn loop
+            task.spawn(function()
+                while State do
+                    task.wait(5)
+                    if not lighting:FindFirstChild("DarkSky") then
+                        darkSky:Clone().Parent = lighting
+                    end
+                end
+            end)
+        else
+            -- restore default sky if desired (optional)
+            if lighting:FindFirstChild("DarkSky") then
+                lighting.DarkSky:Destroy()
+            end
+            -- reset any other lighting values here if you want
+        end
     end
 })
 
@@ -276,7 +339,9 @@ local durabilityStat = player:WaitForChild("Durability")
 local killsStat = ls:WaitForChild("Kills")
 local agilityStat = player:WaitForChild("Agility")
 
-local CRIMSON = Color3.fromRGB(220, 20, 60)
+local NAVY_BLUE = Color3.fromRGB(30, 58, 138)      -- navy blue text / accents
+local GRAY_BG   = Color3.fromRGB(45, 45, 45)       -- main gray background
+local DARK_GRAY = Color3.fromRGB(35, 35, 35)       -- title-bar gray
 
 local function AbbrevNumber(num)
     local abbrev = {"", "K", "M", "B", "T", "Qa", "Qi"}
@@ -295,7 +360,7 @@ screenGui.Enabled = false
 local main = Instance.new("Frame")
 main.Size = UDim2.new(0, 500, 0, 350)
 main.Position = UDim2.new(0.5, -250, 0.5, -175)
-main.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+main.BackgroundColor3 = GRAY_BG
 main.BorderSizePixel = 0
 main.Parent = screenGui
 main.Active = true
@@ -303,14 +368,14 @@ main.Draggable = true
 
 local titleBar = Instance.new("Frame")
 titleBar.Size = UDim2.new(1, 0, 0, 30)
-titleBar.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+titleBar.BackgroundColor3 = DARK_GRAY
 titleBar.Parent = main
 
 local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, 0, 1, 0)
 title.BackgroundTransparency = 1
 title.Text = "Session Stats"
-title.TextColor3 = CRIMSON
+title.TextColor3 = NAVY_BLUE
 title.Font = Enum.Font.SourceSansBold
 title.TextSize = 20
 title.Parent = titleBar
@@ -333,7 +398,7 @@ local function AddLabel(text, size)
     lab.Size = UDim2.new(1, -10, 0, size + 5)
     lab.BackgroundTransparency = 1
     lab.Text = text
-    lab.TextColor3 = CRIMSON
+    lab.TextColor3 = NAVY_BLUE
     lab.Font = Enum.Font.SourceSans
     lab.TextSize = size
     lab.TextXAlignment = Enum.TextXAlignment.Left
@@ -344,8 +409,8 @@ end
 local function AddButton(text, callback)
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(1, -10, 0, 30)
-    btn.BackgroundColor3 = Color3.fromRGB(50, 0, 0)
-    btn.TextColor3 = CRIMSON
+    btn.BackgroundColor3 = DARK_GRAY
+    btn.TextColor3 = NAVY_BLUE
     btn.Font = Enum.Font.SourceSansBold
     btn.TextSize = 18
     btn.Text = text
