@@ -19,11 +19,11 @@ else
 end
 
 local Window = Library:CreateWindow({
-    Title = " KYY HUB ",
+    Title = " KYYPIE HUB ",
     SubTitle = "Version 6.9 | by Markyy",
     Size = UDim2.fromOffset(500, 335),
     TabWidth = 150,
-    Theme = "Crimson",
+    Theme = "SkyBlue",
     Acrylic = false,
 })
 
