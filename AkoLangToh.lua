@@ -1116,7 +1116,7 @@ toolsSection:AddToggle("Farming AutoPunchEquip", {
     end,
 })
 
-local rockSection = farmingTab:AddSection("Rock Farming")
+local hitSection = farmingTab:AddSection("Rock Farming")
 
 local function gettool()
     for i, v in pairs(game.Players.LocalPlayer.Backpack:GetChildren()) do
@@ -1128,7 +1128,7 @@ local function gettool()
     game:GetService("Players").LocalPlayer.muscleEvent:FireServer("punch", "rightHand")
 end
 
-rockSection:AddToggle("Farm Tiny Island Rock", {
+hitSection:AddToggle("Farm Tiny Island Rock", {
 	Default = false,
     Callback = function(bool)
     selectrock = "Tiny Island Rock"
@@ -1157,7 +1157,7 @@ rockSection:AddToggle("Farm Tiny Island Rock", {
     end
 end})
 
-rockSection:AddToggle("Farm Starter Island Rock", {
+hitSection:AddToggle("Farm Starter Island Rock", {
 	Default = false,
     Callback = function(bool)
     selectrock = "Starter Island Rock"
@@ -1186,7 +1186,7 @@ rockSection:AddToggle("Farm Starter Island Rock", {
     end
 end})
 
-rockSection:AddToggle("Farm Legend Beach Rock", {
+hitSection:AddToggle("Farm Legend Beach Rock", {
 	Default = false,
     Callback = function(bool)
     selectrock = "Legend Beach Rock"
@@ -1215,7 +1215,7 @@ rockSection:AddToggle("Farm Legend Beach Rock", {
     end
 end})
 
-rockSection:AddToggle("Farm Frost Gym Rock", {
+hitSection:AddToggle("Farm Frost Gym Rock", {
 	Default = false,
     Callback = function(bool)
     selectrock = "Frost Gym Rock"
@@ -1244,7 +1244,7 @@ rockSection:AddToggle("Farm Frost Gym Rock", {
     end
 end})
 
-rockSection:AddToggle("Farm Mythical Gym Rock", {
+hitSection:AddToggle("Farm Mythical Gym Rock", {
 	Default = false,
     Callback = function(bool)
     selectrock = "Mythical Gym Rock"
@@ -1273,7 +1273,7 @@ rockSection:AddToggle("Farm Mythical Gym Rock", {
     end
 end})
 
-rockSection:AddToggle("Farm Eternal Gym Rock", {
+hitSection:AddToggle("Farm Eternal Gym Rock", {
 	Default = false,
     Callback = function(bool)
     selectrock = "Eternal Gym Rock"
@@ -1302,7 +1302,7 @@ rockSection:AddToggle("Farm Eternal Gym Rock", {
     end
 end})
 
-rockSection:AddToggle("Farm Legend Gym Rock", {
+hitSection:AddToggle("Farm Legend Gym Rock", {
 	Default = false,
     Callback = function(bool)
     selectrock = "Legend Gym Rock"
@@ -1331,7 +1331,7 @@ rockSection:AddToggle("Farm Legend Gym Rock", {
     end
 end})
 
-rockSection:AddToggle("Farm Muscle King Gym Rock", {
+hitSection:AddToggle("Farm Muscle King Gym Rock", {
 	Default = false,
     Callback = function(bool)
     selectrock = "Muscle King Gym Rock"
@@ -1360,7 +1360,7 @@ rockSection:AddToggle("Farm Muscle King Gym Rock", {
     end
 end})
 
-rockSection:AddToggle("Farm Ancient Jungle Rock", {
+hitSection:AddToggle("Farm Ancient Jungle Rock", {
 	Default = false,
     Callback = function(bool)
     selectrock = "Ancient Jungle Rock"
