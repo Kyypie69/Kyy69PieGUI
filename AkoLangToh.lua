@@ -928,12 +928,8 @@ Home:AddButton({
 --  TAB 2  –  FARMING
 --============================================================================
 local mainSection   = farmingTab:AddSection("Auto Farming")
-local toolsSection  = farmingTab:AddSection("Auto Tools")
-local rockSection = farmingTab:AddSection("Rock Farming")
-local rocksSection  = farmingTab:AddSection("Auto Rocks")
-local HideSection   = farmingTab:AddSection("Hide Features")
 
--- MAIN
+--MAIN
 mainSection:AddParagraph({
     Title = "Auto Machines",
     Content = "Select a machine and toggle Start to teleport and auto lift at that location.",
@@ -1020,6 +1016,7 @@ mainSection:AddToggle("Farming_StartMachine", {
     end,
 })
 
+local toolsSection  = farmingTab:AddSection("Auto Tools")
 -- TOOLS
 toolsSection:AddParagraph({
     Title = "Auto Tools",
@@ -1119,6 +1116,7 @@ toolsSection:AddToggle("Farming AutoPunchEquip", {
     end,
 })
 
+local rockSection = farmingTab:AddSection("Rock Farming")
 
 local function gettool()
     for i, v in pairs(game.Players.LocalPlayer.Backpack:GetChildren()) do
@@ -1130,9 +1128,6 @@ local function gettool()
     game:GetService("Players").LocalPlayer.muscleEvent:FireServer("punch", "rightHand")
 end
 
---------------------------------------------------------------------
---  rock toggles
---------------------------------------------------------------------
 rockSection:AddToggle("Farm Tiny Island Rock", false, function(bool)
     selectrock = "Tiny Island Rock"
     getgenv().autoFarm = bool
@@ -1376,7 +1371,9 @@ rockSection:AddToggle("Farm Ancient Jungle Rock", false, function(bool)
     end
 end)
 
--- ROCKS
+
+local rocksSection  = farmingTab:AddSection("Auto Rocks")
+
 rocksSection:AddParagraph({
     Title = "Auto Rocks",
     Content = "Select which rock to hit and toggle Start to farm it.",
@@ -1466,7 +1463,8 @@ rocksSection:AddToggle("Farming StartRocks", {
     end,
 })
 
--- Hide Features
+local HideSection   = farmingTab:AddSection("Hide Features")
+
 HideSection:AddToggle("Hide Frames", {
     Title = "Hide Frames",
     Description = "Toggle to hide or show all objects ending with 'Frame' in ReplicatedStorage.",
