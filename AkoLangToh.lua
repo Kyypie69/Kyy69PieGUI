@@ -186,6 +186,7 @@ task.spawn(function()
     end
 end)
 
+
 --============================================================================
 --  TAB 1  –  HOME / PACKS
 --============================================================================
@@ -421,121 +422,88 @@ packSection:AddButton({
     end
 })
 
-local farmThread = nil   -- nil = not running
 packSection:AddToggle("Packs Farm", {
     Title = "230K+ per day",
 	Description = "BUGGED AS OF NOW",
     Default = false,
     Callback = function(state)
-        -- state == true  -> user turned it ON
-        -- state == false -> user turned it OFF
-        if state then   -- START
-            farmThread = task.spawn(function()
-                local a = game:GetService("ReplicatedStorage")
-                local b = game:GetService("Players")
-                local c = b.LocalPlayer
-
-                local d = function()
-                    local f = c.petsFolder
-                    for _, h in pairs(f:GetChildren()) do
-                        if h:IsA("Folder") then
-                            for _, j in pairs(h:GetChildren()) do
-                                a.rEvents.equipPetEvent:FireServer("unequipPet", j)
+    getgenv().AutoFarming = state
+    if state then
+        task.spawn(function()
+            local a = ReplicatedStorage
+            local c = LocalPlayer
+            local function equipPetByName(name)
+                local folderPets = c:FindFirstChild("petsFolder")
+                if not folderPets then return end
+                for _, folder in pairs(folderPets:GetChildren()) do
+                    if folder:IsA("Folder") then
+                        for _, pet in pairs(folder:GetChildren()) do
+                            if pet.Name == name then
+                                a.rEvents.equipPetEvent:FireServer("equipPet", pet)
                             end
                         end
                     end
-                    task.wait(.1)
                 end
-
-                local k = function(petName)
-                    d()
-                    task.wait(.01)
-                    for _, n in pairs(c.petsFolder.Unique:GetChildren()) do
-                        if n.Name == petName then
-                            a.rEvents.equipPetEvent:FireServer("equipPet", n)
-                            break
+            end
+            local function unequipAllPets()
+                local f = c:FindFirstChild("petsFolder")
+                if not f then return end
+                for _, folder in pairs(f:GetChildren()) do
+                    if folder:IsA("Folder") then
+                        for _, pet in pairs(folder:GetChildren()) do
+                            a.rEvents.equipPetEvent:FireServer("unequipPet", pet)
                         end
                     end
                 end
-
-                local o = function(machine)
-                    local q = workspace.machinesFolder:FindFirstChild(machine)
-                    if not q then
-                        for _, s in pairs(workspace:GetChildren()) do
-                            if s:IsA("Folder") and s.Name:find("machines") then
-                                q = s:FindFirstChild(machine)
-                                if q then break end
-                            end
-                        end
-                    end
-                    return q
+                task.wait(0.1)
+            end
+            local function getGoldenRebirthCount()
+                local g = c:FindFirstChild("ultimatesFolder")
+                if g and g:FindFirstChild("Golden Rebirth") then
+                    return g["Golden Rebirth"].Value
                 end
-
-                local t = function()
-                    local vim = game:GetService("VirtualInputManager")
-                    vim:SendKeyEvent(true,  "E", false, game)
-                    task.wait(.1)
-                    vim:SendKeyEvent(false, "E", false, game)
+                return 0
+            end
+            local function getStrengthRequiredForRebirth()
+                local rebirths = c.leaderstats.Rebirths.Value
+                local baseStrength = 10000 + (5000 * rebirths)
+                local golden = getGoldenRebirthCount()
+                if golden >= 1 and golden <= 5 then
+                    baseStrength = baseStrength * (1 - golden * 0.1)
                 end
-
-                while true do
-                    local v = c.leaderstats.Rebirths.Value
-                    local w = 10000 + (5000 * v)
-                    if c.ultimatesFolder:FindFirstChild("Golden Rebirth") then
-                        local x = c.ultimatesFolder["Golden Rebirth"].Value
-                        w = math.floor(w * (1 - (x * 0.1)))
+                return math.floor(baseStrength)
+            end
+            while getgenv().AutoFarming do
+                local requiredStrength = getStrengthRequiredForRebirth()
+                unequipAllPets()
+                equipPetByName("Swift Samurai")
+                while c.leaderstats.Strength.Value < requiredStrength and getgenv().AutoFarming do
+                    for _ = 1, 10 do
+                        c.muscleEvent:FireServer("rep")
                     end
-
-                    d()
-                    task.wait(.1)
-                    k("Swift Samurai")
-
-                    while c.leaderstats.Strength.Value < w do
-                        for _ = 1, 10 do
-                            c.muscleEvent:FireServer("rep")
-                        end
-                        task.wait()
-                    end
-
-                    d()
-                    task.wait(.1)
-                    k("Tribal Overlord")
-
-                    local z = o("Jungle Bar Lift")
-                    if z and z:FindFirstChild("interactSeat") then
-                        c.Character.HumanoidRootPart.CFrame =
-                            z.interactSeat.CFrame * CFrame.new(0, 3, 0)
-                        repeat
-                            task.wait(.1)
-                            t()
-                        until c.Character.Humanoid.Sit
-                    end
-
+                    task.wait()
+                end
+                if getgenv().AutoFarming then
+                    unequipAllPets()
+                    equipPetByName("Tribal Overlord")
                     local oldRebirths = c.leaderstats.Rebirths.Value
                     repeat
                         a.rEvents.rebirthRemote:InvokeServer("rebirthRequest")
-                        task.wait(.1)
-                    until c.leaderstats.Rebirths.Value > oldRebirths
-
-                    task.wait()
+                        task.wait(0.1)
+                    until c.leaderstats.Rebirths.Value > oldRebirths or not getgenv().AutoFarming
                 end
-            end)
-
-        else            -- STOP
-            if farmThread then
-                task.cancel(farmThread)
-                farmThread = nil
+                task.wait()
             end
-        end
+        end)
     end
-})
+end})
 
 
 packSection:AddToggle("Packs Farm", {
     Title = "FAST REBIRTHS",
 	Description = "Auto Switch Tribal + Overlord.",
     Default = false,
-    Callback = function(v)
+    Callback = function(state)
     getgenv().AutoFarming = state
     if state then
         task.spawn(function()
@@ -1118,23 +1086,13 @@ toolsSection:AddToggle("Farming AutoPunchEquip", {
 
 local hitSection = farmingTab:AddSection("Rock Farming")
 
-local function gettool()
-    for i, v in pairs(game.Players.LocalPlayer.Backpack:GetChildren()) do
-        if v.Name == "Punch" and game.Players.LocalPlayer.Character:FindFirstChild("Humanoid") then
-            game.Players.LocalPlayer.Character.Humanoid:EquipTool(v)
-        end
-    end
-    game:GetService("Players").LocalPlayer.muscleEvent:FireServer("punch", "leftHand")
-    game:GetService("Players").LocalPlayer.muscleEvent:FireServer("punch", "rightHand")
-end
-
 hitSection:AddToggle("Farm Tiny Island Rock", {
 	Default = false,
-    Callback = function(bool)
-    selectrock = "Tiny Island Rock"
-    getgenv().autoFarm = bool
+    Callback = function(value)
+   		 selectrock = "Tiny Island Rock"
+   		 getgenv().autoFarm = value
 
-    if bool then
+    if value then
         spawn(function()
             while getgenv().autoFarm do
                 task.wait()
@@ -1156,6 +1114,16 @@ hitSection:AddToggle("Farm Tiny Island Rock", {
         end)
     end
 end})
+
+local function gettool()
+    for i, v in pairs(game.Players.LocalPlayer.Backpack:GetChildren()) do
+        if v.Name == "Punch" and game.Players.LocalPlayer.Character:FindFirstChild("Humanoid") then
+            game.Players.LocalPlayer.Character.Humanoid:EquipTool(v)
+        end
+    end
+    game:GetService("Players").LocalPlayer.muscleEvent:FireServer("punch", "leftHand")
+    game:GetService("Players").LocalPlayer.muscleEvent:FireServer("punch", "rightHand")
+end
 
 hitSection:AddToggle("Farm Starter Island Rock", {
 	Default = false,
