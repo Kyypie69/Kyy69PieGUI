@@ -34,15 +34,6 @@ local Shop        = Window:AddTab({ Title = "Crystals",         Icon = "shopping
 local Misc        = Window:AddTab({ Title = "Miscellaneous",    Icon = "menu" })
 local Settings    = Window:AddTab({ Title = "Settings",         Icon = "save" })
 ------------------------------------------------------------------------------
-local function gettool()
-    for i, v in pairs(game.Players.LocalPlayer.Backpack:GetChildren()) do
-        if v.Name == "Punch" and game.Players.LocalPlayer.Character:FindFirstChild("Humanoid") then
-            game.Players.LocalPlayer.Character.Humanoid:EquipTool(v)
-        end
-    end
-    game:GetService("Players").LocalPlayer.muscleEvent:FireServer("punch", "leftHand")
-    game:GetService("Players").LocalPlayer.muscleEvent:FireServer("punch", "rightHand")
-end
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
@@ -1126,7 +1117,20 @@ toolsSection:AddToggle("Farming AutoPunchEquip", {
 })
 
 local rockSection = farmingTab:AddSection("Rock Farming")
-rockSection:AddToggle("Farm Tiny Island Rock", false, function(bool)
+
+local function gettool()
+    for i, v in pairs(game.Players.LocalPlayer.Backpack:GetChildren()) do
+        if v.Name == "Punch" and game.Players.LocalPlayer.Character:FindFirstChild("Humanoid") then
+            game.Players.LocalPlayer.Character.Humanoid:EquipTool(v)
+        end
+    end
+    game:GetService("Players").LocalPlayer.muscleEvent:FireServer("punch", "leftHand")
+    game:GetService("Players").LocalPlayer.muscleEvent:FireServer("punch", "rightHand")
+end
+
+rockSection:AddToggle("Farm Tiny Island Rock", {
+	Default = false,
+    Callback = function(bool)
     selectrock = "Tiny Island Rock"
     getgenv().autoFarm = bool
 
@@ -1151,9 +1155,11 @@ rockSection:AddToggle("Farm Tiny Island Rock", false, function(bool)
             end
         end)
     end
-end)
+end})
 
-rockSection:AddToggle("Farm Starter Island Rock", false, function(bool)
+rockSection:AddToggle("Farm Starter Island Rock", {
+	Default = false,
+    Callback = function(bool)
     selectrock = "Starter Island Rock"
     getgenv().autoFarm = bool
 
@@ -1178,9 +1184,11 @@ rockSection:AddToggle("Farm Starter Island Rock", false, function(bool)
             end
         end)
     end
-end)
+end})
 
-rockSection:AddToggle("Farm Legend Beach Rock", false, function(bool)
+rockSection:AddToggle("Farm Legend Beach Rock", {
+	Default = false,
+    Callback = function(bool)
     selectrock = "Legend Beach Rock"
     getgenv().autoFarm = bool
 
@@ -1205,9 +1213,11 @@ rockSection:AddToggle("Farm Legend Beach Rock", false, function(bool)
             end
         end)
     end
-end)
+end})
 
-rockSection:AddToggle("Farm Frost Gym Rock", false, function(bool)
+rockSection:AddToggle("Farm Frost Gym Rock", {
+	Default = false,
+    Callback = function(bool)
     selectrock = "Frost Gym Rock"
     getgenv().autoFarm = bool
 
@@ -1232,9 +1242,11 @@ rockSection:AddToggle("Farm Frost Gym Rock", false, function(bool)
             end
         end)
     end
-end)
+end})
 
-rockSection:AddToggle("Farm Mythical Gym Rock", false, function(bool)
+rockSection:AddToggle("Farm Mythical Gym Rock", {
+	Default = false,
+    Callback = function(bool)
     selectrock = "Mythical Gym Rock"
     getgenv().autoFarm = bool
 
@@ -1259,9 +1271,11 @@ rockSection:AddToggle("Farm Mythical Gym Rock", false, function(bool)
             end
         end)
     end
-end)
+end})
 
-rockSection:AddToggle("Farm Eternal Gym Rock", false, function(bool)
+rockSection:AddToggle("Farm Eternal Gym Rock", {
+	Default = false,
+    Callback = function(bool)
     selectrock = "Eternal Gym Rock"
     getgenv().autoFarm = bool
 
@@ -1286,9 +1300,11 @@ rockSection:AddToggle("Farm Eternal Gym Rock", false, function(bool)
             end
         end)
     end
-end)
+end})
 
-rockSection:AddToggle("Farm Legend Gym Rock", false, function(bool)
+rockSection:AddToggle("Farm Legend Gym Rock", {
+	Default = false,
+    Callback = function(bool)
     selectrock = "Legend Gym Rock"
     getgenv().autoFarm = bool
 
@@ -1313,9 +1329,11 @@ rockSection:AddToggle("Farm Legend Gym Rock", false, function(bool)
             end
         end)
     end
-end)
+end})
 
-rockSection:AddToggle("Farm Muscle King Gym Rock", false, function(bool)
+rockSection:AddToggle("Farm Muscle King Gym Rock", {
+	Default = false,
+    Callback = function(bool)
     selectrock = "Muscle King Gym Rock"
     getgenv().autoFarm = bool
 
@@ -1340,9 +1358,11 @@ rockSection:AddToggle("Farm Muscle King Gym Rock", false, function(bool)
             end
         end)
     end
-end)
+end})
 
-rockSection:AddToggle("Farm Ancient Jungle Rock", false, function(bool)
+rockSection:AddToggle("Farm Ancient Jungle Rock", {
+	Default = false,
+    Callback = function(bool)
     selectrock = "Ancient Jungle Rock"
     getgenv().autoFarm = bool
 
@@ -1367,10 +1387,11 @@ rockSection:AddToggle("Farm Ancient Jungle Rock", false, function(bool)
             end
         end)
     end
-end)
+end})
 
 
 local rocksSection  = farmingTab:AddSection("Auto Rocks")
+
 rocksSection:AddParagraph({
     Title = "Auto Rocks",
     Content = "Select which rock to hit and toggle Start to farm it.",
