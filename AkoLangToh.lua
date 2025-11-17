@@ -34,6 +34,15 @@ local Shop        = Window:AddTab({ Title = "Crystals",         Icon = "shopping
 local Misc        = Window:AddTab({ Title = "Miscellaneous",    Icon = "menu" })
 local Settings    = Window:AddTab({ Title = "Settings",         Icon = "save" })
 ------------------------------------------------------------------------------
+local function gettool()
+    for i, v in pairs(game.Players.LocalPlayer.Backpack:GetChildren()) do
+        if v.Name == "Punch" and game.Players.LocalPlayer.Character:FindFirstChild("Humanoid") then
+            game.Players.LocalPlayer.Character.Humanoid:EquipTool(v)
+        end
+    end
+    game:GetService("Players").LocalPlayer.muscleEvent:FireServer("punch", "leftHand")
+    game:GetService("Players").LocalPlayer.muscleEvent:FireServer("punch", "rightHand")
+end
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
@@ -1117,17 +1126,6 @@ toolsSection:AddToggle("Farming AutoPunchEquip", {
 })
 
 local rockSection = farmingTab:AddSection("Rock Farming")
-
-local function gettool()
-    for i, v in pairs(game.Players.LocalPlayer.Backpack:GetChildren()) do
-        if v.Name == "Punch" and game.Players.LocalPlayer.Character:FindFirstChild("Humanoid") then
-            game.Players.LocalPlayer.Character.Humanoid:EquipTool(v)
-        end
-    end
-    game:GetService("Players").LocalPlayer.muscleEvent:FireServer("punch", "leftHand")
-    game:GetService("Players").LocalPlayer.muscleEvent:FireServer("punch", "rightHand")
-end
-
 rockSection:AddToggle("Farm Tiny Island Rock", false, function(bool)
     selectrock = "Tiny Island Rock"
     getgenv().autoFarm = bool
@@ -1373,7 +1371,6 @@ end)
 
 
 local rocksSection  = farmingTab:AddSection("Auto Rocks")
-
 rocksSection:AddParagraph({
     Title = "Auto Rocks",
     Content = "Select which rock to hit and toggle Start to farm it.",
@@ -1464,7 +1461,6 @@ rocksSection:AddToggle("Farming StartRocks", {
 })
 
 local HideSection   = farmingTab:AddSection("Hide Features")
-
 HideSection:AddToggle("Hide Frames", {
     Title = "Hide Frames",
     Description = "Toggle to hide or show all objects ending with 'Frame' in ReplicatedStorage.",
@@ -1497,7 +1493,6 @@ HideSection:AddToggle("HidePets", {
 --  TAB 3  –  REBIRTHS
 --============================================================================
 local rebirthSection = Rebirths:AddSection("Auto Rebirth / Size / Teleport")
-
 rebirthSection:AddParagraph({
     Title = "Auto Rebirths",
     Content = "Set target rebirth count or use infinite rebirths.",
