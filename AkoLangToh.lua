@@ -2482,6 +2482,189 @@ Settings:AddDropdown("ChangeTime", {
         })
     end,
 })
+
+local giftSection = Settings:AddSections("Gift Features")
+
+giftSection:AddLabel("Gifting Protein egg:").TextSize = 22
+
+local proteinEggLabel = giftSection:AddLabel("Protein Eggs: 0")
+proteinEggLabel.TextSize = 20
+
+local selectedEggPlayer = nil
+local eggCount = 0
+
+local eggDropdown = giftSection:AddDropdown("Player to Gift Eggs", function(selectedDisplayName)
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr.DisplayName == selectedDisplayName then
+            selectedEggPlayer = plr
+            break
+        end
+    end
+end)
+
+for _, plr in ipairs(Players:GetPlayers()) do
+    if plr ~= Players.LocalPlayer then
+        eggDropdown:Add(plr.DisplayName)
+    end
+end
+
+Players.PlayerAdded:Connect(function(plr)
+    if plr ~= Players.LocalPlayer then
+        eggDropdown:Add(plr.DisplayName)
+    end
+end)
+
+giftSection:AddInput("Amount of Eggs", function(text)
+    eggCount = tonumber(text) or 0
+end)
+
+giftSection:AddButton("Gift Eggs", function()
+    if selectedEggPlayer and eggCount > 0 then
+        for i = 1, eggCount do
+            local egg = Players.LocalPlayer.consumablesFolder:FindFirstChild("Protein Egg")
+            if egg then
+                ReplicatedStorage.rEvents.giftRemote:InvokeServer("giftRequest", selectedEggPlayer, egg)
+                task.wait(0.1)
+            end
+        end
+    end
+end)
+
+giftSection:AddLabel("Gifting Tropical Shakes:").TextSize = 22
+
+local tropicalShakeLabel = giftSection:AddLabel("Tropical Shakes: 0")
+tropicalShakeLabel.TextSize = 18
+
+local selectedShakePlayer = nil
+local shakeCount = 0
+
+local shakeDropdown = giftSection:AddDropdown("Player to Gift Tropical Shakes", function(selectedDisplayName)
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr.DisplayName == selectedDisplayName then
+            selectedShakePlayer = plr
+            break
+        end
+    end
+end)
+
+for _, plr in ipairs(Players:GetPlayers()) do
+    if plr ~= Players.LocalPlayer then
+        shakeDropdown:Add(plr.DisplayName)
+    end
+end
+
+Players.PlayerAdded:Connect(function(plr)
+    if plr ~= Players.LocalPlayer then
+        shakeDropdown:Add(plr.DisplayName)
+    end
+end)
+
+giftSection:AddInput("Tropical Shakes gift", function(text)
+    shakeCount = tonumber(text) or 0
+end)
+
+giftSection:AddButton("Gift Tropical Shakes", function()
+    if selectedShakePlayer and shakeCount > 0 then
+        for i = 1, shakeCount do
+            local shake = Players.LocalPlayer.consumablesFolder:FindFirstChild("Tropical Shake")
+            if shake then
+                ReplicatedStorage.rEvents.giftRemote:InvokeServer("giftRequest", selectedShakePlayer, shake)
+                task.wait(0.1)
+            end
+        end
+    end
+end)
+
+local function updateItemCount()
+    local proteinEggCount = 0
+    local tropicalShakeCount = 0
+
+    local backpack = Players.LocalPlayer:WaitForChild("Backpack")
+    if backpack then
+        for _, item in ipairs(backpack:GetChildren()) do
+            if item.Name == "Protein Egg" then
+                proteinEggCount = proteinEggCount + 1
+            elseif item.Name == "Tropical Shake" or item.Name == "PiÃƒÂ±as" then
+                tropicalShakeCount = tropicalShakeCount + 1
+            end
+        end
+    end
+
+    proteinEggLabel.Text = "Protein Eggs: " .. proteinEggCount
+    tropicalShakeLabel.Text = "Tropical Shakes: " .. tropicalShakeCount
+end
+
+task.spawn(function()
+    while true do
+        updateItemCount()
+        task.wait(0.25)
+    end
+end)
+
+
+local itemList = {
+    "Tropical Shake",
+    "Energy Shake",
+    "Protein Bar",
+    "TOUGH Bar",
+    "Protein Shake",
+    "ULTRA Shake",
+    "Energy Bar"
+}
+
+local function formatEventName(itemName)
+    local parts = {}
+    for word in itemName:gmatch("%S+") do
+        table.insert(parts, word:lower())
+    end
+    for i = 2, #parts do
+        parts[i] = parts[i]:sub(1, 1):upper() .. parts[i]:sub(2)
+    end
+    return table.concat(parts)
+end
+
+local function activateRandomItems(count)
+    local shuffledItems = {}
+    for _, item in ipairs(itemList) do
+        table.insert(shuffledItems, item)
+    end
+    for i = #shuffledItems, 2, -1 do
+        local j = math.random(i)
+        shuffledItems[i], shuffledItems[j] = shuffledItems[j], shuffledItems[i]
+    end
+    for i = 1, math.min(count, #shuffledItems) do
+        local tool =
+            player.Character:FindFirstChild(shuffledItems[i]) or player.Backpack:FindFirstChild(shuffledItems[i])
+        if tool then
+            local eventName = formatEventName(shuffledItems[i])
+            player.muscleEvent:FireServer(eventName, tool)
+        end
+    end
+end
+
+local eatingRunning = false
+task.spawn(
+    function()
+        while true do
+            if eatingRunning then
+                activateRandomItems(4)
+                task.wait(0.5)
+            else
+                task.wait(0.5)
+            end
+        end
+    end
+)
+
+giftShake:AddButton(
+    "Eat Everything",
+    function(state)
+        eatingRunning = state
+        if state then
+            activateRandomItems(4)
+        end
+    end
+)
 --============================================================================
 --  END OF FILE
 --============================================================================
