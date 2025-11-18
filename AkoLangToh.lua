@@ -555,7 +555,7 @@ packSection:AddToggle("Packs Farm", {
                 unequipAllPets()
                 equipPetByName("Swift Samurai")
                 while c.leaderstats.Strength.Value < requiredStrength and getgenv().AutoFarming do
-                    for _ = 1, 20 do
+                    for _ = 1, 15 do
                         c.muscleEvent:FireServer("rep")
                     end
                     task.wait()
@@ -895,7 +895,7 @@ Home:AddButton({
 --============================================================================
 --  TAB 2  –  FARMING
 --============================================================================
-local mainSection   = farmingTab:AddSection("Auto Farming")
+local mainSection  = farmingTab:AddSection("Auto Farming")
 
 --MAIN
 mainSection:AddParagraph({
@@ -1084,14 +1084,14 @@ toolsSection:AddToggle("Farming AutoPunchEquip", {
     end,
 })
 
-local hitSection = farmingTab:AddSection("Auto Rock Punch")
+local farmSection = farmingTab:AddSection("Auto Rock Punch")
 
-hitSection:AddParagraph({
-    Title = "Auto Rock Punch",
+farmSection:AddParagraph({
+    Title = "Rock Punch",
     Content = "Hit/Punch Rock that u desired to Farm",
 })
 	
-hitSection:AddToggle("Farm Tiny Island Rock", {
+farmSection:AddToggle("Farm Tiny Island Rock", {
 	Title = "Tiny Rock",
 	Default = false,
     Callback = function(value)
@@ -1131,7 +1131,7 @@ local function gettool()
     game:GetService("Players").LocalPlayer.muscleEvent:FireServer("punch", "rightHand")
 end
 
-hitSection:AddToggle("Farm Starter Island Rock", {
+farmSection:AddToggle("Farm Starter Island Rock", {
 	Title = "Starter Rock",
 	Default = false,
     Callback = function(bool)
@@ -1161,7 +1161,7 @@ hitSection:AddToggle("Farm Starter Island Rock", {
     end
 end})
 
-hitSection:AddToggle("Farm Legend Beach Rock", {
+farmSection:AddToggle("Farm Legend Beach Rock", {
 	Title = "Legend Beach Rock",
 	Default = false,
     Callback = function(bool)
@@ -1191,7 +1191,7 @@ hitSection:AddToggle("Farm Legend Beach Rock", {
     end
 end})
 
-hitSection:AddToggle("Farm Frost Gym Rock", {
+farmSection:AddToggle("Farm Frost Gym Rock", {
 	Title = "Frost Rock",
 	Default = false,
     Callback = function(bool)
@@ -1221,7 +1221,7 @@ hitSection:AddToggle("Farm Frost Gym Rock", {
     end
 end})
 
-hitSection:AddToggle("Farm Mythical Gym Rock", {
+farmSection:AddToggle("Farm Mythical Gym Rock", {
 	Title = "Mythical Rock",
 	Default = false,
     Callback = function(bool)
@@ -1251,7 +1251,7 @@ hitSection:AddToggle("Farm Mythical Gym Rock", {
     end
 end})
 
-hitSection:AddToggle("Farm Eternal Gym Rock", {
+farmSection:AddToggle("Farm Eternal Gym Rock", {
 	Title = "Eternal Rock",
 	Default = false,
     Callback = function(bool)
@@ -1281,7 +1281,7 @@ hitSection:AddToggle("Farm Eternal Gym Rock", {
     end
 end})
 
-hitSection:AddToggle("Farm Legend Gym Rock", {
+farmSection:AddToggle("Farm Legend Gym Rock", {
 	Title = "Legend Gym Rock",
 	Default = false,
     Callback = function(bool)
@@ -1311,7 +1311,7 @@ hitSection:AddToggle("Farm Legend Gym Rock", {
     end
 end})
 
-hitSection:AddToggle("Farm Muscle King Gym Rock", {
+farmSection:AddToggle("Farm Muscle King Gym Rock", {
 	Title = "Muscle King Rock",
 	Default = false,
     Callback = function(bool)
@@ -1341,7 +1341,7 @@ hitSection:AddToggle("Farm Muscle King Gym Rock", {
     end
 end})
 
-hitSection:AddToggle("Farm Ancient Jungle Rock", {
+farmSection:AddToggle("Farm Ancient Jungle Rock", {
 	Title = "Ancient Rock",
 	Default = false,
     Callback = function(bool)
