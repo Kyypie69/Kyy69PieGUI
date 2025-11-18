@@ -1094,7 +1094,7 @@ farmSection:AddParagraph({
 farmSection:AddToggle("Farm Tiny Island Rock", {
 	Title = "Tiny Rock",
 	Default = false,
-    Callback = function(value)
+    Callback = function(value),
    		 selectrock = "Tiny Island Rock"
    		 getgenv().autoFarm = value
 
@@ -1134,11 +1134,11 @@ end
 farmSection:AddToggle("Farm Starter Island Rock", {
 	Title = "Starter Rock",
 	Default = false,
-    Callback = function(bool)
+    Callback = function(value),
     selectrock = "Starter Island Rock"
-    getgenv().autoFarm = bool
+    getgenv().autoFarm = value
 
-    if bool then
+    if value then
         spawn(function()
             while getgenv().autoFarm do
                 task.wait()
@@ -1164,11 +1164,11 @@ end})
 farmSection:AddToggle("Farm Legend Beach Rock", {
 	Title = "Legend Beach Rock",
 	Default = false,
-    Callback = function(bool)
+    Callback = function(value),
     selectrock = "Legend Beach Rock"
-    getgenv().autoFarm = bool
+    getgenv().autoFarm = value
 
-    if bool then
+    if value then
         spawn(function()
             while getgenv().autoFarm do
                 task.wait()
@@ -1194,11 +1194,11 @@ end})
 farmSection:AddToggle("Farm Frost Gym Rock", {
 	Title = "Frost Rock",
 	Default = false,
-    Callback = function(bool)
+    Callback = function(value),
     selectrock = "Frost Gym Rock"
-    getgenv().autoFarm = bool
+    getgenv().autoFarm = value
 
-    if bool then
+    if value then
         spawn(function()
             while getgenv().autoFarm do
                 task.wait()
@@ -1224,11 +1224,11 @@ end})
 farmSection:AddToggle("Farm Mythical Gym Rock", {
 	Title = "Mythical Rock",
 	Default = false,
-    Callback = function(bool)
+    Callback = function(value),
     selectrock = "Mythical Gym Rock"
-    getgenv().autoFarm = bool
+    getgenv().autoFarm = value
 
-    if bool then
+    if value then
         spawn(function()
             while getgenv().autoFarm do
                 task.wait()
@@ -1254,11 +1254,11 @@ end})
 farmSection:AddToggle("Farm Eternal Gym Rock", {
 	Title = "Eternal Rock",
 	Default = false,
-    Callback = function(bool)
+    Callback = function(value),
     selectrock = "Eternal Gym Rock"
-    getgenv().autoFarm = bool
+    getgenv().autoFarm = value
 
-    if bool then
+    if value then
         spawn(function()
             while getgenv().autoFarm do
                 task.wait()
@@ -1284,11 +1284,11 @@ end})
 farmSection:AddToggle("Farm Legend Gym Rock", {
 	Title = "Legend Gym Rock",
 	Default = false,
-    Callback = function(bool)
+    Callback = function(value),
     selectrock = "Legend Gym Rock"
-    getgenv().autoFarm = bool
+    getgenv().autoFarm = value
 
-    if bool then
+    if value then
         spawn(function()
             while getgenv().autoFarm do
                 task.wait()
@@ -1314,11 +1314,11 @@ end})
 farmSection:AddToggle("Farm Muscle King Gym Rock", {
 	Title = "Muscle King Rock",
 	Default = false,
-    Callback = function(bool)
+    Callback = function(value),
     selectrock = "Muscle King Gym Rock"
-    getgenv().autoFarm = bool
+    getgenv().autoFarm = value
 
-    if bool then
+    if value then
         spawn(function()
             while getgenv().autoFarm do
                 task.wait()
@@ -1344,11 +1344,11 @@ end})
 farmSection:AddToggle("Farm Ancient Jungle Rock", {
 	Title = "Ancient Rock",
 	Default = false,
-    Callback = function(bool)
+    Callback = function(value),
     selectrock = "Ancient Jungle Rock"
-    getgenv().autoFarm = bool
+    getgenv().autoFarm = value
 
-    if bool then
+    if value then
         spawn(function()
             while getgenv().autoFarm do
                 task.wait()
