@@ -191,8 +191,8 @@ end)
 --  TAB 1  –  HOME / PACKS
 --============================================================================
 Home:AddButton({
-    Title = "KYYY Discord Link | Press to Copy |",
-	Description = "MAMAMATAY KA PAG DI MOTO NI COPY!",
+    Title = "KYYY Discord Link | Press to Copy",
+	Description = "oooh ulul",
     Callback = function()
         setclipboard("https://discord.gg/u5tNN8tZcY")
         Library:Notify({Title = "Copied!", Content = "Discord link copied to clipboard.", Duration = 3})
@@ -369,7 +369,7 @@ local packSection = Home:AddSection("PACKS FARM")
 
 packSection:AddButton({
     Title = "Jungle Squat",
-    Description = "Teleport to Jungle Squat and start workout",
+    Description = "Teleport to Jungle Squat",
     Callback = function()
         local char = LocalPlayer.Character
         if char and char:FindFirstChild("HumanoidRootPart") then
@@ -387,7 +387,7 @@ packSection:AddButton({
 })
 
 packSection:AddButton({
-    Title = "Equip 8× Swift Samurai",
+    Title = "Equip Swift Samurai",
     Description = "Unequips every pet, then equips up to 8 Swift Samurai",
     Callback = function()
         local LocalPlayer       = game:GetService("Players").LocalPlayer
@@ -501,7 +501,7 @@ end})
 
 packSection:AddToggle("Packs Farm", {
     Title = "FAST REBIRTHS",
-	Description = "Auto Switch Tribal + Overlord.",
+	Description = "Auto Switch Tribal & Samurai",
     Default = false,
     Callback = function(state)
     getgenv().AutoFarming = state
@@ -555,7 +555,7 @@ packSection:AddToggle("Packs Farm", {
                 unequipAllPets()
                 equipPetByName("Swift Samurai")
                 while c.leaderstats.Strength.Value < requiredStrength and getgenv().AutoFarming do
-                    for _ = 1, 10 do
+                    for _ = 1, 20 do
                         c.muscleEvent:FireServer("rep")
                     end
                     task.wait()
@@ -566,7 +566,7 @@ packSection:AddToggle("Packs Farm", {
                     local oldRebirths = c.leaderstats.Rebirths.Value
                     repeat
                         a.rEvents.rebirthRemote:InvokeServer("rebirthRequest")
-                        task.wait(0.01)
+                        task.wait(0.01S
                     until c.leaderstats.Rebirths.Value > oldRebirths or not getgenv().AutoFarming
                 end
                 task.wait()
@@ -580,9 +580,9 @@ local muscleEvent = player:WaitForChild("muscleEvent")
 local runFastRep = false
 local repsPerTick = 1
 
-local RepSpeedDropdown = packSection:AddDropdown("FastRep_Speed", {
+local RepSpeedDropdown = packSection:AddDropdown("FastRep Speed", {
 	Title = "Rep Speed",
-	Description = "Choose how many reps per tick (1–30)",
+	Description = "Reps per tick (1–30)",
 	Values = {},
 	Default = "1",
 	Callback = function(value)
@@ -620,8 +620,8 @@ packSection:AddToggle("FastRep_Toggle", {
 })
 
 packSection:AddToggle("FAST STRENGTH", {
-    Title = "Fast Strength",
-	Description = "Auto-farm OP Strength.",
+    Title = "Fast Strength V2",
+	Description = "OP Grind Strength.",
     Default = false,
     Callback = function(v)
         getgenv()._AutoRepFarmEnabled = v
@@ -1084,9 +1084,15 @@ toolsSection:AddToggle("Farming AutoPunchEquip", {
     end,
 })
 
-local hitSection = farmingTab:AddSection("Rock Farming")
+local hitSection = farmingTab:AddSection("Auto Rock Punch")
 
+hitSection:AddParagraph({
+    Title = "Auto Rock Punch",
+    Content = "Hit/Punch Rock that u desired to Farm",
+})
+	
 hitSection:AddToggle("Farm Tiny Island Rock", {
+	Title = "Tiny Rock",
 	Default = false,
     Callback = function(value)
    		 selectrock = "Tiny Island Rock"
@@ -1126,6 +1132,7 @@ local function gettool()
 end
 
 hitSection:AddToggle("Farm Starter Island Rock", {
+	Title = "Starter Rock",
 	Default = false,
     Callback = function(bool)
     selectrock = "Starter Island Rock"
@@ -1155,6 +1162,7 @@ hitSection:AddToggle("Farm Starter Island Rock", {
 end})
 
 hitSection:AddToggle("Farm Legend Beach Rock", {
+	Title = "Legend Beach Rock",
 	Default = false,
     Callback = function(bool)
     selectrock = "Legend Beach Rock"
@@ -1184,6 +1192,7 @@ hitSection:AddToggle("Farm Legend Beach Rock", {
 end})
 
 hitSection:AddToggle("Farm Frost Gym Rock", {
+	Title = "Frost Rock",
 	Default = false,
     Callback = function(bool)
     selectrock = "Frost Gym Rock"
@@ -1213,6 +1222,7 @@ hitSection:AddToggle("Farm Frost Gym Rock", {
 end})
 
 hitSection:AddToggle("Farm Mythical Gym Rock", {
+	Title = "Mythical Rock",
 	Default = false,
     Callback = function(bool)
     selectrock = "Mythical Gym Rock"
@@ -1242,6 +1252,7 @@ hitSection:AddToggle("Farm Mythical Gym Rock", {
 end})
 
 hitSection:AddToggle("Farm Eternal Gym Rock", {
+	Title = "Eternal Rock",
 	Default = false,
     Callback = function(bool)
     selectrock = "Eternal Gym Rock"
@@ -1271,6 +1282,7 @@ hitSection:AddToggle("Farm Eternal Gym Rock", {
 end})
 
 hitSection:AddToggle("Farm Legend Gym Rock", {
+	Title = "Legend Gym Rock",
 	Default = false,
     Callback = function(bool)
     selectrock = "Legend Gym Rock"
@@ -1300,6 +1312,7 @@ hitSection:AddToggle("Farm Legend Gym Rock", {
 end})
 
 hitSection:AddToggle("Farm Muscle King Gym Rock", {
+	Title = "Muscle King Rock",
 	Default = false,
     Callback = function(bool)
     selectrock = "Muscle King Gym Rock"
@@ -1329,6 +1342,7 @@ hitSection:AddToggle("Farm Muscle King Gym Rock", {
 end})
 
 hitSection:AddToggle("Farm Ancient Jungle Rock", {
+	Title = "Ancient Rock",
 	Default = false,
     Callback = function(bool)
     selectrock = "Ancient Jungle Rock"
