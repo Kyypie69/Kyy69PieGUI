@@ -665,7 +665,7 @@ end
 
 
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "Stats UI"
+screenGui.Name = "StatsUI"
 screenGui.Parent = player:WaitForChild("PlayerGui")
 screenGui.Enabled = false
 
@@ -912,27 +912,27 @@ local statSection = viewStats:AddSection("Stats")
 
 -- Crear etiquetas para las estadísticas solicitadas
 statSection:AddLabel("Strength")
-local strengthStatsLabel = statSection:AddLabel("Actual: Waiting...")
-local strengthGainLabel = statSection:AddLabel("Gained: 0")
+local strengthStatsLabel = viewStats:AddLabel("Actual: Waiting...")
+local strengthGainLabel = viewStats:AddLabel("Gained: 0")
 
 statSection:AddLabel("Durability")
-local durabilityStatsLabel = statSection:AddLabel("Actual: Waiting...")
-local durabilityGainLabel = statSection:AddLabel("Gained: 0")
+local durabilityStatsLabel = viewStats:AddLabel("Actual: Waiting...")
+local durabilityGainLabel = viewStats:AddLabel("Gained: 0")
 
 statSection:AddLabel("Rebirths")
-local rebirthsStatsLabel = statSection:AddLabel("Actual: Waiting...")
-local rebirthsGainLabel = statSection:AddLabel("Gained: 0")
+local rebirthsStatsLabel = viewStats:AddLabel("Actual: Waiting...")
+local rebirthsGainLabel = viewStats:AddLabel("Gained: 0")
 
 statSection:AddLabel("Brawls")
-local brawlsStatsLabel = statSection:AddLabel("Actual: Waiting...")
-local brawlsGainLabel = statSection:AddLabel("Gained: 0")
+local brawlsStatsLabel = viewStats:AddLabel("Actual: Waiting...")
+local brawlsGainLabel = viewStats:AddLabel("Gained: 0")
 
 statSection:AddLabel("Time Of Session")
-local sessionTimeLabel = statSection:AddLabel("Time: 00:00:00")
+local sessionTimeLabel = viewStats:AddLabel("Time: 00:00:00")
 
 statSection:AddLabel("Kills")
-local killsStatsLabel = statSection:AddLabel("Actual: Waiting...")
-local killsGainLabel = statSection:AddLabel("Gained: 0")
+local killsStatsLabel = viewStats:AddLabel("Actual: Waiting...")
+local killsGainLabel = viewStats:AddLabel("Gained: 0")
 
 -- Función para formatear números
 local function formatNumber(number)
@@ -1035,7 +1035,9 @@ spawn(function()
 end)
 
 -- Agregar botones para funcionalidades adicionales
-statSection:AddButton("Reset Stats", function()
+statSection:AddButton(
+	Title = "Reset",
+    Callback = function()
     local player = game.Players.LocalPlayer
     sessionStartStrength = player.leaderstats.Strength.Value
     sessionStartDurability = player.Durability.Value
@@ -1051,7 +1053,9 @@ statSection:AddButton("Reset Stats", function()
     })
 end)
 
-statSection:AddButton("Copy Stats", function()
+statSection:AddButton(
+	Title = "Copy Stats",
+    Callback = function()
     local player = game.Players.LocalPlayer
     local statsText = "Statistics of Muscle Legends:\n\n"
     
