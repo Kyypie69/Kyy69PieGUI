@@ -366,9 +366,7 @@ Home:AddToggle("LockPosition", {
     end
 })
 
-local packSection = Home:AddSection("PACKS FARM REBIRTH")
-
-packSection:AddButton({
+Home:AddButton({
     Title = "Jungle Squat",
     Description = "Teleport",
     Callback = function()
@@ -387,7 +385,7 @@ packSection:AddButton({
     end
 })
 
-packSection:AddButton({
+Home:AddButton({
     Title = "Equip 8× Swift Samurai",
     Description = "Equips up to 8 Swift Samurai",
     Callback = function()
@@ -422,6 +420,8 @@ packSection:AddButton({
         end
     end
 })
+
+local packSection = Home:AddSection("PACKS FARM REBIRTH")
 
 packSection:AddToggle("Packs Farm", {
     Title = "230K+ per day",
@@ -610,7 +610,7 @@ local function fastRepLoop()
 end
 
 -- Fast Rep Toggle
-packSection:AddToggle("FastRep_Toggle", {
+fastSection:AddToggle("FastRep_Toggle", {
 	Title = "Fast Rep Strength",
 	Description = "Rapidly Grind Stats",
 	Default = false,
@@ -662,6 +662,10 @@ local function AbbrevNumber(num)
     end
     return string.format("%.2f%s", num, abbrev[i])
 end
+
+local IntSection = viewStats:AddSection("Player Stats")
+local RunService = game:GetService("RunService")
+local player = game.Players.LocalPlayer
 
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "StatsUI"
