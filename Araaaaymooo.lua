@@ -893,14 +893,161 @@ Home:AddButton({
     end,
 })
 
-local statSection = viewStats:AddSection("PLayer Stats")
 
-statSection:AddParagraph({
-    Title = "Godly Player Stats",
-    Content = "View your current stats.",
+local IntSection = viewStats:AddSection("Player Stats")
+local RunService = game:GetService("RunService")
+local player = game.Players.LocalPlayer
+
+local startTime = 0
+local sessionStartTime = os.time()
+local timerRunning = false
+
+local strengthGained = 0
+local lastStrengthValue = nil
+local rebirthsGained = 0
+local lastRebirthsValue = nil
+local killsGained = 0
+local lastKillsValue = nil
+local brawlsGained = 0
+local lastBrawlsValue = nil
+local goodKarmaGained = 0
+local lastGoodKarmaValue = nil
+local evilKarmaGained = 0
+local lastEvilKarmaValue = nil
+local durabilityGained = 0
+local lastDurabilityValue = nil
+local agilityGained = 0
+local lastAgilityValue = nil
+local muscleKingTimeGained = 0
+local lastMuscleKingTimeValue = nil
+
+local TimerParagraph = viewStats:AddParagraph("SessionTimer", {
+	Title = "Elapsed Time",
+	Content = "0 Day, 0 Hours, 0 Minutes, 0 Seconds",
+	TitleAlignment = "Left",
+	ContentAlignment = Enum.TextXAlignment.Left
+})
+
+local LeaderParagraph = viewStats:AddParagraph("LeaderStats", {
+	Title = "Current Stats              |             Gained Stats",
+	Content = "Loading Stats",
+	TitleAlignment = "Left",
+	ContentAlignment = Enum.TextXAlignment.Left
+})
+
+local IntParagraph = viewStats:AddParagraph("IntStats", {
+	Title = "Kill & Brawl Stats",
+	Content = "Loading Stats",
+	TitleAlignment = "Left",
+	ContentAlignment = Enum.TextXAlignment.Left
 })
 
 
+local function formatNumber(number)
+	local formatted = tostring(math.floor(number))
+	local k
+	while true do
+		formatted, k = string.gsub(formatted, "^(-?%d+)(%d%d%d)", '%1,%2')
+		if k == 0 then
+			break
+		end
+	end
+	return formatted
+end
+
+local function formatTime(seconds)
+	local days = math.floor(seconds / 86400)
+	local hours = math.floor((seconds % 86400) / 3600)
+	local minutes = math.floor((seconds % 3600) / 60)
+	local secs = seconds % 60
+	return string.format("%dd %dh %dm %ds", days, hours, minutes, secs)
+end
+
+local function debugPrint(message, value)
+	print(string.format("[DEBUG] %s: %s", message, tostring(value)))
+end
+
+repeat
+	task.wait()
+until game:IsLoaded()
+debugPrint("")
+
+if not player.Character then
+	player.CharacterAdded:Wait()
+end
+debugPrint("Character Loaded", "Success")
+
+repeat
+	task.wait()
+until player:FindFirstChild("leaderstats") and player:FindFirstChild("goodKarma")
+debugPrint("")
+
+RunService.RenderStepped:Connect(function()
+	local sessionTime = os.time() - sessionStartTime
+	TimerParagraph:SetContent(formatTime(sessionTime))
+	if timerRunning then
+		local elapsed = os.time() - startTime
+		CustomTimerParagraph:SetContent(formatTime(elapsed))
+	end
+	local currentStrength = player.leaderstats.Strength.Value
+	local currentRebirths = player.leaderstats.Rebirths.Value
+	local currentKills = player.leaderstats.Kills.Value
+	local currentBrawls = player.leaderstats.Brawls.Value
+	local currentDurability = player.Durability.Value
+	local currentAgility = player.Agility.Value
+	if lastStrengthValue == nil then
+		lastStrengthValue = currentStrength
+	elseif currentStrength > lastStrengthValue then
+		strengthGained = strengthGained + (currentStrength - lastStrengthValue)
+	end
+	lastStrengthValue = currentStrength
+	if lastRebirthsValue == nil then
+		lastRebirthsValue = currentRebirths
+	elseif currentRebirths > lastRebirthsValue then
+		rebirthsGained = rebirthsGained + (currentRebirths - lastRebirthsValue)
+	end
+	lastRebirthsValue = currentRebirths
+	if lastKillsValue == nil then
+		lastKillsValue = currentKills
+	elseif currentKills > lastKillsValue then
+		killsGained = killsGained + (currentKills - lastKillsValue)
+	end
+	lastKillsValue = currentKills
+	if lastBrawlsValue == nil then
+		lastBrawlsValue = currentBrawls
+	elseif currentBrawls > lastBrawlsValue then
+		brawlsGained = brawlsGained + (currentBrawls - lastBrawlsValue)
+	end
+	lastBrawlsValue = currentBrawls
+	if lastDurabilityValue == nil then
+		lastDurabilityValue = currentDurability
+	elseif currentDurability > lastDurabilityValue then
+		durabilityGained = durabilityGained + (currentDurability - lastDurabilityValue)
+	end
+	lastDurabilityValue = currentDurability
+	if lastAgilityValue == nil then
+		lastAgilityValue = currentAgility
+	elseif currentAgility > lastAgilityValue then
+		agilityGained = agilityGained + (currentAgility - lastAgilityValue)
+	end
+	lastAgilityValue = currentAgility
+	LeaderParagraph:SetContent(string.format("Strength: %s     Strength Gained: %s\nRebirths: %s     Rebirths Gained: %s\nDurability: %s     Durability Gained: %s\nAgility: %s     Agility Gained: %s", formatNumber(currentStrength), formatNumber(strengthGained), formatNumber(currentRebirths), formatNumber(rebirthsGained), formatNumber(currentDurability), formatNumber(durabilityGained), formatNumber(currentAgility), formatNumber(agilityGained)))
+	IntParagraph:SetContent(string.format("Kills: %s     Kills Gained: %s\nBrawls: %s      Brawls Gained: %s", formatNumber(currentKills), formatNumber(killsGained), formatNumber(currentBrawls), formatNumber(brawlsGained)))
+end)
+
+local leaderStats = {
+	"Strength",
+	"Rebirths",
+	"Durability",
+    "Agility"
+}
+
+local intStats = {
+	"Kills",
+	"Brawls"
+}
+
+	
 --============================================================================
 --  TAB 2  –  FARMING
 --============================================================================
