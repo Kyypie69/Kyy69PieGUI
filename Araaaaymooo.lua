@@ -656,6 +656,8 @@ otherSection:AddButton({
     end,
 })
 
+local viewSection  = viewStats:AddSection("Auto Farming")
+
 -- Session Stats UI
 local player = game.Players.LocalPlayer
 local ls = player:WaitForChild("leaderstats")
@@ -685,7 +687,6 @@ local function AbbrevNumber(num)
     end
     return string.format("%.2f%s", num, abbrev[i])
 end
-
 
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "StatsUI"
@@ -723,7 +724,7 @@ scroll.ScrollBarThickness = 8
 scroll.BackgroundTransparency = 1
 scroll.Parent = main
 
-local uiList = Instance.new("UI List Layout")
+local uiList = Instance.new("UIListLayout")
 uiList.SortOrder = Enum.SortOrder.LayoutOrder
 uiList.Padding = UDim.new(0, 5)
 uiList.Parent = scroll
@@ -890,8 +891,6 @@ task.spawn(function()
     end
 end)
 
-local viewSection   = viewStats:AddSection("Statistics")
-
 viewSection:AddToggle("ShowStats", {
     Title = "Show Stats",
     Default = false,
@@ -900,6 +899,8 @@ viewSection:AddToggle("ShowStats", {
     end
 })
 
+
+        
 
 --============================================================================
 --  TAB 2  –  FARMING
