@@ -890,7 +890,9 @@ task.spawn(function()
     end
 end)
 
-viewStats:AddToggle("ShowStats", {
+local viewSection   = viewStats:AddSection("Statistics")
+
+viewSection:AddToggle("ShowStats", {
     Title = "Show Stats",
     Default = false,
     Callback = function(state)
@@ -902,7 +904,7 @@ viewStats:AddToggle("ShowStats", {
 --============================================================================
 --  TAB 2  –  FARMING
 --============================================================================
-local mainSection   = farmingTab:AddSection("Auto Farming")
+local mainSection  = farmingTab:AddSection("Auto Farming")
 
 --MAIN
 mainSection:AddParagraph({
