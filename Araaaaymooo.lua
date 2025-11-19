@@ -191,8 +191,8 @@ end)
 --  TAB 1  –  HOME / PACKS
 --============================================================================
 Home:AddButton({
-    Title = "KYYY Discord Link | Press to Copy |",
-	Description = "MAMAMATAY KA PAG DI MOTO NI COPY!",
+    Title = "KYYY Discord Link",
+	Description = "PRESS TO COPYCAT!",
     Callback = function()
         setclipboard("https://discord.gg/u5tNN8tZcY")
         Library:Notify({Title = "Copied!", Content = "Discord link copied to clipboard.", Duration = 3})
@@ -369,7 +369,7 @@ local packSection = Home:AddSection("PACKS FARM")
 
 packSection:AddButton({
     Title = "Jungle Squat",
-    Description = "Teleport to Jungle Squat and start workout",
+    Description = "Teleport",
     Callback = function()
         local char = LocalPlayer.Character
         if char and char:FindFirstChild("HumanoidRootPart") then
@@ -388,7 +388,7 @@ packSection:AddButton({
 
 packSection:AddButton({
     Title = "Equip 8× Swift Samurai",
-    Description = "Unequips every pet, then equips up to 8 Swift Samurai",
+    Description = "Equips up to 8 Swift Samurai",
     Callback = function()
         local LocalPlayer       = game:GetService("Players").LocalPlayer
         local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -501,7 +501,7 @@ end})
 
 packSection:AddToggle("Packs Farm", {
     Title = "FAST REBIRTHS",
-	Description = "Auto Switch Tribal + Overlord.",
+	Description = "Auto Switch Samurai & Overlord.",
     Default = false,
     Callback = function(state)
     getgenv().AutoFarming = state
@@ -621,7 +621,7 @@ packSection:AddToggle("FastRep_Toggle", {
 
 packSection:AddToggle("FAST STRENGTH", {
     Title = "Fast Strength",
-	Description = "Auto-farm OP Strength.",
+	Description = "Farm OP Strength.",
     Default = false,
     Callback = function(v)
         getgenv()._AutoRepFarmEnabled = v
@@ -900,7 +900,7 @@ local mainSection   = farmingTab:AddSection("Auto Farming")
 --MAIN
 mainSection:AddParagraph({
     Title = "Auto Machines",
-    Content = "Select a machine and toggle Start to teleport and auto lift at that location.",
+    Content = "Select Gym",
 })
 
 local workoutPositions = {
@@ -930,7 +930,7 @@ end
 local selectedMachine = nil
 mainSection:AddDropdown("Farming_Machine", {
     Title = "Select Machine",
-    Description = "Choose the machine to farm",
+    Description = "Choose to Farm",
     Values = machineValues,
     Default = machineValues[1],
     Callback = function(val) selectedMachine = val end,
@@ -970,7 +970,7 @@ end
 mainSection:AddToggle("Farming_StartMachine", {
     Title = "Start Auto Machine",
     Default = false,
-    Description = "Teleport to the selected machine and auto-lift (sends 'rep').",
+    Description = "Teleport to the Machine and Start Workout",
     Callback = function(state)
         if getgenv().working and not state then
             getgenv().working = false
@@ -988,7 +988,7 @@ local toolsSection  = farmingTab:AddSection("Auto Tools")
 -- TOOLS
 toolsSection:AddParagraph({
     Title = "Auto Tools",
-    Content = "Automatically use tools like Weight, Pushups, Punch.",
+    Content = "Use tools like Weight, Pushups, Punch.",
 })
 
 _G.AutoWeight = false
@@ -1065,7 +1065,7 @@ local autoEquipPunch = false
 toolsSection:AddToggle("Farming AutoPunchEquip", {
     Title = "Auto Punch Equip",
     Default = false,
-    Description = "Continuously move Punch from backpack to character.",
+    Description = "Continuously Punch.",
     Callback = function(enabled)
         autoEquipPunch = enabled
         if autoEquipPunch then
@@ -1084,9 +1084,14 @@ toolsSection:AddToggle("Farming AutoPunchEquip", {
     end,
 })
 
-local hitSection = farmingTab:AddSection("Rock Farming")
+local rockedSection = farmingTab:AddSection("Farming Rock")
 
-hitSection:AddToggle("Farm Tiny Island Rock", {
+rockedSection:AddParagraph({
+    Title = "Farming Rocks",
+    Content = "Toggle to start hit rock",
+})
+
+rockedSection:AddToggle("Farm Tiny Rock", {
 	Default = false,
     Callback = function(value)
    		 selectrock = "Tiny Island Rock"
@@ -1125,13 +1130,13 @@ local function gettool()
     game:GetService("Players").LocalPlayer.muscleEvent:FireServer("punch", "rightHand")
 end
 
-hitSection:AddToggle("Farm Starter Island Rock", {
+rockedSection:AddToggle("Farm Starter Rock", {
 	Default = false,
-    Callback = function(bool)
+    Callback = function(value)
     selectrock = "Starter Island Rock"
-    getgenv().autoFarm = bool
+    getgenv().autoFarm = value
 
-    if bool then
+    if value then
         spawn(function()
             while getgenv().autoFarm do
                 task.wait()
@@ -1154,13 +1159,13 @@ hitSection:AddToggle("Farm Starter Island Rock", {
     end
 end})
 
-hitSection:AddToggle("Farm Legend Beach Rock", {
+rockedSection:AddToggle("Farm Legend Rock", {
 	Default = false,
-    Callback = function(bool)
+    Callback = function(value)
     selectrock = "Legend Beach Rock"
-    getgenv().autoFarm = bool
+    getgenv().autoFarm = value
 
-    if bool then
+    if value then
         spawn(function()
             while getgenv().autoFarm do
                 task.wait()
@@ -1183,13 +1188,13 @@ hitSection:AddToggle("Farm Legend Beach Rock", {
     end
 end})
 
-hitSection:AddToggle("Farm Frost Gym Rock", {
+rockedSection:AddToggle("Farm Frost Rock", {
 	Default = false,
-    Callback = function(bool)
+    Callback = function(value)
     selectrock = "Frost Gym Rock"
-    getgenv().autoFarm = bool
+    getgenv().autoFarm = value
 
-    if bool then
+    if value then
         spawn(function()
             while getgenv().autoFarm do
                 task.wait()
@@ -1212,13 +1217,13 @@ hitSection:AddToggle("Farm Frost Gym Rock", {
     end
 end})
 
-hitSection:AddToggle("Farm Mythical Gym Rock", {
+rockedSection:AddToggle("Farm Mythical Gym Rock", {
 	Default = false,
-    Callback = function(bool)
-    selectrock = "Mythical Gym Rock"
-    getgenv().autoFarm = bool
+    Callback = function(value)
+    selectrock = "Mythical Rock"
+    getgenv().autoFarm = value
 
-    if bool then
+    if value then
         spawn(function()
             while getgenv().autoFarm do
                 task.wait()
@@ -1241,13 +1246,13 @@ hitSection:AddToggle("Farm Mythical Gym Rock", {
     end
 end})
 
-hitSection:AddToggle("Farm Eternal Gym Rock", {
+rockedSection:AddToggle("Farm Eternal Gym Rock", {
 	Default = false,
-    Callback = function(bool)
-    selectrock = "Eternal Gym Rock"
-    getgenv().autoFarm = bool
+    Callback = function(value)
+    selectrock = "Eternal Rock"
+    getgenv().autoFarm = value
 
-    if bool then
+    if value then
         spawn(function()
             while getgenv().autoFarm do
                 task.wait()
@@ -1270,13 +1275,13 @@ hitSection:AddToggle("Farm Eternal Gym Rock", {
     end
 end})
 
-hitSection:AddToggle("Farm Legend Gym Rock", {
+rockedSection:AddToggle("Farm Legend Gym Rock", {
 	Default = false,
-    Callback = function(bool)
-    selectrock = "Legend Gym Rock"
-    getgenv().autoFarm = bool
+    Callback = function(value)
+    selectrock = "Legend Rock"
+    getgenv().autoFarm = value
 
-    if bool then
+    if value then
         spawn(function()
             while getgenv().autoFarm do
                 task.wait()
@@ -1299,13 +1304,13 @@ hitSection:AddToggle("Farm Legend Gym Rock", {
     end
 end})
 
-hitSection:AddToggle("Farm Muscle King Gym Rock", {
+rockedSection:AddToggle("Farm Muscle King Gym Rock", {
 	Default = false,
-    Callback = function(bool)
-    selectrock = "Muscle King Gym Rock"
-    getgenv().autoFarm = bool
+    Callback = function(value)
+    selectrock = "Muscle King Rock"
+    getgenv().autoFarm = value
 
-    if bool then
+    if value then
         spawn(function()
             while getgenv().autoFarm do
                 task.wait()
@@ -1328,13 +1333,13 @@ hitSection:AddToggle("Farm Muscle King Gym Rock", {
     end
 end})
 
-hitSection:AddToggle("Farm Ancient Jungle Rock", {
+rockedSection:AddToggle("Farm Ancient Jungle Rock", {
 	Default = false,
-    Callback = function(bool)
+    Callback = function(value)
     selectrock = "Ancient Jungle Rock"
-    getgenv().autoFarm = bool
+    getgenv().autoFarm = value
 
-    if bool then
+    if value then
         spawn(function()
             while getgenv().autoFarm do
                 task.wait()
@@ -1362,7 +1367,7 @@ local rocksSection  = farmingTab:AddSection("Auto Rocks")
 
 rocksSection:AddParagraph({
     Title = "Auto Rocks",
-    Content = "Select which rock to hit and toggle Start to farm it.",
+    Content = "Select which rock to hit.",
 })
 
 local rockData = {
