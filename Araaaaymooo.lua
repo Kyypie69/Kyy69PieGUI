@@ -366,7 +366,7 @@ Home:AddToggle("LockPosition", {
     end
 })
 
-local packSection = Home:AddSection("PACKS FARM")
+local packSection = Home:AddSection("PACKS FARM REBIRTH")
 
 packSection:AddButton({
     Title = "Jungle Squat",
@@ -576,12 +576,14 @@ packSection:AddToggle("Packs Farm", {
     end
 end})
 
+local fastSection = Home:AddSection("PACKS FARM STRENGTH")
+
 local player = game.Players.LocalPlayer
 local muscleEvent = player:WaitForChild("muscleEvent")
 local runFastRep = false
 local repsPerTick = 1
 
-local RepSpeedDropdown = packSection:AddDropdown("FastRep_Speed", {
+local RepSpeedDropdown = fastSection:AddDropdown("FastRep_Speed", {
 	Title = "Rep Speed",
 	Description = "Choose how many reps per tick (1–30)",
 	Values = {},
@@ -620,7 +622,7 @@ packSection:AddToggle("FastRep_Toggle", {
 	end,
 })
 
-packSection:AddToggle("FAST STRENGTH", {
+fastSection:AddToggle("FAST STRENGTH", {
     Title = "Fast Strength",
 	Description = "Farm OP Strength.",
     Default = false,
@@ -628,6 +630,8 @@ packSection:AddToggle("FAST STRENGTH", {
         getgenv()._AutoRepFarmEnabled = v
     end
 })
+
+local otherSection = Home:AddSection("OTHERS")
 
 -- Session Stats UI
 local player = game.Players.LocalPlayer
@@ -862,7 +866,7 @@ task.spawn(function()
     end
 end)
 
-Home:AddToggle("ShowStats", {
+otherSection:AddToggle("ShowStats", {
     Title = "Show Stats",
     Default = false,
     Callback = function(state)
@@ -871,7 +875,7 @@ Home:AddToggle("ShowStats", {
 })
 
 -- Block Rebirths
-Home:AddButton({
+otherSection:AddButton({
     Title = "Block Rebirths",
     Callback = function()
         local old
@@ -886,7 +890,7 @@ Home:AddButton({
 })
 
 -- Block Trades
-Home:AddButton({
+otherSection:AddButton({
     Title = "Block Trades",
     Callback = function()
         game:GetService("ReplicatedStorage").rEvents.tradingEvent:FireServer("disableTrading")
@@ -921,21 +925,21 @@ local lastAgilityValue = nil
 local muscleKingTimeGained = 0
 local lastMuscleKingTimeValue = nil
 
-local TimerParagraph = viewStats:AddParagraph("SessionTimer", {
+local TimerParagraph = viewStats:AddLabel("SessionTimer", {
 	Title = "Elapsed Time",
 	Content = "0 Day, 0 Hours, 0 Minutes, 0 Seconds",
 	TitleAlignment = "Left",
 	ContentAlignment = Enum.TextXAlignment.Left
 })
 
-local LeaderParagraph = viewStats:AddParagraph("LeaderStats", {
+local LeaderParagraph = viewStats:AddLabel("LeaderStats", {
 	Title = "Current Stats              |             Gained Stats",
 	Content = "Loading Stats",
 	TitleAlignment = "Left",
 	ContentAlignment = Enum.TextXAlignment.Left
 })
 
-local IntParagraph = viewStats:AddParagraph("IntStats", {
+local IntParagraph = viewStats:AddLabel("IntStats", {
 	Title = "Kill & Brawl Stats",
 	Content = "Loading Stats",
 	TitleAlignment = "Left",
