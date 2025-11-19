@@ -27,9 +27,10 @@ local Window = Library:CreateWindow({
 
 --  TABS  --------------------------------------------------------------------
 local Home        = Window:AddTab({ Title = "Home / Packs",     Icon = "home" })
+local viewStats   = Window:AddTab({ Title = "Stats",            Icon = "pie-chart" })
 local farmingTab  = Window:AddTab({ Title = "Farming",          Icon = "leaf" })
 local Rebirths    = Window:AddTab({ Title = "Rebirths",         Icon = "repeat" })
-local Killer      = Window:AddTab({ Title = "Killer",           Icon = "skull" })
+local Killer      = Window:AddTab({ Title = "Killer",           Icon = "target" })
 local Shop        = Window:AddTab({ Title = "Crystals",         Icon = "shopping-cart" })
 local Misc        = Window:AddTab({ Title = "Miscellaneous",    Icon = "menu" })
 local Settings    = Window:AddTab({ Title = "Settings",         Icon = "save" })
@@ -891,6 +892,14 @@ Home:AddButton({
         game:GetService("ReplicatedStorage").rEvents.tradingEvent:FireServer("disableTrading")
     end,
 })
+
+local statSection = viewStats:AddSection("PLayer Stats")
+
+statSection:AddParagraph({
+    Title = "Godly Player Stats",
+    Content = "View your current stats.",
+})
+
 
 --============================================================================
 --  TAB 2  –  FARMING
