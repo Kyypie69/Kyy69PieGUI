@@ -663,12 +663,9 @@ local function AbbrevNumber(num)
     return string.format("%.2f%s", num, abbrev[i])
 end
 
-local IntSection = viewStats:AddSection("Player Stats")
-local RunService = game:GetService("RunService")
-local player = game.Players.LocalPlayer
 
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "StatsUI"
+screenGui.Name = "Stats UI"
 screenGui.Parent = player:WaitForChild("PlayerGui")
 screenGui.Enabled = false
 
@@ -703,7 +700,7 @@ scroll.ScrollBarThickness = 8
 scroll.BackgroundTransparency = 1
 scroll.Parent = main
 
-local uiList = Instance.new("UIListLayout")
+local uiList = Instance.new("UI List Layout")
 uiList.SortOrder = Enum.SortOrder.LayoutOrder
 uiList.Padding = UDim.new(0, 5)
 uiList.Parent = scroll
@@ -929,21 +926,21 @@ local lastAgilityValue = nil
 local muscleKingTimeGained = 0
 local lastMuscleKingTimeValue = nil
 
-local TimerParagraph = viewStats:AddLabel("SessionTimer", {
+local TimerLabel= viewStats:AddLabel("SessionTimer", {
 	Title = "Elapsed Time",
 	Content = "0 Day, 0 Hours, 0 Minutes, 0 Seconds",
 	TitleAlignment = "Left",
 	ContentAlignment = Enum.TextXAlignment.Left
 })
 
-local LeaderParagraph = viewStats:AddLabel("LeaderStats", {
+local LeaderLabel = viewStats:AddLabel("LeaderStats", {
 	Title = "Current Stats              |             Gained Stats",
 	Content = "Loading Stats",
 	TitleAlignment = "Left",
 	ContentAlignment = Enum.TextXAlignment.Left
 })
 
-local IntParagraph = viewStats:AddLabel("IntStats", {
+local IntLabel = viewStats:AddLabel("IntStats", {
 	Title = "Kill & Brawl Stats",
 	Content = "Loading Stats",
 	TitleAlignment = "Left",
@@ -992,10 +989,10 @@ debugPrint("")
 
 RunService.RenderStepped:Connect(function()
 	local sessionTime = os.time() - sessionStartTime
-	TimerParagraph:SetContent(formatTime(sessionTime))
+	TimerLabel:SetContent(formatTime(sessionTime))
 	if timerRunning then
 		local elapsed = os.time() - startTime
-		CustomTimerParagraph:SetContent(formatTime(elapsed))
+		CustomTimerLabel:SetContent(formatTime(elapsed))
 	end
 	local currentStrength = player.leaderstats.Strength.Value
 	local currentRebirths = player.leaderstats.Rebirths.Value
@@ -1039,8 +1036,8 @@ RunService.RenderStepped:Connect(function()
 		agilityGained = agilityGained + (currentAgility - lastAgilityValue)
 	end
 	lastAgilityValue = currentAgility
-	LeaderParagraph:SetContent(string.format("Strength: %s     Strength Gained: %s\nRebirths: %s     Rebirths Gained: %s\nDurability: %s     Durability Gained: %s\nAgility: %s     Agility Gained: %s", formatNumber(currentStrength), formatNumber(strengthGained), formatNumber(currentRebirths), formatNumber(rebirthsGained), formatNumber(currentDurability), formatNumber(durabilityGained), formatNumber(currentAgility), formatNumber(agilityGained)))
-	IntParagraph:SetContent(string.format("Kills: %s     Kills Gained: %s\nBrawls: %s      Brawls Gained: %s", formatNumber(currentKills), formatNumber(killsGained), formatNumber(currentBrawls), formatNumber(brawlsGained)))
+	LeaderLabel:SetContent(string.format("Strength: %s     Strength Gained: %s\nRebirths: %s     Rebirths Gained: %s\nDurability: %s     Durability Gained: %s\nAgility: %s     Agility Gained: %s", formatNumber(currentStrength), formatNumber(strengthGained), formatNumber(currentRebirths), formatNumber(rebirthsGained), formatNumber(currentDurability), formatNumber(durabilityGained), formatNumber(currentAgility), formatNumber(agilityGained)))
+	IntLabel:SetContent(string.format("Kills: %s     Kills Gained: %s\nBrawls: %s      Brawls Gained: %s", formatNumber(currentKills), formatNumber(killsGained), formatNumber(currentBrawls), formatNumber(brawlsGained)))
 end)
 
 local leaderStats = {
