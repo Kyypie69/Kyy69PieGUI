@@ -633,6 +633,29 @@ fastSection:AddToggle("FAST STRENGTH", {
 
 local otherSection = Home:AddSection("OTHERS")
 
+-- Block Rebirths
+otherSection:AddButton({
+    Title = "Block Rebirths",
+    Callback = function()
+        local old
+        old = hookmetamethod(game, "__namecall", function(self, ...)
+            local args = { ... }
+            if self.Name == "rebirthRemote" and args[1] == "rebirthRequest" then
+                return
+            end
+            return old(self, unpack(args))
+        end)
+    end,
+})
+
+-- Block Trades
+otherSection:AddButton({
+    Title = "Block Trades",
+    Callback = function()
+        game:GetService("ReplicatedStorage").rEvents.tradingEvent:FireServer("disableTrading")
+    end,
+})
+
 -- Session Stats UI
 local player = game.Players.LocalPlayer
 local ls = player:WaitForChild("leaderstats")
@@ -875,28 +898,6 @@ viewStats:AddToggle("ShowStats", {
     end
 })
 
--- Block Rebirths
-otherSection:AddButton({
-    Title = "Block Rebirths",
-    Callback = function()
-        local old
-        old = hookmetamethod(game, "__namecall", function(self, ...)
-            local args = { ... }
-            if self.Name == "rebirthRemote" and args[1] == "rebirthRequest" then
-                return
-            end
-            return old(self, unpack(args))
-        end)
-    end,
-})
-
--- Block Trades
-otherSection:AddButton({
-    Title = "Block Trades",
-    Callback = function()
-        game:GetService("ReplicatedStorage").rEvents.tradingEvent:FireServer("disableTrading")
-    end,
-})
 
 --============================================================================
 --  TAB 2  –  FARMING
