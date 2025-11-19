@@ -898,6 +898,190 @@ otherSection:AddButton({
     end,
 })
 
+-- Inicializar variables de seguimiento
+local sessionStartTime = os.time()
+local sessionStartStrength = 0
+local sessionStartDurability = 0
+local sessionStartKills = 0
+local sessionStartRebirths = 0
+local sessionStartBrawls = 0
+local hasStartedTracking = false
+
+-- Crear una carpeta en farmPlusTab para estadísticas
+local statSection = viewStats:AddSection("Stats")
+
+-- Crear etiquetas para las estadísticas solicitadas
+statSection:AddLabel("Strength")
+local strengthStatsLabel = statSection:AddLabel("Actual: Waiting...")
+local strengthGainLabel = statSection:AddLabel("Gained: 0")
+
+statSection:AddLabel("Durability")
+local durabilityStatsLabel = statSection:AddLabel("Actual: Waiting...")
+local durabilityGainLabel = statSection:AddLabel("Gained: 0")
+
+statSection:AddLabel("Rebirths")
+local rebirthsStatsLabel = statSection:AddLabel("Actual: Waiting...")
+local rebirthsGainLabel = statSection:AddLabel("Gained: 0")
+
+statSection:AddLabel("Brawls")
+local brawlsStatsLabel = statSection:AddLabel("Actual: Waiting...")
+local brawlsGainLabel = statSection:AddLabel("Gained: 0")
+
+statSection:AddLabel("Time Of Session")
+local sessionTimeLabel = statSection:AddLabel("Time: 00:00:00")
+
+statSection:AddLabel("Kills")
+local killsStatsLabel = statSection:AddLabel("Actual: Waiting...")
+local killsGainLabel = statSection:AddLabel("Gained: 0")
+
+-- Función para formatear números
+local function formatNumber(number)
+    if number >= 1e15 then return string.format("%.2fQ", number/1e15)
+    elseif number >= 1e12 then return string.format("%.2fT", number/1e12)
+    elseif number >= 1e9 then return string.format("%.2fB", number/1e9)
+    elseif number >= 1e6 then return string.format("%.2fM", number/1e6)
+    elseif number >= 1e3 then return string.format("%.2fK", number/1e3)
+    end
+    return tostring(math.floor(number))
+end
+
+local function formatNumberWithCommas(number)
+    local formatted = tostring(math.floor(number))
+    local k
+    while true do
+        formatted, k = string.gsub(formatted, "^(-?%d+)(%d%d%d)", '%1,%2')
+        if k == 0 then break end
+    end
+    return formatted
+end
+
+local function formatTime(seconds)
+    local days = math.floor(seconds / 86400)
+    local hours = math.floor((seconds % 86400) / 3600)
+    local minutes = math.floor((seconds % 3600) / 60)
+    local secs = seconds % 60
+    
+    if days > 0 then
+        return string.format("%dd %02dh %02dm %02ds", days, hours, minutes, secs)
+    else
+        return string.format("%02d:%02d:%02d", hours, minutes, secs)
+    end
+end
+
+-- Inicializar seguimiento
+local function startTracking()
+    if not hasStartedTracking then
+        local player = game.Players.LocalPlayer
+        sessionStartStrength = player.leaderstats.Strength.Value
+        sessionStartDurability = player.Durability.Value
+        sessionStartKills = player.leaderstats.Kills.Value
+        sessionStartRebirths = player.leaderstats.Rebirths.Value
+        sessionStartBrawls = player.leaderstats.Brawls.Value
+        sessionStartTime = os.time()
+        hasStartedTracking = true
+    end
+end
+
+-- Función para actualizar estadísticas
+local function updateStats()
+    local player = game.Players.LocalPlayer
+    
+    -- Iniciar seguimiento si aún no ha comenzado
+    if not hasStartedTracking then
+        startTracking()
+    end
+    
+    -- Calcular valores actuales y ganancias
+    local currentStrength = player.leaderstats.Strength.Value
+    local currentDurability = player.Durability.Value
+    local currentKills = player.leaderstats.Kills.Value
+    local currentRebirths = player.leaderstats.Rebirths.Value
+    local currentBrawls = player.leaderstats.Brawls.Value
+    
+    local strengthGain = currentStrength - sessionStartStrength
+    local durabilityGain = currentDurability - sessionStartDurability
+    local killsGain = currentKills - sessionStartKills
+    local rebirthsGain = currentRebirths - sessionStartRebirths
+    local brawlsGain = currentBrawls - sessionStartBrawls
+    
+    -- Actualizar valores de estadísticas actuales
+    strengthStatsLabel.Text = string.format("Actual: %s", formatNumber(currentStrength))
+    durabilityStatsLabel.Text = string.format("Actual: %s", formatNumber(currentDurability))
+    rebirthsStatsLabel.Text = string.format("Actual: %s", formatNumber(currentRebirths))
+    killsStatsLabel.Text = string.format("Actual: %s", formatNumber(currentKills))
+    brawlsStatsLabel.Text = string.format("Actual: %s", formatNumber(currentBrawls))
+    
+    -- Actualizar valores de ganancias
+    strengthGainLabel.Text = string.format("Gained: %s", formatNumber(strengthGain))
+    durabilityGainLabel.Text = string.format("Gained: %s", formatNumber(durabilityGain))
+    rebirthsGainLabel.Text = string.format("Gained: %s", formatNumber(rebirthsGain))
+    killsGainLabel.Text = string.format("Gained: %s", formatNumber(killsGain))
+    brawlsGainLabel.Text = string.format("Gained: %s", formatNumber(brawlsGain))
+    
+    -- Actualizar tiempo de sesión
+    local elapsedTime = os.time() - sessionStartTime
+    local timeString = formatTime(elapsedTime)
+    sessionTimeLabel.Text = string.format("Time: %s", timeString)
+end
+
+-- Actualizar estadísticas inicialmente
+updateStats()
+
+-- Actualizar estadísticas cada 2 segundos
+spawn(function()
+    while wait(2) do
+        updateStats()
+    end
+end)
+
+-- Agregar botones para funcionalidades adicionales
+statSection:AddButton("Reset Stats", function()
+    local player = game.Players.LocalPlayer
+    sessionStartStrength = player.leaderstats.Strength.Value
+    sessionStartDurability = player.Durability.Value
+    sessionStartKills = player.leaderstats.Kills.Value
+    sessionStartRebirths = player.leaderstats.Rebirths.Value
+    sessionStartBrawls = player.leaderstats.Brawls.Value
+    sessionStartTime = os.time()
+    
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "Statistics Tracking",
+        Text = "Session progress tracking has been reset!",
+        Duration = 0
+    })
+end)
+
+statSection:AddButton("Copy Stats", function()
+    local player = game.Players.LocalPlayer
+    local statsText = "Statistics of Muscle Legends:\n\n"
+    
+    statsText = statsText .. "Strength: " .. formatNumberWithCommas(player.leaderstats.Strength.Value) .. "\n"
+    statsText = statsText .. "Durability: " .. formatNumberWithCommas(player.Durability.Value) .. "\n"
+    statsText = statsText .. "Rebirths: " .. formatNumberWithCommas(player.leaderstats.Rebirths.Value) .. "\n"
+    statsText = statsText .. "Kills: " .. formatNumberWithCommas(player.leaderstats.Kills.Value) .. "\n"
+    statsText = statsText .. "Brawls: " .. formatNumberWithCommas(player.leaderstats.Brawls.Value) .. "\n\n"
+    
+    -- Agregar estadísticas de sesión si el seguimiento ha comenzado
+    if hasStartedTracking then
+        local elapsedTime = os.time() - sessionStartTime
+        local strengthGain = player.leaderstats.Strength.Value - sessionStartStrength
+        local durabilityGain = player.Durability.Value - sessionStartDurability
+        local killsGain = player.leaderstats.Kills.Value - sessionStartKills
+        local rebirthsGain = player.leaderstats.Rebirths.Value - sessionStartRebirths
+        local brawlsGain = player.leaderstats.Brawls.Value - sessionStartBrawls
+        
+        statsText = statsText .. "--- Session Statistics ---\n"
+        statsText = statsText .. "Time Of Session: " .. formatTime(elapsedTime) .. "\n"
+        statsText = statsText .. "Strength Gained: " .. formatNumberWithCommas(strengthGain) .. "\n"
+        statsText = statsText .. "Durability Gained: " .. formatNumberWithCommas(durabilityGain) .. "\n"
+        statsText = statsText .. "Rebirths Gained: " .. formatNumberWithCommas(rebirthsGain) .. "\n"
+        statsText = statsText .. "Kills Gained: " .. formatNumberWithCommas(killsGain) .. "\n"
+        statsText = statsText .. "Brawls Gained: " .. formatNumberWithCommas(brawlsGain) .. "\n"
+    end
+    
+    setclipboard(statsText)
+end)
+
 --============================================================================
 --  TAB 2  –  FARMING
 --============================================================================
