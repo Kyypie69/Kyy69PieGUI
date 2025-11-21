@@ -656,7 +656,7 @@ otherSection:AddButton({
     end,
 })
 
-local viewSection  = viewStats:AddSection("Auto Farming")
+local viewSection  = viewStats:AddSection("PLAYER STATS")
 
 -- Session Stats UI
 local player = game.Players.LocalPlayer
@@ -892,7 +892,7 @@ task.spawn(function()
 end)
 
 viewSection:AddToggle("ShowStats", {
-    Title = "Show Stats",
+    Title = "View Stats",
     Default = false,
     Callback = function(state)
         screenGui.Enabled = state
