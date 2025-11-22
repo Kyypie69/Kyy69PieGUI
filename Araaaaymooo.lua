@@ -1593,20 +1593,23 @@ local targetDropdown = Killer:AddDropdown("SelectTarget", {
 Killer:AddButton({
     Title = "Remove Target From List",
     Callback = function()
-        local name = Library:InputDialog({
-            Title = "Remove Target",
-            Default = "",
-            Placeholder = "PlayerName"
-        })
-        if not name or name == "" then return end
+        local name = targetDropdown.Value   -- currently selected player
+        if not name or name == "" then
+            Library:Notify({Title = "Target", Content = "No target selected.", Duration = 2})
+            return
+        end
 
         for i, v in ipairs(targetPlayerNames) do
             if v == name then
                 table.remove(targetPlayerNames, i)
-                Library:Notify({Title="Target", Content = name .. " removed.", Duration = 2})
-                break
+                targetDropdown:SetValue(nil)          -- clear dropdown
+                targetDropdown:Refresh(targetPlayerNames) -- update choices
+                Library:Notify({Title = "Target", Content = name .. " removed.", Duration = 2})
+                return
             end
         end
+
+        Library:Notify({Title = "Target", Content = name .. " not found in list.", Duration = 2})
     end
 })
 
