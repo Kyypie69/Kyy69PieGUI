@@ -1672,8 +1672,8 @@ PlayersService.PlayerRemoving:Connect(function(player)
 	end
 end)
 
-Killer:AddToggle("Start to Kill Target", {
-	Title = "Kill Target",
+Killer:AddToggle("StartKillTarget", {
+	Title = "Start Kill Target(s)",
 	Default = false,
 	Description = "Attack players listed in the target list.",
 	Callback = function(state)
@@ -2416,6 +2416,67 @@ giftShake:AddButton(
         end
     end
 )
+
+-- Auto Clear Inventory / Eat Boosts Toggle
+local autoEatBoostsEnabled = false
+local boostsList = {"ULTRA Shake","TOUGH Bar","Protein Shake","Energy Shake","Protein Bar","Energy Bar","Tropical Shake"}
+
+local function eatAllBoosts()
+    local player = game.Players.LocalPlayer
+    local backpack = player:WaitForChild("Backpack")
+    local character = player.Character or player.CharacterAdded:Wait()
+    for _, boostName in ipairs(boostsList) do
+        local boost = backpack:FindFirstChild(boostName)
+        while boost do
+            boost.Parent = character
+            pcall(function() boost:Activate() end)
+            task.wait(0)
+            boost = backpack:FindFirstChild(boostName)
+        end
+    end
+end
+
+task.spawn(function()
+    while true do
+        if autoEatBoostsEnabled then
+            eatAllBoosts()
+            task.wait(2)
+        else
+            task.wait(1)
+        end
+    end
+end)
+
+giftShake:AddToggle("AutoClearInventory", {
+    Title = "Auto Clear Inventory",
+    Default = false,
+    Callback = function(state)
+        autoEatBoostsEnabled = state
+    end
+})
+
+-- Auto Fortune Wheel Toggle
+giftShake:AddToggle("AutoFortuneWheel", {
+    Title = "Auto Fortune Wheel",
+    Default = false,
+    Callback = function(Value)
+        _G.autoFortuneWheelActive = Value
+        if Value then
+            task.spawn(function()
+                while _G.autoFortuneWheelActive do
+                    local args = {
+                        [1] = "openFortuneWheel",
+                        [2] = game:GetService("ReplicatedStorage"):WaitForChild("fortuneWheelChances"):WaitForChild("Fortune Wheel")
+                    }
+                    game:GetService("ReplicatedStorage"):WaitForChild("rEvents"):WaitForChild("openFortuneWheelRemote"):InvokeServer(unpack(args))
+                    task.wait(0)
+                end
+            end)
+        else
+            _G.autoFortuneWheelActive = false
+        end
+    end
+})
 --============================================================================
 --  END OF FILE
 --============================================================================
