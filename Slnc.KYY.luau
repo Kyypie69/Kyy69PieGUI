@@ -19,12 +19,12 @@ local Library, SaveManager, InterfaceManager = loadstring(game:HttpGet("https://
 
 -- Create Window
 local Window = Library:CreateWindow({
-    Title = "Silence | Farming v2",
-    SubTitle = "KyypieUI Edition",
-    TabWidth = 160,
-    Size = UDim2.fromOffset(600, 630),
-    Acrylic = false, -- Set to true if you want acrylic effect
-    Theme = "Red", -- You can change this to any available theme
+    Title = "KYY HUB",
+    SubTitle = "Kyypie UI",
+    TabWidth = 150,
+    Size = UDim2.fromOffset(500, 320),
+    Acrylic = true, -- Set to true if you want acrylic effect
+    Theme = "LightBlue", -- You can change this to any available theme
 })
 
 -- Anti AFK
