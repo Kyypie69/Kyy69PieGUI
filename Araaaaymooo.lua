@@ -774,13 +774,15 @@ spawn(function()
     end
 end)
 
+
 local viewSection  = viewStats:AddSection("PLAYER STATS")
 
 -- Session Stats UI
 local player = game.Players.LocalPlayer
 local ls = player:WaitForChild("leaderstats")
 local strengthStat = ls:WaitForChild("Strength")
-local rebirthsStat = ls:WaitForChild("Rebirths")
+local rebirthsStat = ls:WaitForChild("Rebirths"
+
 local durabilityStat = player:WaitForChild("Durability")
 local killsStat = ls:WaitForChild("Kills")
 local agilityStat = player:WaitForChild("Agility")
