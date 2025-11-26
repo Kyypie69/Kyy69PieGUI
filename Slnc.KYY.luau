@@ -15,7 +15,7 @@ local muscleEvent = localPlayer:WaitForChild("muscleEvent")
 local changeSpeedSizeRemote = ReplicatedStorage.rEvents.changeSpeedSizeRemote
 
 -- Load KyypieUI Library
-local Library, SaveManager, InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/Kyypie69/Library.UI/refs/heads/main/kyyADLink.lua"))()
+local Library, SaveManager, InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/Kyypie69/Library.UI/refs/heads/main/KyypieUI.lua"))()
 
 -- Create Window
 local Window = Library:CreateWindow({
