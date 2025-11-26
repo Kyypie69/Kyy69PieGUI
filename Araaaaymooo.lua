@@ -899,9 +899,123 @@ viewSection:AddToggle("ShowStats", {
     end
 })
 
+-- Stats Tab
+local function formatNumber(n)
+    if n >= 1e15 then
+        return string.format("%.1fqa", n/1e15)
+    elseif n >= 1e12 then
+        return string.format("%.1ft", n/1e12)
+    elseif n >= 1e9 then
+        return string.format("%.1fb", n/1e9)
+    elseif n >= 1e6 then
+        return string.format("%.1fm", n/1e6)
+    elseif n >= 1e3 then
+        return string.format("%.1fk", n/1e3)
+    else
+        return tostring(n)
+    end
+end
 
+local function formatWithCommas(n)
+    local formatted = tostring(math.floor(n))
+    while true do
+        formatted, k = formatted:gsub("^(-?%d+)(%d%d%d)", '%1,%2')
+        if k == 0 then break end
+    end
+    return formatted
+end
+
+-- Create stat displays
+local leaderstats = localPlayer:WaitForChild("leaderstats")
+local strengthStat = leaderstats:WaitForChild("Strength")
+local rebirthsStat = leaderstats:WaitForChild("Rebirths")
+local durabilityStat = localPlayer:WaitForChild("Durability")
+local killsStat = leaderstats:WaitForChild("Kills")
+local agilityStat = localPlayer:WaitForChild("Agility")
+local evilKarmaStat = localPlayer:WaitForChild("evilKarma")
+local goodKarmaStat = localPlayer:WaitForChild("goodKarma")
+local brawlsStat = leaderstats:WaitForChild("Brawls")
+
+local emojiMap = {
+    ["Time"] = "⏰",
+    ["Stats"] = "📊",
+    ["Strength"] = "💪",
+    ["Rebirths"] = "🔄",
+    ["Durability"] = "🛡️",
+    ["Kills"] = "💀",
+    ["Agility"] = "🏃",
+    ["Evil Karma"] = "😈",
+    ["Good Karma"] = "😇",
+    ["Brawls"] = "🥊"
+}
+
+local stats = {
+    { name = emojiMap["Strength"] .. " Strength", stat = strengthStat },
+    { name = emojiMap["Rebirths"] .. " Rebirths", stat = rebirthsStat },
+    { name = emojiMap["Durability"] .. " Durability", stat = durabilityStat },
+    { name = emojiMap["Agility"] .. " Agility", stat = agilityStat },
+    { name = emojiMap["Kills"] .. " Kills", stat = killsStat },
+    { name = emojiMap["Evil Karma"] .. " Evil Karma", stat = evilKarmaStat },
+    { name = emojiMap["Good Karma"] .. " Good Karma", stat = goodKarmaStat },
+    { name = emojiMap["Brawls"] .. " Brawls", stat = brawlsStat }
+}
+
+local initialValues = {}
+local statLabels = {}
+
+for _, info in ipairs(stats) do
+    initialValues[info.name] = info.stat.Value
+    local label = StatsTab:AddParagraph({
+        Title = info.name,
+        Content = "Loading..."
+    })
+    statLabels[info.name] = label
+end
+
+-- Update stats loop
+spawn(function()
+    while true do
+        for _, info in ipairs(stats) do
+            local currentValue = info.stat.Value
+            local gained = currentValue - initialValues[info.name]
+            
+            local displayText = string.format(
+                "%s: %s (%s) | Gained: %s (%s)",
+                info.name,
+                formatNumber(currentValue),
+                formatWithCommas(currentValue),
+                formatNumber(gained),
+                formatWithCommas(gained)
+            )
+            
+            statLabels[info.name]:SetDesc(displayText)
+        end
+        wait(0.1)
+    end
+end)
+
+-- Time Display
+local startTime = tick()
+local timeLabel = viewSection:AddParagraph({
+    Title = emojiMap["Time"] .. " Time:",
+    Content = "0d 0h 0m 0s"
+})
+
+spawn(function()
+    while true do
+        local currentTime = tick()
+        local elapsedTime = currentTime - startTime
+
+        local days = math.floor(elapsedTime / (24 * 3600))
+        local hours = math.floor((elapsedTime % (24 * 3600)) / 3600)
+        local minutes = math.floor((elapsedTime % 3600) / 60)
+        local seconds = math.floor(elapsedTime % 60)
+
+        timeLabel:SetDesc(string.format("%dd %dh %dm %ds", days, hours, minutes, seconds))
+        wait(0.1)
+    end
+end)
         
-
 --============================================================================
 --  TAB 2  –  FARMING
 --============================================================================
