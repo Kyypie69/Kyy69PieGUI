@@ -657,6 +657,7 @@ otherSection:AddButton({
     end,
 })
 
+local starterSection  = StatsTab:AddSection("STATS")
 -- Stats Tab
 local function formatNumber(n)
     if n >= 1e15 then
@@ -683,6 +684,7 @@ local function formatWithCommas(n)
     return formatted
 end
 
+local starterSection = StatsTab:AddSection("STATS")
 -- Create stat displays
 local leaderstats = localPlayer:WaitForChild("leaderstats")
 local strengthStat = leaderstats:WaitForChild("Strength")
@@ -723,7 +725,7 @@ local statLabels = {}
 
 for _, info in ipairs(stats) do
     initialValues[info.name] = info.stat.Value
-    local label = StatsTab:AddParagraph({
+    local label = starterSection:AddParagraph({
         Title = info.name,
         Content = "Loading..."
     })
@@ -754,7 +756,7 @@ end)
 
 -- Time Display
 local startTime = tick()
-local timeLabel = StatsTab:AddParagraph({
+local timeLabel = starterSection:AddParagraph({
     Title = emojiMap["Time"] .. " Time:",
     Content = "0d 0h 0m 0s"
 })
@@ -773,7 +775,6 @@ spawn(function()
         wait(0.1)
     end
 end)
-
 
 local viewSection  = viewStats:AddSection("PLAYER STATS")
 
