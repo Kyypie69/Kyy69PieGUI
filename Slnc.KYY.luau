@@ -312,7 +312,7 @@ spawn(function()
     end
 end)
 
-SpecsTab:AddLabel("Player Stats:").TextSize = 24
+SpecsTab:AddLabel("Player Stats", 24)
 
 local playerToInspect = nil
 
