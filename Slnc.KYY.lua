@@ -1,5 +1,20 @@
 -- Load KyypieUI Library
-local Library, SaveManager, InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/Kyypie69/Library.UI/refs/heads/main/KyypieUI.lua"))()
+local LIB_URL = "https://raw.githubusercontent.com/Kyypie69/Library.UI/refs/heads/main/KyypieUI.lua"
+local ok, a, b, c = pcall(function()
+    local source = game:HttpGet(LIB_URL)
+    return loadstring(source)()
+end)
+local Library, SaveManager, InterfaceManager
+if ok then
+    Library, SaveManager, InterfaceManager = a, b, c
+else
+    if getgenv and getgenv().Fluent then
+        Library = getgenv().Fluent
+        warn("Loaded library from getgenv().Fluent as fallback.")
+    else
+        error("Failed to load UI library from URL: " .. tostring(a))
+    end
+end
 
 -- Services
 local Players = game:GetService("Players")
@@ -36,10 +51,13 @@ local function formatNumber(num)
     return string.format("%.0f", num)
 end
 
--- Fast Rebirth Tab
-local FastRebTab = Window:AddTab({Title = "Fast Rebirth", Icon = "lucide-refresh-cw"})
+local rebirthTab = Window:AddTab({Title = "Fast Rebirth", Icon = "lucide-refresh-cw"})
+local strengthTab = Window:AddTab({Title = "Fast Strength", Icon = "lucide-zap"})
+local infoTab = Window:AddTab({Title = "Info", Icon = "lucide-info"})
 
 -- Fast Rebirth variables
+local packSection = rebirthTab:AddSection("PACKS FARM REBIRTH")
+
 local isRunning = false
 local startTime = 0
 local totalElapsed = 0
@@ -51,7 +69,7 @@ local paceHistoryWeek = {}
 local maxHistoryLength = 20
 
 -- UI Elements for Fast Rebirth
-local serverLabel = FastRebTab:AddLabel("Time:")
+local serverLabel = packSection:AddLabel("Time:")
 serverLabel:SetText("Time:")
 
 local timeLabel = FastRebTab:AddLabel("0d 0h 0m 0s - Inactive")
@@ -181,7 +199,7 @@ local function fastRebirthLoop()
 end
 
 -- Fast Rebirth Toggle
-FastRebTab:AddToggle("FastRebirth", {
+packSection:AddToggle("FastRebirth", {
     Title = "Fast Rebirth",
     Default = false,
     Callback = function(state)
@@ -235,7 +253,7 @@ end)
 local sizeRunning = false
 local sizeThread = nil
 
-FastRebTab:AddToggle("SetSize1", {
+packSection:AddToggle("SetSize1", {
     Title = "Set Size 1",
     Default = false,
     Callback = function(bool)
@@ -253,7 +271,7 @@ FastRebTab:AddToggle("SetSize1", {
 })
 
 -- Anti Lag Button
-FastRebTab:AddButton({
+packSection:AddButton({
     Title = "Anti Lag",
     Callback = function()
         local player = game.Players.LocalPlayer
@@ -333,7 +351,7 @@ FastRebTab:AddButton({
 local lockRunning = false
 local lockThread = nil
 
-FastRebTab:AddToggle("LockPosition", {
+packSection:AddToggle("LockPosition", {
     Title = "Lock Position",
     Default = false,
     Callback = function(state)
@@ -379,7 +397,7 @@ task.spawn(function()
     end
 end)
 
-FastRebTab:AddToggle("AutoShake", {
+packSection:AddToggle("AutoShake", {
     Title = "Auto Shake",
     Default = false,
     Callback = function(state)
@@ -391,7 +409,7 @@ FastRebTab:AddToggle("AutoShake", {
 })
 
 -- Spin Fortune Wheel
-FastRebTab:AddToggle("SpinFortuneWheel", {
+packSection:AddToggle("SpinFortuneWheel", {
     Title = "Spin Fortune Wheel",
     Default = false,
     Callback = function(bool)
@@ -408,7 +426,7 @@ FastRebTab:AddToggle("SpinFortuneWheel", {
 })
 
 -- Jungle Lift
-FastRebTab:AddButton({
+packSection:AddButton({
     Title = "Jungle Lift",
     Callback = function()
         local player = game.Players.LocalPlayer
@@ -423,7 +441,7 @@ FastRebTab:AddButton({
 })
 
 -- Fast Farm Tab
-local FarmingTab = Window:AddTab({Title = "Fast Farm", Icon = "lucide-zap"})
+local fastSection = strengthTab:AddSection("PACKS FARM STRENGTH")
 
 local strengthStat = leaderstats:WaitForChild("Strength")
 local durabilityStat = localPlayer:WaitForChild("Durability")
@@ -549,7 +567,7 @@ local function getPing()
     return pingStat and pingStat:GetValue() or 0
 end
 
-FarmingTab:AddInput("RepSpeed", {
+fastSection:AddInput("RepSpeed", {
     Title = "Rep Speed",
     Default = "1",
     Numeric = true,
@@ -578,7 +596,7 @@ local function fastRepLoop()
     end
 end
 
-FarmingTab:AddToggle("FastRep", {
+fastSection:AddToggle("FastRep", {
     Title = "Fast Rep",
     Default = false,
     Callback = function(state)
@@ -612,7 +630,7 @@ task.spawn(function()
     end
 end)
 
-FarmingTab:AddToggle("AutoEgg", {
+fastSection:AddToggle("AutoEgg", {
     Title = "Auto Egg",
     Default = false,
     Callback = function(state)
@@ -644,7 +662,7 @@ task.spawn(function()
     end
 end)
 
-FarmingTab:AddToggle("AutoShakeFarm", {
+fastSection:AddToggle("AutoShakeFarm", {
     Title = "Auto Shake",
     Default = false,
     Callback = function(state)
@@ -656,7 +674,7 @@ FarmingTab:AddToggle("AutoShakeFarm", {
 })
 
 -- Spin Fortune Wheel (duplicate for farming tab)
-FarmingTab:AddToggle("SpinFortuneWheelFarm", {
+fastSection:AddToggle("SpinFortuneWheelFarm", {
     Title = "Spin Fortune Wheel",
     Default = false,
     Callback = function(bool)
@@ -673,7 +691,7 @@ FarmingTab:AddToggle("SpinFortuneWheelFarm", {
 })
 
 -- Jungle Squat
-FarmingTab:AddButton({
+fastSection:AddButton({
     Title = "Jungle Squat",
     Callback = function()
         local player = game.Players.LocalPlayer
@@ -688,7 +706,7 @@ FarmingTab:AddButton({
 })
 
 -- Anti Lag (duplicate for farming tab)
-FarmingTab:AddButton({
+fastSection:AddButton({
     Title = "Anti Lag",
     Callback = function()
         local player = game.Players.LocalPlayer
@@ -765,7 +783,7 @@ FarmingTab:AddButton({
 })
 
 -- Equip Swift Samurai
-FarmingTab:AddButton({
+fastSection:AddButton({
     Title = "Equip Swift Samurai",
     Callback = function()
         local function unequipPets()
@@ -794,12 +812,12 @@ FarmingTab:AddButton({
 })
 
 -- Info Tab
-local infoTab = Window:AddTab({Title = "Info", Icon = "lucide-info"})
+local infSection = infoTab:AddSection("INFORMATION")
 
-infoTab:AddLabel("Made by Henne ♥️")
-infoTab:AddLabel("discord.gg/silencev1")
+infSection:AddLabel("Made by KYY ♥️")
+infSection:AddLabel("discord.gg/silencev1")
 
-infoTab:AddButton({
+infSection:AddButton({
     Title = "Copy Invite",
     Callback = function()
         local link = "https://discord.gg/9eFf93Kg8D"
@@ -820,7 +838,7 @@ infoTab:AddButton({
     end
 })
 
-infoTab:AddLabel("VERSION//6.9.6.9")
+infSection:AddLabel("VERSION//6.9.6.9")
 
 -- Initialize SaveManager and InterfaceManager
 SaveManager:SetLibrary(Library)
