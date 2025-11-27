@@ -56,6 +56,14 @@ local strengthTab = Window:AddTab({Title = "Fast Strength", Icon = "lucide-zap"}
 local infoTab = Window:AddTab({Title = "Info", Icon = "lucide-info"})
 
 -- Fast Rebirth variables
+-- Example: Assuming rebirthsStat is a NumberValue in ReplicatedStorage
+local rebirthsStat = game:GetService("ReplicatedStorage"):WaitForChild("RebirthsStat")
+
+-- Example: Define formatNumber if not already defined
+local function formatNumber(n)
+    return tostring(n):reverse():gsub("(%d%d%d)", "%1,"):reverse():gsub("^,", "")
+end
+
 local packSection = rebirthTab:AddSection("PACKS FARM REBIRTH")
 
 local isRunning = false
@@ -69,8 +77,7 @@ local paceHistoryWeek = {}
 local maxHistoryLength = 20
 
 -- UI Elements for Fast Rebirth
-local serverLabel = packSection:AddParagraph("Time:")
-serverLabel:SetText("Time:")
+local serverLabel = packSection:AddLabel("Time:")
 
 local timeLabel = packSection:AddLabel("0d 0h 0m 0s - Inactive")
 local paceLabel = packSection:AddLabel("Pace: 0 / Hour | 0 / Day | 0 / Week")
