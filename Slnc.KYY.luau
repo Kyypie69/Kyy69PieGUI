@@ -1,69 +1,207 @@
--- SilenceV2Farming with KyypieUI
-local Players = game:GetService("Players")
-local HttpService = game:GetService("HttpService")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local VirtualUser = game:GetService("VirtualUser")
-local Workspace = game:GetService("Workspace")
-local Lighting = game:GetService("Lighting")
-local UserInputService = game:GetService("UserInputService")
-
-local localPlayer = Players.LocalPlayer
-local username = localPlayer.Name
-local userId = localPlayer.UserId
-
-local muscleEvent = localPlayer:WaitForChild("muscleEvent")
-local changeSpeedSizeRemote = ReplicatedStorage.rEvents.changeSpeedSizeRemote
-
 -- Load KyypieUI Library
 local Library, SaveManager, InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/Kyypie69/Library.UI/refs/heads/main/KyypieUI.lua"))()
 
--- Create Window
+-- Services
+local Players = game:GetService("Players")
+local HttpService = game:GetService("HttpService")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+
+-- Player variables
+local localPlayer = Players.LocalPlayer
+local username = localPlayer.Name
+local userId = localPlayer.UserId
+local muscleEvent = localPlayer:WaitForChild("muscleEvent")
+local leaderstats = localPlayer:WaitForChild("leaderstats")
+local rebirthsStat = leaderstats:WaitForChild("Rebirths")
+
+-- Create main window
 local Window = Library:CreateWindow({
-    Title = "KYY HUB",
-    SubTitle = "Kyypie UI",
+    Title = " KYYPIE HUB ",
+    SubTitle = "Version 6.9 | by Markyy",
+    Size = UDim2.fromOffset(500, 350),
     TabWidth = 150,
-    Size = UDim2.fromOffset(500, 320),
-    Acrylic = true, -- Set to true if you want acrylic effect
-    Theme = "LightBlue", -- You can change this to any available theme
+    Theme = "LightBlue",
+    Acrylic = false,
 })
 
--- Anti AFK
-local function setupAntiAFK()
-    local antiAFKConnection
-    antiAFKConnection = localPlayer.Idled:Connect(function()
-        VirtualUser:CaptureController()
-        VirtualUser:ClickButton2(Vector2.new())
-    end)
+-- Format number function
+local function formatNumber(num)
+    if num >= 1e15 then return string.format("%.2fQ", num/1e15) end
+    if num >= 1e12 then return string.format("%.2fT", num/1e12) end
+    if num >= 1e9 then return string.format("%.2fB", num/1e9) end
+    if num >= 1e6 then return string.format("%.2fM", num/1e6) end
+    if num >= 1e3 then return string.format("%.2fK", num/1e3) end
+    return string.format("%.0f", num)
 end
-setupAntiAFK()
 
--- Portal Removal
-local function removePortals()
-    for _, portal in pairs(game:GetDescendants()) do
-        if portal.Name == "RobloxForwardPortals" then
-            portal:Destroy()
+-- Fast Rebirth Tab
+local FastRebTab = Window:AddTab({Title = "Fast Rebirth", Icon = "lucide-refresh-cw"})
+
+-- Fast Rebirth variables
+local isRunning = false
+local startTime = 0
+local totalElapsed = 0
+local initialRebirths = rebirthsStat.Value
+local rebirthCount = 0
+local paceHistoryHour = {}
+local paceHistoryDay = {}
+local paceHistoryWeek = {}
+local maxHistoryLength = 20
+
+-- UI Elements for Fast Rebirth
+local serverLabel = FastRebTab:AddLabel("Time:")
+serverLabel:SetText("Time:")
+
+local timeLabel = FastRebTab:AddLabel("0d 0h 0m 0s - Inactive")
+local paceLabel = FastRebTab:AddLabel("Pace: 0 / Hour | 0 / Day | 0 / Week")
+local averagePaceLabel = FastRebTab:AddLabel("Average Pace: 0 / Hour | 0 / Day | 0 / Week")
+local rebirthsStatsLabel = FastRebTab:AddLabel("Rebirths: "..formatNumber(rebirthsStat.Value).." | Gained: 0")
+
+-- Functions
+local function updateRebirthsLabel()
+    local gained = rebirthsStat.Value - initialRebirths
+    rebirthsStatsLabel:SetText(string.format("Rebirths: %s | Gained: %s", 
+                                           formatNumber(rebirthsStat.Value), 
+                                           formatNumber(gained)))
+end
+
+local function updateUI()
+    local currentTime = tick()
+    local elapsed = isRunning and (currentTime - startTime + totalElapsed) or totalElapsed
+    
+    local days = math.floor(elapsed / 86400)
+    local hours = math.floor((elapsed % 86400) / 3600)
+    local minutes = math.floor((elapsed % 3600) / 60)
+    local seconds = math.floor(elapsed % 60)
+    
+    timeLabel:SetText(string.format("%dd %dh %dm %ds - %s", days, hours, minutes, seconds,
+                                 isRunning and "Rebirthing" or "Paused"))
+end
+
+local function calculatePaceOnRebirth()
+    rebirthCount = rebirthCount + 1
+    
+    if rebirthCount < 2 then
+        lastRebirthTime = tick()
+        lastRebirthValue = rebirthsStat.Value
+        return
+    end
+
+    local now = tick()
+    local gained = rebirthsStat.Value - lastRebirthValue
+
+    if gained > 0 then
+        local avgTimePerRebirth = (now - lastRebirthTime) / gained
+        local paceHour = 3600 / avgTimePerRebirth
+        local paceDay = 86400 / avgTimePerRebirth
+        local paceWeek = 604800 / avgTimePerRebirth
+
+        paceLabel:SetText(string.format("Pace: %s / Hour | %s / Day | %s / Week",
+            formatNumber(paceHour), formatNumber(paceDay), formatNumber(paceWeek)))
+
+        table.insert(paceHistoryHour, paceHour)
+        table.insert(paceHistoryDay, paceDay)
+        table.insert(paceHistoryWeek, paceWeek)
+
+        if #paceHistoryHour > maxHistoryLength then
+            table.remove(paceHistoryHour, 1)
+            table.remove(paceHistoryDay, 1)
+            table.remove(paceHistoryWeek, 1)
+        end
+
+        local function average(tbl)
+            local sum = 0
+            for _, v in ipairs(tbl) do
+                sum = sum + v
+            end
+            return #tbl > 0 and (sum / #tbl) or 0
+        end
+
+        local avgHour = average(paceHistoryHour)
+        local avgDay = average(paceHistoryDay)
+        local avgWeek = average(paceHistoryWeek)
+
+        averagePaceLabel:SetText(string.format("Average Pace: %s / Hour | %s / Day | %s / Week",
+            formatNumber(avgHour), formatNumber(avgDay), formatNumber(avgWeek)))
+
+        lastRebirthTime = now
+        lastRebirthValue = rebirthsStat.Value
+    end
+end
+
+local function managePets(petName)
+    for _, folder in pairs(localPlayer.petsFolder:GetChildren()) do
+        if folder:IsA("Folder") then
+            for _, pet in pairs(folder:GetChildren()) do
+                ReplicatedStorage.rEvents.equipPetEvent:FireServer("unequipPet", pet)
+            end
         end
     end
+    task.wait(0.1)
     
-    if _G.AdRemovalConnection then
-        _G.AdRemovalConnection:Disconnect()
+    for _, pet in pairs(localPlayer.petsFolder.Unique:GetChildren()) do
+        if pet.Name == petName then
+            ReplicatedStorage.rEvents.equipPetEvent:FireServer("equipPet", pet)
+        end
+    end
+end
+
+local function doRebirth()
+    local rebirths = rebirthsStat.Value
+    local strengthTarget = 5000 + (rebirths * 2550)
+    
+    while isRunning and localPlayer.leaderstats.Strength.Value < strengthTarget do
+        local reps = localPlayer.MembershipType == Enum.MembershipType.Premium and 8 or 14
+        for _ = 1, reps do
+            muscleEvent:FireServer("rep")
+        end
+        task.wait(0.02)
     end
     
-    _G.AdRemovalConnection = game.DescendantAdded:Connect(function(descendant)
-        if descendant.Name == "RobloxForwardPortals" then
-            descendant:Destroy()
-        end
-    end)
+    if isRunning and localPlayer.leaderstats.Strength.Value >= strengthTarget then
+        managePets("Tribal Overlord")
+        task.wait(0.25)
+        
+        local before = rebirthsStat.Value
+        repeat
+            ReplicatedStorage.rEvents.rebirthRemote:InvokeServer("rebirthRequest")
+            task.wait(0.05)
+        until rebirthsStat.Value > before or not isRunning
+    end
 end
-removePortals()
 
--- Block Frames
+local function fastRebirthLoop()
+    while isRunning do
+        managePets("Swift Samurai")
+        doRebirth()
+        task.wait(0.5)
+    end
+end
+
+-- Fast Rebirth Toggle
+FastRebTab:AddToggle("FastRebirth", {
+    Title = "Fast Rebirth",
+    Default = false,
+    Callback = function(state)
+        isRunning = state
+        
+        if state then
+            startTime = tick()
+            task.spawn(fastRebirthLoop)
+        else
+            totalElapsed = totalElapsed + (tick() - startTime)
+            updateUI()
+        end
+    end
+})
+
+-- Hide frames
 local blockedFrames = {
     "strengthFrame",
     "durabilityFrame", 
     "agilityFrame",
-    "evilKarmaFrame",
-    "goodKarmaFrame",
 }
 
 for _, name in ipairs(blockedFrames) do
@@ -79,1144 +217,629 @@ ReplicatedStorage.ChildAdded:Connect(function(child)
     end
 end)
 
--- Create Tabs
-local MainTab = Window:AddTab({Title = "Main", Icon = "settings"})
-local KillingTab = Window:AddTab({Title = "Killing", Icon = "sword"})
-local SpecsTab = Window:AddTab({Title = "Specs", Icon = "user"})
-local FarmingTab = Window:AddTab({Title = "Farming", Icon = "dumbbell"})
-local InventoryTab = Window:AddTab({Title = "Inventory", Icon = "package"})
-local PetsTab = Window:AddTab({Title = "Pet Shop", Icon = "paw-print"})
-local TeleportTab = Window:AddTab({Title = "Teleports", Icon = "map-pin"})
-local StatsTab = Window:AddTab({Title = "Stats", Icon = "bar-chart"})
-
--- Main Tab Functions
-local userSize = 2
-local sizeActive = false
-local userSpeed = 120
-local speedActive = false
-
--- Size Control
-MainTab:AddSlider("SizeSlider", {
-    Title = "Size",
-    Description = "Adjust player size",
-    Default = 2,
-    Min = 0.1,
-    Max = 50,
-    Rounding = 1,
-    Callback = function(Value)
-        userSize = Value
+-- Update UI loop
+task.spawn(function()
+    while true do
+        updateUI()
+        task.wait(0.1)
     end
-})
+end)
 
-MainTab:AddToggle("SetSizeToggle", {
-    Title = "Set Size",
-    Description = "Enable size modification",
+-- Rebirth stat changed
+rebirthsStat:GetPropertyChangedSignal("Value"):Connect(function()
+    calculatePaceOnRebirth()
+    updateRebirthsLabel() 
+end)
+
+-- Size Switch
+local sizeRunning = false
+local sizeThread = nil
+
+FastRebTab:AddToggle("SetSize1", {
+    Title = "Set Size 1",
     Default = false,
-    Callback = function(Value)
-        sizeActive = Value
+    Callback = function(bool)
+        sizeRunning = bool
+        if sizeRunning then
+            sizeThread = coroutine.create(function()
+                while sizeRunning do
+                    game:GetService("ReplicatedStorage").rEvents.changeSpeedSizeRemote:InvokeServer("changeSize", 1)
+                    wait(0.01)
+                end
+            end)
+            coroutine.resume(sizeThread)
+        end
     end
 })
 
--- Speed Control
-MainTab:AddSlider("SpeedSlider", {
-    Title = "Speed",
-    Description = "Adjust player speed",
-    Default = 120,
-    Min = 16,
-    Max = 500,
-    Rounding = 0,
-    Callback = function(Value)
-        userSpeed = Value
-    end
-})
+-- Anti Lag Button
+FastRebTab:AddButton({
+    Title = "Anti Lag",
+    Callback = function()
+        local player = game.Players.LocalPlayer
+        local playerGui = player:WaitForChild("PlayerGui")
+        local lighting = game:GetService("Lighting")
 
-MainTab:AddToggle("SetSpeedToggle", {
-    Title = "Set Speed",
-    Description = "Enable speed modification",
-    Default = false,
-    Callback = function(Value)
-        speedActive = Value
-    end
-})
+        for _, gui in pairs(playerGui:GetChildren()) do
+            if gui:IsA("ScreenGui") then
+                gui:Destroy()
+            end
+        end
 
--- Anti Fling
-MainTab:AddToggle("AntiFlingToggle", {
-    Title = "Anti Fling",
-    Description = "Prevent being flung",
-    Default = true,
-    Callback = function(Value)
-        if Value then
-            local character = Workspace:FindFirstChild(localPlayer.Name)
-            if character then
-                local rootPart = character:FindFirstChild("HumanoidRootPart")
-                if rootPart then
-                    local bodyVelocity = Instance.new("BodyVelocity")
-                    bodyVelocity.MaxForce = Vector3.new(100000, 0, 100000)
-                    bodyVelocity.Velocity = Vector3.new(0, 0, 0)
-                    bodyVelocity.P = 1250
-                    bodyVelocity.Parent = rootPart
+        local function darkenSky()
+            for _, v in pairs(lighting:GetChildren()) do
+                if v:IsA("Sky") then
+                    v:Destroy()
                 end
             end
-        else
-            local character = Workspace:FindFirstChild(localPlayer.Name)
-            if character then
-                local rootPart = character:FindFirstChild("HumanoidRootPart")
-                if rootPart then
-                    local existingVelocity = rootPart:FindFirstChild("BodyVelocity")
-                    if existingVelocity and existingVelocity.MaxForce == Vector3.new(100000, 0, 100000) then
-                        existingVelocity:Destroy()
+
+            local darkSky = Instance.new("Sky")
+            darkSky.Name = "DarkSky"
+            darkSky.SkyboxBk = "rbxassetid://0"
+            darkSky.SkyboxDn = "rbxassetid://0"
+            darkSky.SkyboxFt = "rbxassetid://0"
+            darkSky.SkyboxLf = "rbxassetid://0"
+            darkSky.SkyboxRt = "rbxassetid://0"
+            darkSky.SkyboxUp = "rbxassetid://0"
+            darkSky.Parent = lighting
+
+            lighting.Brightness = 0
+            lighting.ClockTime = 0
+            lighting.TimeOfDay = "00:00:00"
+            lighting.OutdoorAmbient = Color3.new(0, 0, 0)
+            lighting.Ambient = Color3.new(0, 0, 0)
+            lighting.FogColor = Color3.new(0, 0, 0)
+            lighting.FogEnd = 100
+
+            task.spawn(function()
+                while true do
+                    wait(5)
+                    if not lighting:FindFirstChild("DarkSky") then
+                        darkSky:Clone().Parent = lighting
                     end
+                    lighting.Brightness = 0
+                    lighting.ClockTime = 0
+                    lighting.OutdoorAmbient = Color3.new(0, 0, 0)
+                    lighting.Ambient = Color3.new(0, 0, 0)
+                    lighting.FogColor = Color3.new(0, 0, 0)
+                    lighting.FogEnd = 100
+                end
+            end)
+        end
+
+        local function removeParticleEffects()
+            for _, obj in pairs(workspace:GetDescendants()) do
+                if obj:IsA("ParticleEmitter") then
+                    obj:Destroy()
                 end
             end
         end
+
+        local function removeLightSources()
+            for _, obj in pairs(workspace:GetDescendants()) do
+                if obj:IsA("PointLight") or obj:IsA("SpotLight") or obj:IsA("SurfaceLight") then
+                    obj:Destroy()
+                end
+            end
+        end
+
+        removeParticleEffects()
+        removeLightSources()
+        darkenSky()
     end
 })
 
 -- Lock Position
 local lockRunning = false
-MainTab:AddToggle("LockPositionToggle", {
+local lockThread = nil
+
+FastRebTab:AddToggle("LockPosition", {
     Title = "Lock Position",
-    Description = "Lock your character position",
     Default = false,
-    Callback = function(Value)
-        lockRunning = Value
-        if Value then
-            local player = localPlayer
+    Callback = function(state)
+        lockRunning = state
+        if lockRunning then
+            local player = game.Players.LocalPlayer
             local char = player.Character or player.CharacterAdded:Wait()
             local hrp = char:WaitForChild("HumanoidRootPart")
             local lockPosition = hrp.Position
-            
-            spawn(function()
+
+            lockThread = coroutine.create(function()
                 while lockRunning do
                     hrp.Velocity = Vector3.new(0, 0, 0)
                     hrp.RotVelocity = Vector3.new(0, 0, 0)
                     hrp.CFrame = CFrame.new(lockPosition)
-                    wait(0.05)
+                    wait(0.05) 
                 end
             end)
+
+            coroutine.resume(lockThread)
         end
     end
 })
 
--- Infinite Jump
-MainTab:AddToggle("InfiniteJumpToggle", {
-    Title = "Infinite Jump",
-    Description = "Enable infinite jumping",
-    Default = false,
-    Callback = function(Value)
-        _G.InfiniteJump = Value
-        
-        if Value then
-            local InfiniteJumpConnection
-            InfiniteJumpConnection = UserInputService.JumpRequest:Connect(function()
-                if _G.InfiniteJump then
-                    localPlayer.Character:FindFirstChildOfClass("Humanoid"):ChangeState("Jumping")
-                else
-                    InfiniteJumpConnection:Disconnect()
-                end
-            end)
-        end
-    end
-})
+-- Auto Shake
+local shakeRunning = false
 
--- Walk on Water
-local parts = {}
-local partSize = 2048
-local totalDistance = 50000
-local startPosition = Vector3.new(-2, -9.5, -2)
-
-local function createAllParts()
-    local numberOfParts = math.ceil(totalDistance / partSize)
-    
-    for x = 0, numberOfParts - 1 do
-        for z = 0, numberOfParts - 1 do
-            local function createPart(pos, name)
-                local part = Instance.new("Part")
-                part.Size = Vector3.new(partSize, 1, partSize)
-                part.Position = pos
-                part.Anchored = true
-                part.Transparency = 1
-                part.CanCollide = true
-                part.Name = name
-                part.Parent = Workspace
-                return part
-            end
-            
-            table.insert(parts, createPart(startPosition + Vector3.new(x*partSize,0,z*partSize), "Part_Side_"..x.."_"..z))
-            table.insert(parts, createPart(startPosition + Vector3.new(-x*partSize,0,z*partSize), "Part_LeftRight_"..x.."_"..z))
-            table.insert(parts, createPart(startPosition + Vector3.new(-x*partSize,0,-z*partSize), "Part_UpLeft_"..x.."_"..z))
-            table.insert(parts, createPart(startPosition + Vector3.new(x*partSize,0,-z*partSize), "Part_UpRight_"..x.."_"..z))
-        end
-    end
-end
-createAllParts()
-
-MainTab:AddToggle("WalkOnWaterToggle", {
-    Title = "Walk on Water",
-    Description = "Enable walking on water parts",
-    Default = true,
-    Callback = function(Value)
-        for _, part in ipairs(parts) do
-            if part and part.Parent then
-                part.CanCollide = Value
-            end
-        end
-    end
-})
-
--- Time Control
-MainTab:AddDropdown("TimeDropdown", {
-    Title = "Change Time",
-    Description = "Change the time of day",
-    Values = {"Night", "Day", "Midnight"},
-    Default = "Day",
-    Callback = function(Value)
-        if Value == "Night" then
-            Lighting.ClockTime = 0
-        elseif Value == "Day" then
-            Lighting.ClockTime = 12
-        elseif Value == "Midnight" then
-            Lighting.ClockTime = 6
-        end
-    end
-})
-
--- Auto Update Loops
-spawn(function()
-    while true do
-        if sizeActive then
-            local character = localPlayer.Character
-            if character then
-                local humanoid = character:FindFirstChildOfClass("Humanoid")
-                if humanoid then
-                    changeSpeedSizeRemote:InvokeServer("changeSize", userSize)
-                end
-            end
-        end
-        wait(0.15)
-    end
-end)
-
-spawn(function()
-    while true do
-        if speedActive then
-            local character = localPlayer.Character
-            if character then
-                local humanoid = character:FindFirstChildOfClass("Humanoid")
-                if humanoid then
-                    changeSpeedSizeRemote:InvokeServer("changeSpeed", userSpeed)
-                end
-            end
-        end
-        wait(0.15)
-    end
-end)
-
-SpecsTab:AddLabel("Player Stats", 24)
-
-local playerToInspect = nil
-
-local emojiMap = {
-    ["Time"] = utf8.char(0x1F55B),
-    ["Stats"] = utf8.char(0x1F4CA),
-    ["Strength"] = utf8.char(0x1F4AA),
-    ["Rebirths"] = utf8.char(0x1F504),
-    ["Durability"] = utf8.char(0x1F6E1),
-    ["Kills"] = utf8.char(0x1F480),
-    ["Agility"] = utf8.char(0x1F3C3),
-    ["Evil Karma"] = utf8.char(0x1F608),
-    ["Good Karma"] = utf8.char(0x1F607),
-    ["Brawls"] = utf8.char(0x1F94A)
-}
-
-local statDefinitions = {
-    { name = "Strength", statName = "Strength" },
-    { name = "Rebirths", statName = "Rebirths" },
-    { name = "Durability", statName = "Durability" },
-    { name = "Agility", statName = "Agility" },
-    { name = "Kills", statName = "Kills" },
-    { name = "Evil Karma", statName = "evilKarma" },
-    { name = "Good Karma", statName = "goodKarma" },
-    { name = "Brawls", statName = "Brawls" }
-}
-
-local function getCurrentPlayers()
-    local playersList = {}
-    for _, p in ipairs(Players:GetPlayers()) do
-        table.insert(playersList, p)
-    end
-    return playersList
-end
-
-local specdropdown = SpecsTab:AddDropdown("Choose Player", function(text) 
-    for _, player in ipairs(getCurrentPlayers()) do
-        local optionText = player.DisplayName .. " | " .. player.Name
-        if text == optionText then
-            playerToInspect = player
-            updateStatLabels(playerToInspect)
-            break
-        end
-    end
-end)
-
-for _, player in ipairs(getCurrentPlayers()) do
-    specdropdown:Add(player.DisplayName .. " | " .. player.Name)
-end
-
-Players.PlayerAdded:Connect(function(player)
-    specdropdown:Add(player.DisplayName .. " | " .. player.Name)
-end)
-
-Players.PlayerRemoving:Connect(function(player)
-    specdropdown:Clear()
-    for _, p in ipairs(getCurrentPlayers()) do
-        specdropdown:Add(p.DisplayName .. " | " .. p.Name)
-    end
-end)
-
-local playerNameLabel = SpecsTab:AddLabel("Name: N/A")
-playerNameLabel.TextSize = 20
-
-local playerUsernameLabel = SpecsTab:AddLabel("Username: N/A")
-playerUsernameLabel.TextSize = 20
-
-local statLabels = {}
-for _, info in ipairs(statDefinitions) do
-    statLabels[info.name] = SpecsTab:AddLabel(emojiMap[info.name] .. " " .. info.name .. ": 0 (0)")
-    statLabels[info.name].TextSize = 20
-end
-
-local function formatNumber(n)
-    if n >= 1e15 then
-        return string.format("%.1fqa", n/1e15)
-    elseif n >= 1e12 then
-        return string.format("%.1ft", n/1e12)
-    elseif n >= 1e9 then
-        return string.format("%.1fb", n/1e9)
-    elseif n >= 1e6 then
-        return string.format("%.1fm", n/1e6)
-    elseif n >= 1e3 then
-        return string.format("%.1fk", n/1e3)
-    else
-        return tostring(n)
-    end
-end
-
-local function formatWithCommas(n)
-    local formatted = tostring(math.floor(n))
-    while true do
-        formatted, k = formatted:gsub("^(-?%d+)(%d%d%d)", '%1,%2')
-        if k == 0 then break end
-    end
-    return formatted
-end
-
-
-local function updateStatLabels(targetPlayer)
-    if not targetPlayer then return end
-
-    playerNameLabel.Text = "Name: " .. targetPlayer.DisplayName
-    playerUsernameLabel.Text = "Username: " .. targetPlayer.Name
-
-    local leaderstats = targetPlayer:FindFirstChild("leaderstats")
-    if not leaderstats then return end
-
-    for _, info in ipairs(statDefinitions) do
-        local statObject
-
-        if leaderstats:FindFirstChild(info.statName) then
-            statObject = leaderstats:FindFirstChild(info.statName)
-        elseif targetPlayer:FindFirstChild(info.statName) then
-            statObject = targetPlayer:FindFirstChild(info.statName)
-        end
-
-        if statObject then
-            local value = statObject.Value
-            local emoji = emojiMap[info.name] or ""
-            statLabels[info.name].Text = string.format(
-                "%s %s: %s (%s)",
-                emoji,
-                info.name,
-                formatNumber(value),
-                formatWithCommas(value)
-            )
-        else
-            statLabels[info.name].Text = emojiMap[info.name] .. " " .. info.name .. ": 0 (0)"
-        end
+local function activateShake()
+    local tool = localPlayer.Character:FindFirstChild("Tropical Shake") or localPlayer.Backpack:FindFirstChild("Tropical Shake")
+    if tool then
+        muscleEvent:FireServer("tropicalShake", tool)
     end
 end
 
 task.spawn(function()
     while true do
-        if playerToInspect then
-            updateStatLabels(playerToInspect)
-        end
-        task.wait(0.2)
-    end
-end)
-
-SpecsTab:AddLabel("————————————————————————————")
-
-SpecsTab:AddLabel("Advanced Stats:").TextSize = 24
-
-local enemyHealthLabel = SpecsTab:AddLabel("Enemy Health: N/A")
-enemyHealthLabel.TextSize = 20
-enemyHealthLabel.TextColor3 = Color3.fromRGB(0, 140, 255)
-
-local playerDamageLabel = SpecsTab:AddLabel("Your Damage: N/A")
-playerDamageLabel.TextSize = 20
-playerDamageLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
-
-local hitsToKillLabel = SpecsTab:AddLabel("Hits to Kill: N/A")
-hitsToKillLabel.TextSize = 20
-hitsToKillLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
-
-
-
-local function calculateEnemyHealth(targetPlayer)
-    if not targetPlayer then return 0 end
-
-    local baseDura = 0
-    local durabilityStat = targetPlayer:FindFirstChild("Durability") 
-        or (targetPlayer:FindFirstChild("leaderstats") and targetPlayer.leaderstats:FindFirstChild("Durability"))
-    if durabilityStat then
-        baseDura = durabilityStat.Value
-    end
-
-    local totalMultiplier = 1
-
-    local ultFolder = targetPlayer:FindFirstChild("ultimatesFolder")
-    if ultFolder then
-        local infernalHealth = ultFolder:FindFirstChild("Infernal Health")
-        if infernalHealth then
-            local upgrades = infernalHealth.Value or 0
-            totalMultiplier = totalMultiplier + 0.15 * upgrades
-        end
-    end
-
-    local equippedPetsFolder = targetPlayer:FindFirstChild("equippedPets")
-    if equippedPetsFolder then
-        local petBonus = 0
-        for _, petValue in ipairs(equippedPetsFolder:GetChildren()) do
-            if petValue:IsA("ObjectValue") and petValue.Value then
-                local petNameLower = string.lower(petValue.Value.Name)
-                if petNameLower:match("mighty") and petNameLower:match("monster") then
-                    petBonus = petBonus + 0.5
-                end
-            end
-        end
-        totalMultiplier = totalMultiplier + petBonus
-    end
-
-    local totalHealth = baseDura * totalMultiplier
-    return totalHealth
-end
-
-local function calculateLocalPlayerDamage()
-    local strengthStat = nil
-    local leaderstats = Player:FindFirstChild("leaderstats")
-    if leaderstats then
-        strengthStat = leaderstats:FindFirstChild("Strength")
-    end
-    if not strengthStat then return 0 end
-
-    local baseDamage = strengthStat.Value * 0.0667
-    local totalMultiplier = 1
-
-    local ultFolder = Player:FindFirstChild("ultimatesFolder")
-    if ultFolder then
-        local demonDamage = ultFolder:FindFirstChild("Demon Damage")
-        if demonDamage then
-            local upgrades = demonDamage.Value or 0
-            totalMultiplier = totalMultiplier + 0.1 * upgrades
-        end
-    end
-
-local equippedPetsFolder = Player:FindFirstChild("equippedPets")
-    if equippedPetsFolder then
-        local petBonus = 0
-        for _, petValue in ipairs(equippedPetsFolder:GetChildren()) do
-            if petValue:IsA("ObjectValue") and petValue.Value then
-                local petNameLower = string.lower(petValue.Value.Name)
-                if petNameLower:match("wild") and petNameLower:match("wizard") then
-                    petBonus = petBonus + 0.5
-                end
-            end
-        end
-        totalMultiplier = totalMultiplier + petBonus
-    end
-
-    baseDamage = baseDamage * totalMultiplier
-    return baseDamage
-end
-
-
-
-local function calculateHitsToKill(health, damage)
-    if damage <= 0 then return "∞" end
-    local hits = math.ceil(health / damage)
-    if hits > 100 then
-        return "∞"
-    elseif hits < 1 then
-        return 1
-    else
-        return hits
-    end
-end
-
-local function updateAdvancedStats(targetPlayer)
-    if not targetPlayer then
-        enemyHealthLabel.Text = "Enemy Health: N/A"
-        playerDamageLabel.Text = "Your Damage: N/A"
-        hitsToKillLabel.Text = "Hits to Kill: N/A"
-        return
-    end
-    local enemyHealth = calculateEnemyHealth(targetPlayer)
-    local playerDamage = calculateLocalPlayerDamage()
-    local hitsToKill = calculateHitsToKill(enemyHealth, playerDamage)
-    enemyHealthLabel.Text = string.format("Enemy Health: %s (%s)", formatNumber(enemyHealth), formatWithCommas(enemyHealth))
-    playerDamageLabel.Text = string.format("Your Damage: %s (%s)", formatNumber(playerDamage), formatWithCommas(playerDamage))
-    hitsToKillLabel.Text = string.format("Hits to Kill: %s", tostring(hitsToKill))
-end
-
-task.spawn(function()
-    while true do
-        if playerToInspect then
-            updateAdvancedStats(playerToInspect)
+        if shakeRunning then
+            activateShake()
+            task.wait(450)
         else
-            updateAdvancedStats(nil)
-        end
-        task.wait(0.1)
-    end
-end)
-
-local function checkCharacter()
-    if not game.Players.LocalPlayer.Character then
-        repeat task.wait() until game.Players.LocalPlayer.Character
-    end
-    return game.Players.LocalPlayer.Character
-end
-
-local function gettool()
-    for _, v in pairs(game.Players.LocalPlayer.Backpack:GetChildren()) do
-        if v.Name == "Punch" and game.Players.LocalPlayer.Character:FindFirstChild("Humanoid") then
-            game.Players.LocalPlayer.Character.Humanoid:EquipTool(v)
-        end
-    end
-    game.Players.LocalPlayer.muscleEvent:FireServer("punch", "leftHand")
-    game.Players.LocalPlayer.muscleEvent:FireServer("punch", "rightHand")
-end
-
-local function isPlayerAlive(player)
-    return player and player.Character and player.Character:FindFirstChild("HumanoidRootPart") and
-           player.Character:FindFirstChild("Humanoid") and player.Character.Humanoid.Health > 0
-end
-
-local function killPlayer(target)
-    if not isPlayerAlive(target) then return end
-    local character = checkCharacter()
-    if character and character:FindFirstChild("LeftHand") then
-        pcall(function()
-            firetouchinterest(target.Character.HumanoidRootPart, character.LeftHand, 0)
-            firetouchinterest(target.Character.HumanoidRootPart, character.LeftHand, 1)
-            gettool()
-        end)
-    end
-end
-
--- Killing Tab
-KillingTab:AddDropdown("SelectPetDropdown", {
-    Title = "Select Pet",
-    Description = "Choose your pet",
-    Values = {"Wild Wizard", "Mighty Monster"},
-    Default = "Wild Wizard",
-    Callback = function(Value)
-        local petsFolder = localPlayer.petsFolder
-        for _, folder in pairs(petsFolder:GetChildren()) do
-            if folder:IsA("Folder") then
-                for _, pet in pairs(folder:GetChildren()) do
-                    ReplicatedStorage.rEvents.equipPetEvent:FireServer("unequipPet", pet)
-                end
-            end
-        end
-        wait(0.2)
-
-        local petName = Value
-        local petsToEquip = {}
-
-        for _, pet in pairs(localPlayer.petsFolder.Unique:GetChildren()) do
-            if pet.Name == petName then
-                table.insert(petsToEquip, pet)
-            end
-        end
-
-        for i = 1, math.min(8, #petsToEquip) do
-            ReplicatedStorage.rEvents.equipPetEvent:FireServer("equipPet", petsToEquip[i])
-            wait(0.1)
-        end
-    end
-})
-
-KillingTab:AddToggle("RemoveAnimationsToggle", {
-    Title = "Remove Attack Animations",
-    Description = "Disable attack animations",
-    Default = false,
-    Callback = function(Value)
-        if value then
-        local blockedAnimations = {
-            ["rbxassetid://3638729053"] = true,
-            ["rbxassetid://3638767427"] = true,
-        }
-
-        local function setupAnimationBlocking()
-            local char = game.Players.LocalPlayer.Character
-            if not char or not char:FindFirstChild("Humanoid") then return end
-
-            local humanoid = char:FindFirstChild("Humanoid")
-
-            for _, track in pairs(humanoid:GetPlayingAnimationTracks()) do
-                if track.Animation then
-                    local animId = track.Animation.AnimationId
-                    local animName = track.Name:lower()
-
-                    if blockedAnimations[animId] or animName:match("punch") or animName:match("attack") or animName:match("right") then
-                        track:Stop()
-                    end
-                end
-            end
-
-            _G.AnimBlockConnection = humanoid.AnimationPlayed:Connect(function(track)
-                if track.Animation then
-                    local animId = track.Animation.AnimationId
-                    local animName = track.Name:lower()
-
-                    if blockedAnimations[animId] or animName:match("punch") or animName:match("attack") or animName:match("right") then
-                        track:Stop()
-                    end
-                end
-            end)
-        end
-
-        local function processTool(tool)
-            if tool and (tool.Name == "Punch" or tool.Name:match("Attack") or tool.Name:match("Right")) then
-                if not tool:GetAttribute("ActivatedOverride") then
-                    tool:SetAttribute("ActivatedOverride", true)
-
-                    _G.ToolConnections = _G.ToolConnections or {}
-                    _G.ToolConnections[tool] = tool.Activated:Connect(function()
-                        task.wait(0.05)
-                        local char = game.Players.LocalPlayer.Character
-                        if char and char:FindFirstChild("Humanoid") then
-                            for _, track in pairs(char.Humanoid:GetPlayingAnimationTracks()) do
-                                if track.Animation then
-                                    local animId = track.Animation.AnimationId
-                                    local animName = track.Name:lower()
-
-                                    if blockedAnimations[animId] or animName:match("punch") or animName:match("attack") or animName:match("right") then
-                                        track:Stop()
-                                    end
-                                end
-                            end
-                        end
-                    end)
-                end
-            end
-        end
-
-        local function overrideToolActivation()
-            for _, tool in pairs(game.Players.LocalPlayer.Backpack:GetChildren()) do
-                processTool(tool)
-            end
-
-            local char = game.Players.LocalPlayer.Character
-            if char then
-                for _, tool in pairs(char:GetChildren()) do
-                    if tool:IsA("Tool") then
-                        processTool(tool)
-                    end
-                end
-            end
-    end
-})
-
-G.BackpackAddedConnection = game.Players.LocalPlayer.Backpack.ChildAdded:Connect(function(child)
-                if child:IsA("Tool") then
-                    task.wait(0.1)
-                    processTool(child)
-                end
-            end)
-
-            if char then
-                _G.CharacterToolAddedConnection = char.ChildAdded:Connect(function(child)
-                    if child:IsA("Tool") then
-                        task.wait(0.1)
-                        processTool(child)
-                    end
-                end)
-            end
-        end
-
-        _G.AnimMonitorConnection = game:GetService("RunService").Heartbeat:Connect(function()
-            if tick() % 0.5 < 0.01 then
-                local char = game.Players.LocalPlayer.Character
-                if char and char:FindFirstChild("Humanoid") then
-                    for _, track in pairs(char.Humanoid:GetPlayingAnimationTracks()) do
-                        if track.Animation then
-                            local animId = track.Animation.AnimationId
-                            local animName = track.Name:lower()
-
-                            if blockedAnimations[animId] or animName:match("punch") or animName:match("attack") or animName:match("right") then
-                                track:Stop()
-                            end
-                        end
-                    end
-                end
-            end
-        end)
-
-        _G.CharacterAddedConnection = game.Players.LocalPlayer.CharacterAdded:Connect(function(newChar)
             task.wait(1)
-            setupAnimationBlocking()
-            overrideToolActivation()
-
-            if _G.CharacterToolAddedConnection then
-                _G.CharacterToolAddedConnection:Disconnect()
-            end
-
-            _G.CharacterToolAddedConnection = newChar.ChildAdded:Connect(function(child)
-                if child:IsA("Tool") then
-                    task.wait(0.1)
-                    processTool(child)
-                end
-            end)
-        end)
-
-        setupAnimationBlocking()
-        overrideToolActivation()
-    else
-        if _G.AnimBlockConnection then
-            _G.AnimBlockConnection:Disconnect()
-            _G.AnimBlockConnection = nil
-        end
-
-        if _G.AnimMonitorConnection then
-            _G.AnimMonitorConnection:Disconnect()
-            _G.AnimMonitorConnection = nil
-        end
-
-        if _G.CharacterAddedConnection then
-            _G.CharacterAddedConnection:Disconnect()
-            _G.CharacterAddedConnection = nil
-        end
-
-        if _G.BackpackAddedConnection then
-            _G.BackpackAddedConnection:Disconnect()
-            _G.BackpackAddedConnection = nil
-        end
-
-        if _G.CharacterToolAddedConnection then
-            _G.CharacterToolAddedConnection:Disconnect()
-            _G.CharacterToolAddedConnection = nil
-        end
-
-if _G.ToolConnections then
-            for tool, connection in pairs(_G.ToolConnections) do
-                if connection then
-                    connection:Disconnect()
-                end
-                if tool and tool:GetAttribute("ActivatedOverride") then
-                    tool:SetAttribute("ActivatedOverride", nil)
-                end
-            end
-            _G.ToolConnections = nil
         end
     end
 end)
 
-switch:Set(false)
-
-
-local player = game:GetService("Players").LocalPlayer
-
-local comboActive = false
-local eggLoop, characterAddedConn
-
-local function ensureEggEquipped()
-    if not comboActive or not player.Character then return end
-    
-    local eggsInHand = 0
-    for _, item in ipairs(player.Character:GetChildren()) do
-        if item.Name == "Protein Egg" then
-            eggsInHand += 1
-            if eggsInHand > 1 then
-                item.Parent = player.Backpack
-            end
-        end
-    end
-    
-    if eggsInHand == 0 then
-        local egg = player.Backpack:FindFirstChild("Protein Egg")
-        if egg then
-            egg.Parent = player.Character
-        end
-    end
-end
-
-local comboSwitch = KillingTab:AddToggle("NaNToggle", {
-Title = "NaN Egg+NaN+Punch Combo",
-    Description = "Disable attack animations",
+FastRebTab:AddToggle("AutoShake", {
+    Title = "Auto Shake",
     Default = false,
-    Callback = function(Value)
-    comboActive = value
-    
-    if value then
-        changeSpeedSizeRemote:InvokeServer("changeSize", 0/0)
-        
-        eggLoop = task.spawn(function()
-            while comboActive do
-                ensureEggEquipped()
-                task.wait(0.2)
-            end
-        end)
-        
-        characterAddedConn = player.CharacterAdded:Connect(function(newChar)
-            task.wait(0.5)
-            ensureEggEquipped()
-        end)
-        
-        ensureEggEquipped()
-        
-    else
-        if eggLoop then task.cancel(eggLoop) end
-        if characterAddedConn then characterAddedConn:Disconnect() end
-    end
-end)}
-
-comboSwitch:Set(false)
-
--- Kill Everyone
-KillingTab:AddToggle("KillEveryoneToggle", {
-    Title = "Kill Everyone",
-    Description = "Attack all players",
-    Default = false,
-    Callback = function(Value)
-        _G.killAll = Value
-        if Value then
-            if not _G.killAllConnection then
-                _G.killAllConnection = game:GetService("RunService").Heartbeat:Connect(function()
-                    if _G.killAll then
-                        for _, player in ipairs(Players:GetPlayers()) do
-                            if player ~= localPlayer then
-                                -- Kill player logic would go here
-                            end
-                        end
-                    end
-                end)
-            end
-        else
-            if _G.killAllConnection then
-                _G.killAllConnection:Disconnect()
-                _G.killAllConnection = nil
-            end
+    Callback = function(state)
+        shakeRunning = state
+        if state then
+            activateShake()
         end
     end
 })
 
--- Death Ring
-KillingTab:AddSlider("DeathRingRange", {
-    Title = "Death Ring Range",
-    Description = "Set death ring range (1-140)",
-    Default = 20,
-    Min = 1,
-    Max = 140,
-    Rounding = 0,
-    Callback = function(Value)
-        _G.deathRingRange = Value
-    end
-})
-
-KillingTab:AddToggle("DeathRingToggle", {
-    Title = "Death Ring",
-    Description = "Enable death ring",
+-- Spin Fortune Wheel
+FastRebTab:AddToggle("SpinFortuneWheel", {
+    Title = "Spin Fortune Wheel",
     Default = false,
-    Callback = function(Value)
-        _G.deathRingEnabled = Value
-        -- Death ring logic would go here
-    end
-})
-
--- Farming Tab
-local autoFarmRunning = false
-local selectedTool = "Weight"
-
-FarmingTab:AddDropdown("ToolDropdown", {
-    Title = "Select Tool",
-    Description = "Choose farming tool",
-    Values = {"Weight", "Pushups", "Situps", "Handstands", "Fast Punch", "Stomp", "Ground Slam"},
-    Default = "Weight",
-    Callback = function(Value)
-        selectedTool = Value
-    end
-})
-
-FarmingTab:AddToggle("AutoFarmToggle", {
-    Title = "Start Auto Farm",
-    Description = "Start automatic farming",
-    Default = false,
-    Callback = function(Value)
-        autoFarmRunning = Value
-        if Value then
+    Callback = function(bool)
+        _G.AutoSpinWheel = bool
+        
+        if bool then
             spawn(function()
-                while autoFarmRunning do
-                    local player = localPlayer
-                    
-                    if selectedTool == "Weight" then
-                        if not player.Character:FindFirstChild("Weight") then
-                            local weightTool = player.Backpack:FindFirstChild("Weight")
-                            if weightTool then
-                                player.Character.Humanoid:EquipTool(weightTool)
-                            end
-                        end
-                        muscleEvent:FireServer("rep")
-                    elseif selectedTool == "Pushups" then
-                        -- Similar logic for other tools
-                        muscleEvent:FireServer("rep")
-                    elseif selectedTool == "Situps" then
-                        muscleEvent:FireServer("rep")
-                    elseif selectedTool == "Handstands" then
-                        muscleEvent:FireServer("rep")
-                    elseif selectedTool == "Fast Punch" then
-                        local punch = player.Backpack:FindFirstChild("Punch")
-                        if punch then
-                            punch.Parent = player.Character
-                            if punch:FindFirstChild("attackTime") then
-                                punch.attackTime.Value = 0
-                            end
-                        end
-                        muscleEvent:FireServer("punch", "rightHand")
-                        muscleEvent:FireServer("punch", "leftHand")
-                        if player.Character:FindFirstChild("Punch") then
-                            player.Character.Punch:Activate()
-                        end
-                    elseif selectedTool == "Stomp" then
-                        local stomp = player.Backpack:FindFirstChild("Stomp")
-                        if stomp then
-                            stomp.Parent = player.Character
-                            if stomp:FindFirstChild("attackTime") then
-                                stomp.attackTime.Value = 0
-                            end
-                        end
-                        muscleEvent:FireServer("stomp")
-                        if player.Character:FindFirstChild("Stomp") then
-                            player.Character.Stomp:Activate()
-                        end
-                    elseif selectedTool == "Ground Slam" then
-                        local groundSlam = player.Backpack:FindFirstChild("Ground Slam")
-                        if groundSlam then
-                            groundSlam.Parent = player.Character
-                            if groundSlam:FindFirstChild("attackTime") then
-                                groundSlam.attackTime.Value = 0
-                            end
-                        end
-                        muscleEvent:FireServer("slam")
-                        if player.Character:FindFirstChild("Ground Slam") then
-                            player.Character["Ground Slam"]:Activate()
-                        end
-                    end
-                    
-                    wait()
+                while _G.AutoSpinWheel and wait(1) do
+                    game:GetService("ReplicatedStorage").rEvents.openFortuneWheelRemote:InvokeServer("openFortuneWheel", game:GetService("ReplicatedStorage").fortuneWheelChances["Fortune Wheel"])
                 end
             end)
         end
     end
 })
 
--- Auto Rebirth
-local targetRebirths = 0
-local rebirths = localPlayer.leaderstats:WaitForChild("Rebirths")
-
-FarmingTab:AddInput("RebirthTargetInput", {
-    Title = "Set Rebirth Target",
-    Description = "Target number of rebirths",
-    Default = "0",
-    Numeric = true,
-    Callback = function(Value)
-        targetRebirths = tonumber(Value) or 0
+-- Jungle Lift
+FastRebTab:AddButton({
+    Title = "Jungle Lift",
+    Callback = function()
+        local player = game.Players.LocalPlayer
+        local char = player.Character or localPlayer.CharacterAdded:wait()
+        local hrp = char:WaitForChild("HumanoidRootPart")
+        hrp.CFrame = CFrame.new(-8642.396484375, 6.7980651855, 2086.1030273)
+        task.wait(0.2)
+        VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
+        task.wait(0.05)
+        VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
     end
 })
 
-FarmingTab:AddToggle("AutoRebirthToggle", {
-    Title = "Auto Rebirth",
-    Description = "Automatically rebirth when possible",
-    Default = false,
-    Callback = function(Value)
-        if Value then
-            spawn(function()
-                while Value and rebirths.Value < targetRebirths do
-                    ReplicatedStorage.rEvents.rebirthRemote:InvokeServer("rebirthRequest")
-                    wait(0.05)
-                end
-            end)
-        end
-    end
-})
+-- Fast Farm Tab
+local FarmingTab = Window:AddTab({Title = "Fast Farm", Icon = "lucide-zap"})
 
--- Teleport Tab
-local teleportLocations = {
-    ["Tiny Island"] = CFrame.new(-37.1, 9.2, 1919),
-    ["Main Island"] = CFrame.new(16.07, 9.08, 133.8),
-    ["Beach"] = CFrame.new(-8, 9, -169.2),
-    ["Muscle King Gym"] = CFrame.new(-8665.4, 17.21, -5792.9),
-    ["Jungle Gym"] = CFrame.new(-8543, 6.8, 2400),
-    ["Legends Gym"] = CFrame.new(4516, 991.5, -3856),
-    ["Infernal Gym"] = CFrame.new(-6759, 7.36, -1284),
-    ["Mythical Gym"] = CFrame.new(2250, 7.37, 1073.2),
-    ["Frost Gym"] = CFrame.new(-2623, 7.36, -409),
-}
-
-for name, cframe in pairs(teleportLocations) do
-    TeleportTab:AddButton({
-        Title = name,
-        Description = "Teleport to " .. name,
-        Callback = function()
-            local char = localPlayer.Character or localPlayer.CharacterAdded:Wait()
-            local hrp = char:WaitForChild("HumanoidRootPart")
-            hrp.CFrame = cframe
-        end
-    })
-end
-
--- Stats Tab
-local function formatNumber(n)
-    if n >= 1e15 then
-        return string.format("%.1fqa", n/1e15)
-    elseif n >= 1e12 then
-        return string.format("%.1ft", n/1e12)
-    elseif n >= 1e9 then
-        return string.format("%.1fb", n/1e9)
-    elseif n >= 1e6 then
-        return string.format("%.1fm", n/1e6)
-    elseif n >= 1e3 then
-        return string.format("%.1fk", n/1e3)
-    else
-        return tostring(n)
-    end
-end
-
-local function formatWithCommas(n)
-    local formatted = tostring(math.floor(n))
-    while true do
-        formatted, k = formatted:gsub("^(-?%d+)(%d%d%d)", '%1,%2')
-        if k == 0 then break end
-    end
-    return formatted
-end
-
--- Create stat displays
-local leaderstats = localPlayer:WaitForChild("leaderstats")
 local strengthStat = leaderstats:WaitForChild("Strength")
-local rebirthsStat = leaderstats:WaitForChild("Rebirths")
 local durabilityStat = localPlayer:WaitForChild("Durability")
-local killsStat = leaderstats:WaitForChild("Kills")
-local agilityStat = localPlayer:WaitForChild("Agility")
-local evilKarmaStat = localPlayer:WaitForChild("evilKarma")
-local goodKarmaStat = localPlayer:WaitForChild("goodKarma")
-local brawlsStat = leaderstats:WaitForChild("Brawls")
 
-local emojiMap = {
-    ["Time"] = "⏰",
-    ["Stats"] = "📊",
-    ["Strength"] = "💪",
-    ["Rebirths"] = "🔄",
-    ["Durability"] = "🛡️",
-    ["Kills"] = "💀",
-    ["Agility"] = "🏃",
-    ["Evil Karma"] = "😈",
-    ["Good Karma"] = "😇",
-    ["Brawls"] = "🥊"
-}
+-- Fast Farm variables
+local runFastRep = false
+local trackingStarted = false
+local startTime = 0
+local pausedElapsedTime = 0
+local initialStrength = strengthStat.Value
+local initialDurability = durabilityStat.Value
 
-local stats = {
-    { name = emojiMap["Strength"] .. " Strength", stat = strengthStat },
-    { name = emojiMap["Rebirths"] .. " Rebirths", stat = rebirthsStat },
-    { name = emojiMap["Durability"] .. " Durability", stat = durabilityStat },
-    { name = emojiMap["Agility"] .. " Agility", stat = agilityStat },
-    { name = emojiMap["Kills"] .. " Kills", stat = killsStat },
-    { name = emojiMap["Evil Karma"] .. " Evil Karma", stat = evilKarmaStat },
-    { name = emojiMap["Good Karma"] .. " Good Karma", stat = goodKarmaStat },
-    { name = emojiMap["Brawls"] .. " Brawls", stat = brawlsStat }
-}
+-- UI Elements for Fast Farm
+local stopwatchLabel = FarmingTab:AddLabel("0d 0h 0m 0s - Fast Rep Inactive")
+local projectedStrengthLabel = FarmingTab:AddLabel("Strength Pace: 0 /Hour | 0 /Day | 0 /Week")
+local projectedDurabilityLabel = FarmingTab:AddLabel("Durability Pace: 0 /Hour | 0 /Day | 0 /Week")
+local averageStrengthLabel = FarmingTab:AddLabel("Average Strength Pace: 0 /Hour | 0 /Day | 0 /Week")
+local averageDurabilityLabel = FarmingTab:AddLabel("Average Durability Pace: 0 /Hour | 0 /Day | 0 /Week")
+local strengthLabel = FarmingTab:AddLabel("Strength: 0 | Gained: 0")
+local durabilityLabel = FarmingTab:AddLabel("Durability: 0 | Gained: 0")
 
-local initialValues = {}
-local statLabels = {}
-
-for _, info in ipairs(stats) do
-    initialValues[info.name] = info.stat.Value
-    local label = StatsTab:AddParagraph({
-        Title = info.name,
-        Content = "Loading..."
-    })
-    statLabels[info.name] = label
-end
-
--- Update stats loop
-spawn(function()
-    while true do
-        for _, info in ipairs(stats) do
-            local currentValue = info.stat.Value
-            local gained = currentValue - initialValues[info.name]
-            
-            local displayText = string.format(
-                "%s: %s (%s) | Gained: %s (%s)",
-                info.name,
-                formatNumber(currentValue),
-                formatWithCommas(currentValue),
-                formatNumber(gained),
-                formatWithCommas(gained)
-            )
-            
-            statLabels[info.name]:SetDesc(displayText)
-        end
-        wait(0.1)
-    end
-end)
-
--- Time Display
-local startTime = tick()
-local timeLabel = StatsTab:AddParagraph({
-    Title = emojiMap["Time"] .. " Time:",
-    Content = "0d 0h 0m 0s"
-})
-
-spawn(function()
+-- Update labels
+task.spawn(function()
+    local lastCalcTime = tick()
+    local strengthHistory = {}
+    local durabilityHistory = {}
+    local calculationInterval = 10
+    
     while true do
         local currentTime = tick()
-        local elapsedTime = currentTime - startTime
+        local currentStrength = strengthStat.Value
+        local currentDurability = durabilityStat.Value
 
-        local days = math.floor(elapsedTime / (24 * 3600))
-        local hours = math.floor((elapsedTime % (24 * 3600)) / 3600)
-        local minutes = math.floor((elapsedTime % 3600) / 60)
-        local seconds = math.floor(elapsedTime % 60)
+        strengthLabel:SetText("Strength: " .. formatNumber(currentStrength) .. " | Gained: " .. formatNumber(currentStrength - initialStrength))
+        durabilityLabel:SetText("Durability: " .. formatNumber(currentDurability) .. " | Gained: " .. formatNumber(currentDurability - initialDurability))
 
-        timeLabel:SetDesc(string.format("%dd %dh %dm %ds", days, hours, minutes, seconds))
-        wait(0.1)
+        if runFastRep then
+            if not trackingStarted then
+                trackingStarted = true
+                startTime = currentTime
+                strengthHistory = {}
+                durabilityHistory = {}
+            end
+            local elapsedTime = pausedElapsedTime + (currentTime - startTime)
+            local days = math.floor(elapsedTime / (24 * 3600))
+            local hours = math.floor((elapsedTime % (24 * 3600)) / 3600)
+            local minutes = math.floor((elapsedTime % 3600) / 60)
+            local seconds = math.floor(elapsedTime % 60)
+            stopwatchLabel:SetText(string.format("%dd %dh %dm %ds - Fast Rep Running", days, hours, minutes, seconds))
+
+            table.insert(strengthHistory, {time = currentTime, value = currentStrength})
+            table.insert(durabilityHistory, {time = currentTime, value = currentDurability})
+
+            while #strengthHistory > 0 and currentTime - strengthHistory[1].time > calculationInterval do
+                table.remove(strengthHistory, 1)
+            end
+            while #durabilityHistory > 0 and currentTime - durabilityHistory[1].time > calculationInterval do
+                table.remove(durabilityHistory, 1)
+            end
+
+            if currentTime - lastCalcTime >= calculationInterval then
+                lastCalcTime = currentTime
+
+                if #strengthHistory >= 2 then
+                    local strengthDelta = strengthHistory[#strengthHistory].value - strengthHistory[1].value
+                    local strengthPerSecond = strengthDelta / calculationInterval
+                    local strengthPerHour = strengthPerSecond * 3600
+                    local strengthPerDay = strengthPerSecond * 86400
+                    local strengthPerWeek = strengthPerSecond * 604800
+                    projectedStrengthLabel:SetText("Strength Pace: " .. formatNumber(strengthPerHour) .. "/Hour | " .. formatNumber(strengthPerDay) .. "/Day | " .. formatNumber(strengthPerWeek) .. "/Week")
+                end
+
+                if #durabilityHistory >= 2 then
+                    local durabilityDelta = durabilityHistory[#durabilityHistory].value - durabilityHistory[1].value
+                    local durabilityPerSecond = durabilityDelta / calculationInterval
+                    local durabilityPerHour = durabilityPerSecond * 3600
+                    local durabilityPerDay = durabilityPerSecond * 86400
+                    local durabilityPerWeek = durabilityPerSecond * 604800
+                    projectedDurabilityLabel:SetText("Durability Pace: " .. formatNumber(durabilityPerHour) .. "/Hour | " .. formatNumber(durabilityPerDay) .. "/Day | " .. formatNumber(durabilityPerWeek) .. "/Week")
+                end
+
+                local totalElapsed = pausedElapsedTime + (currentTime - startTime)
+                if totalElapsed > 0 then
+                    local avgStrengthPerSecond = (currentStrength - initialStrength) / totalElapsed
+                    local avgStrengthPerHour = avgStrengthPerSecond * 3600
+                    local avgStrengthPerDay = avgStrengthPerSecond * 86400
+                    local avgStrengthPerWeek = avgStrengthPerSecond * 604800
+                    averageStrengthLabel:SetText("Average Strength Pace: " .. formatNumber(avgStrengthPerHour) .. "/Hour | " .. formatNumber(avgStrengthPerDay) .. "/Day | " .. formatNumber(avgStrengthPerWeek) .. "/Week")
+
+                    local avgDurabilityPerSecond = (currentDurability - initialDurability) / totalElapsed
+                    local avgDurabilityPerHour = avgDurabilityPerSecond * 3600
+                    local avgDurabilityPerDay = avgDurabilityPerSecond * 86400
+                    local avgDurabilityPerWeek = avgDurabilityPerSecond * 604800
+                    averageDurabilityLabel:SetText("Average Durability Pace: " .. formatNumber(avgDurabilityPerHour) .. "/Hour | " .. formatNumber(avgDurabilityPerDay) .. "/Day | " .. formatNumber(avgDurabilityPerWeek) .. "/Week")
+                end
+            end
+        else
+            if trackingStarted then
+                trackingStarted = false
+                pausedElapsedTime = pausedElapsedTime + (currentTime - startTime)
+                stopwatchLabel:SetText(string.format("%dd %dh %dm %ds - Fast Rep Stopped", math.floor(pausedElapsedTime / (24 * 3600)), math.floor((pausedElapsedTime % (24 * 3600)) / 3600), math.floor((pausedElapsedTime % 3600) / 60), math.floor(pausedElapsedTime % 60)))
+
+                projectedStrengthLabel:SetText("Strength Pace: 0 /Hour | 0 /Day | 0 /Week")
+                projectedDurabilityLabel:SetText("Durability Pace: 0 /Hour | 0 /Day | 0 /Week")
+                averageStrengthLabel:SetText("Average Strength Pace: 0 /Hour | 0 /Day | 0 /Week")
+                averageDurabilityLabel:SetText("Average Durability Pace: 0 /Hour | 0 /Day | 0 /Week")
+
+                strengthHistory = {}
+                durabilityHistory = {}
+            end
+        end
+
+        task.wait(0.05)
     end
 end)
 
--- Interface Settings
-InterfaceManager:SetFolder("SilenceV2Farming")
-InterfaceManager:BuildInterfaceSection(MainTab)
+-- Rep Speed Input
+local repsPerTick = 1
 
--- Save Manager
-SaveManager:SetFolder("SilenceV2Farming/Saves")
-SaveManager:BuildConfigSection(MainTab)
+local function getPing()
+    local stats = game:GetService("Stats")
+    local pingStat = stats:FindFirstChild("PerformanceStats") and stats.PerformanceStats:FindFirstChild("Ping")
+    return pingStat and pingStat:GetValue() or 0
+end
 
--- Notification
-Library:Notify({
-    Title = "SilenceV2 Farming",
-    Content = "Successfully loaded with KyypieUI!",
-    Duration = 5
+FarmingTab:AddInput("RepSpeed", {
+    Title = "Rep Speed",
+    Default = "1",
+    Numeric = true,
+    Finished = true,
+    Callback = function(value)
+        local num = tonumber(value)
+        if num and num > 0 then
+            repsPerTick = math.floor(num)
+        end
+    end
 })
 
--- Select first tab
-Window:SelectTab(1)
+-- Fast Rep Toggle
+local function fastRepLoop()
+    while runFastRep do
+        local startTick = tick()
+        while tick() - startTick < 0.75 and runFastRep do
+            for i = 1, repsPerTick do
+                muscleEvent:FireServer("rep")
+            end
+            task.wait(0.02)
+        end
+        while runFastRep and getPing() >= 350 do
+            task.wait(1)
+        end
+    end
+end
+
+FarmingTab:AddToggle("FastRep", {
+    Title = "Fast Rep",
+    Default = false,
+    Callback = function(state)
+        if state and not runFastRep then
+            runFastRep = true
+            task.spawn(fastRepLoop)
+        elseif not state and runFastRep then
+            runFastRep = false
+        end
+    end
+})
+
+-- Auto Egg
+local function activateProteinEgg()
+    local tool = localPlayer.Character:FindFirstChild("Protein Egg") or localPlayer.Backpack:FindFirstChild("Protein Egg")
+    if tool then
+        muscleEvent:FireServer("proteinEgg", tool)
+    end
+end
+
+local eggRunning = false
+
+task.spawn(function()
+    while true do
+        if eggRunning then
+            activateProteinEgg()
+            task.wait(1800)
+        else
+            task.wait(1)
+        end
+    end
+end)
+
+FarmingTab:AddToggle("AutoEgg", {
+    Title = "Auto Egg",
+    Default = false,
+    Callback = function(state)
+        eggRunning = state
+        if state then
+            activateProteinEgg()
+        end
+    end
+})
+
+-- Auto Shake (duplicate for farming tab)
+local shakeRunning2 = false
+
+local function activateShake2()
+    local tool = localPlayer.Character:FindFirstChild("Tropical Shake") or localPlayer.Backpack:FindFirstChild("Tropical Shake")
+    if tool then
+        muscleEvent:FireServer("tropicalShake", tool)
+    end
+end
+
+task.spawn(function()
+    while true do
+        if shakeRunning2 then
+            activateShake2()
+            task.wait(900)
+        else
+            task.wait(1)
+        end
+    end
+end)
+
+FarmingTab:AddToggle("AutoShakeFarm", {
+    Title = "Auto Shake",
+    Default = false,
+    Callback = function(state)
+        shakeRunning2 = state
+        if state then
+            activateShake2()
+        end
+    end
+})
+
+-- Spin Fortune Wheel (duplicate for farming tab)
+FarmingTab:AddToggle("SpinFortuneWheelFarm", {
+    Title = "Spin Fortune Wheel",
+    Default = false,
+    Callback = function(bool)
+        _G.AutoSpinWheel = bool
+        
+        if bool then
+            spawn(function()
+                while _G.AutoSpinWheel and wait(1) do
+                    game:GetService("ReplicatedStorage").rEvents.openFortuneWheelRemote:InvokeServer("openFortuneWheel", game:GetService("ReplicatedStorage").fortuneWheelChances["Fortune Wheel"])
+                end
+            end)
+        end
+    end
+})
+
+-- Jungle Squat
+FarmingTab:AddButton({
+    Title = "Jungle Squat",
+    Callback = function()
+        local player = game.Players.LocalPlayer
+        local char = player.Character or localPlayer.CharacterAdded:wait()
+        local hrp = char:WaitForChild("HumanoidRootPart")
+        hrp.CFrame = CFrame.new(-8371.43359375, 6.79806327, 2858.88525390)
+        task.wait(0.2)
+        VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
+        task.wait(0.05)
+        VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
+    end
+})
+
+-- Anti Lag (duplicate for farming tab)
+FarmingTab:AddButton({
+    Title = "Anti Lag",
+    Callback = function()
+        local player = game.Players.LocalPlayer
+        local playerGui = player:WaitForChild("PlayerGui")
+        local lighting = game:GetService("Lighting")
+
+        for _, gui in pairs(playerGui:GetChildren()) do
+            if gui:IsA("ScreenGui") then
+                gui:Destroy()
+            end
+        end
+
+        local function darkenSky()
+            for _, v in pairs(lighting:GetChildren()) do
+                if v:IsA("Sky") then
+                    v:Destroy()
+                end
+            end
+
+            local darkSky = Instance.new("Sky")
+            darkSky.Name = "DarkSky"
+            darkSky.SkyboxBk = "rbxassetid://0"
+            darkSky.SkyboxDn = "rbxassetid://0"
+            darkSky.SkyboxFt = "rbxassetid://0"
+            darkSky.SkyboxLf = "rbxassetid://0"
+            darkSky.SkyboxRt = "rbxassetid://0"
+            darkSky.SkyboxUp = "rbxassetid://0"
+            darkSky.Parent = lighting
+
+            lighting.Brightness = 0
+            lighting.ClockTime = 0
+            lighting.TimeOfDay = "00:00:00"
+            lighting.OutdoorAmbient = Color3.new(0, 0, 0)
+            lighting.Ambient = Color3.new(0, 0, 0)
+            lighting.FogColor = Color3.new(0, 0, 0)
+            lighting.FogEnd = 100
+
+            task.spawn(function()
+                while true do
+                    wait(5)
+                    if not lighting:FindFirstChild("DarkSky") then
+                        darkSky:Clone().Parent = lighting
+                    end
+                    lighting.Brightness = 0
+                    lighting.ClockTime = 0
+                    lighting.OutdoorAmbient = Color3.new(0, 0, 0)
+                    lighting.Ambient = Color3.new(0, 0, 0)
+                    lighting.FogColor = Color3.new(0, 0, 0)
+                    lighting.FogEnd = 100
+                end
+            end)
+        end
+
+        local function removeParticleEffects()
+            for _, obj in pairs(workspace:GetDescendants()) do
+                if obj:IsA("ParticleEmitter") then
+                    obj:Destroy()
+                end
+            end
+        end
+
+        local function removeLightSources()
+            for _, obj in pairs(workspace:GetDescendants()) do
+                if obj:IsA("PointLight") or obj:IsA("SpotLight") or obj:IsA("SurfaceLight") then
+                    obj:Destroy()
+                end
+            end
+        end
+
+        removeParticleEffects()
+        removeLightSources()
+        darkenSky()
+    end
+})
+
+-- Equip Swift Samurai
+FarmingTab:AddButton({
+    Title = "Equip Swift Samurai",
+    Callback = function()
+        local function unequipPets()
+            for _, folder in pairs(localPlayer.petsFolder:GetChildren()) do
+                if folder:IsA("Folder") then
+                    for _, pet in pairs(folder:GetChildren()) do
+                        ReplicatedStorage.rEvents.equipPetEvent:FireServer("unequipPet", pet)
+                    end
+                end
+            end
+            task.wait(0.1)
+        end
+
+        local function equipPetsByName(name)
+            unequipPets()
+            task.wait(0.01)
+            for _, pet in pairs(localPlayer.petsFolder.Unique:GetChildren()) do
+                if pet.Name == name then
+                    ReplicatedStorage.rEvents.equipPetEvent:FireServer("equipPet", pet)
+                end
+            end
+        end
+        
+        equipPetsByName("Swift Samurai")
+    end
+})
+
+-- Info Tab
+local infoTab = Window:AddTab({Title = "Info", Icon = "lucide-info"})
+
+infoTab:AddLabel("Made by Henne ♥️")
+infoTab:AddLabel("discord.gg/silencev1")
+
+infoTab:AddButton({
+    Title = "Copy Invite",
+    Callback = function()
+        local link = "https://discord.gg/9eFf93Kg8D"
+        if setclipboard then
+            setclipboard(link)
+            game.StarterGui:SetCore("SendNotification", {
+                Title = "Link Copied!";
+                Text = "You can continue to Discord now.";
+                Duration = 3;
+            })
+        else
+            game.StarterGui:SetCore("SendNotification", {
+                Title = "Error!";
+                Text = "Not Supported.";
+                Duration = 3;
+            })
+        end
+    end
+})
+
+infoTab:AddLabel("VERSION//6.9.6.9")
+
+-- Initialize SaveManager and InterfaceManager
+SaveManager:SetLibrary(Library)
+InterfaceManager:SetLibrary(Library)
+InterfaceManager:SetFolder("SilenceV2Farming")
+
+-- Build interface section
+InterfaceManager:BuildInterfaceSection(infoTab)
+
+-- Build config section  
+SaveManager:BuildConfigSection(infoTab)
+
+-- Load settings
+InterfaceManager:LoadSettings()
+SaveManager:LoadAutoloadConfig()
+
+-- Show notification
+Library:Notify({
+    Title = "Markyy Creampied ur ASS!",
+    Content = "Successfully loaded Kyypie-UI!",
+    Duration = 5
+})
