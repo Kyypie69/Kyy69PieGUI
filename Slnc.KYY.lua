@@ -69,7 +69,7 @@ local paceHistoryWeek = {}
 local maxHistoryLength = 20
 
 -- UI Elements for Fast Rebirth
-local serverLabel = packSection:AddLabel("Time:")
+local serverLabel = packSection:AddParagraph("Time:")
 serverLabel:SetText("Time:")
 
 local timeLabel = FastRebTab:AddLabel("0d 0h 0m 0s - Inactive")
