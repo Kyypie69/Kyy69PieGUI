@@ -72,10 +72,10 @@ local maxHistoryLength = 20
 local serverLabel = packSection:AddParagraph("Time:")
 serverLabel:SetText("Time:")
 
-local timeLabel = FastRebTab:AddLabel("0d 0h 0m 0s - Inactive")
-local paceLabel = FastRebTab:AddLabel("Pace: 0 / Hour | 0 / Day | 0 / Week")
-local averagePaceLabel = FastRebTab:AddLabel("Average Pace: 0 / Hour | 0 / Day | 0 / Week")
-local rebirthsStatsLabel = FastRebTab:AddLabel("Rebirths: "..formatNumber(rebirthsStat.Value).." | Gained: 0")
+local timeLabel = packSection:AddLabel("0d 0h 0m 0s - Inactive")
+local paceLabel = packSection:AddLabel("Pace: 0 / Hour | 0 / Day | 0 / Week")
+local averagePaceLabel = packSection:AddLabel("Average Pace: 0 / Hour | 0 / Day | 0 / Week")
+local rebirthsStatsLabel = packSection:AddLabel("Rebirths: "..formatNumber(rebirthsStat.Value).." | Gained: 0")
 
 -- Functions
 local function updateRebirthsLabel()
