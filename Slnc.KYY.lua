@@ -1,20 +1,5 @@
 -- Load KyypieUI Library
-local LIB_URL = "https://raw.githubusercontent.com/Kyypie69/Library.UI/refs/heads/main/KyypieUI.lua"
-local ok, a, b, c = pcall(function()
-    local source = game:HttpGet(LIB_URL)
-    return loadstring(source)()
-end)
-local Library, SaveManager, InterfaceManager
-if ok then
-    Library, SaveManager, InterfaceManager = a, b, c
-else
-    if getgenv and getgenv().Fluent then
-        Library = getgenv().Fluent
-        warn("Loaded library from getgenv().Fluent as fallback.")
-    else
-        error("Failed to load UI library from URL: " .. tostring(a))
-    end
-end
+local Library, SaveManager, InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/Kyypie69/Library.UI/refs/heads/main/kyyADLink.lua"))()
 
 -- Services
 local Players = game:GetService("Players")
@@ -33,12 +18,11 @@ local rebirthsStat = leaderstats:WaitForChild("Rebirths")
 
 -- Create main window
 local Window = Library:CreateWindow({
-    Title = " KYYPIE HUB ",
-    SubTitle = "Version 6.9 | by Markyy",
-    Size = UDim2.fromOffset(500, 350),
-    TabWidth = 150,
-    Theme = "LightBlue",
+    Title = "Silence | Farming",
+    Size = UDim2.new(0, 600, 0, 600),
+    Theme = "Red", -- Using Red theme for farming
     Acrylic = false,
+    TabWidth = 160
 })
 
 -- Format number function
@@ -51,11 +35,100 @@ local function formatNumber(num)
     return string.format("%.0f", num)
 end
 
-local rebirthTab = Window:AddTab({Title = "Fast Rebirth", Icon = "lucide-refresh-cw"})
-local strengthTab = Window:AddTab({Title = "Fast Strength", Icon = "lucide-zap"})
-local infoTab = Window:AddTab({Title = "Info", Icon = "lucide-info"})
+-- Fast Rebirth Tab
+local FastRebTab = Window:AddTab({Title = "Fast Rebirth", Icon = "lucide-refresh-cw"})
 
-local packSection = rebirthTab:AddSection("PACKS FARM REBIRTH")
+-- Fast Rebirth variables
+local isRunning = false
+local startTime = 0
+local totalElapsed = 0
+local initialRebirths = rebirthsStat.Value
+local rebirthCount = 0
+local paceHistoryHour = {}
+local paceHistoryDay = {}
+local paceHistoryWeek = {}
+local maxHistoryLength = 20
+
+-- UI Elements for Fast Rebirth
+local serverLabel = FastRebTab:AddLabel("Time:")
+serverLabel:SetText("Time:")
+
+local timeLabel = FastRebTab:AddLabel("0d 0h 0m 0s - Inactive")
+local paceLabel = FastRebTab:AddLabel("Pace: 0 / Hour | 0 / Day | 0 / Week")
+local averagePaceLabel = FastRebTab:AddLabel("Average Pace: 0 / Hour | 0 / Day | 0 / Week")
+local rebirthsStatsLabel = FastRebTab:AddLabel("Rebirths: "..formatNumber(rebirthsStat.Value).." | Gained: 0")
+
+-- Functions
+local function updateRebirthsLabel()
+    local gained = rebirthsStat.Value - initialRebirths
+    rebirthsStatsLabel:SetText(string.format("Rebirths: %s | Gained: %s", 
+                                           formatNumber(rebirthsStat.Value), 
+                                           formatNumber(gained)))
+end
+
+local function updateUI()
+    local currentTime = tick()
+    local elapsed = isRunning and (currentTime - startTime + totalElapsed) or totalElapsed
+    
+    local days = math.floor(elapsed / 86400)
+    local hours = math.floor((elapsed % 86400) / 3600)
+    local minutes = math.floor((elapsed % 3600) / 60)
+    local seconds = math.floor(elapsed % 60)
+    
+    timeLabel:SetText(string.format("%dd %dh %dm %ds - %s", days, hours, minutes, seconds,
+                                 isRunning and "Rebirthing" or "Paused"))
+end
+
+local function calculatePaceOnRebirth()
+    rebirthCount = rebirthCount + 1
+    
+    if rebirthCount < 2 then
+        lastRebirthTime = tick()
+        lastRebirthValue = rebirthsStat.Value
+        return
+    end
+
+    local now = tick()
+    local gained = rebirthsStat.Value - lastRebirthValue
+
+    if gained > 0 then
+        local avgTimePerRebirth = (now - lastRebirthTime) / gained
+        local paceHour = 3600 / avgTimePerRebirth
+        local paceDay = 86400 / avgTimePerRebirth
+        local paceWeek = 604800 / avgTimePerRebirth
+
+        paceLabel:SetText(string.format("Pace: %s / Hour | %s / Day | %s / Week",
+            formatNumber(paceHour), formatNumber(paceDay), formatNumber(paceWeek)))
+
+        table.insert(paceHistoryHour, paceHour)
+        table.insert(paceHistoryDay, paceDay)
+        table.insert(paceHistoryWeek, paceWeek)
+
+        if #paceHistoryHour > maxHistoryLength then
+            table.remove(paceHistoryHour, 1)
+            table.remove(paceHistoryDay, 1)
+            table.remove(paceHistoryWeek, 1)
+        end
+
+        local function average(tbl)
+            local sum = 0
+            for _, v in ipairs(tbl) do
+                sum = sum + v
+            end
+            return #tbl > 0 and (sum / #tbl) or 0
+        end
+
+        local avgHour = average(paceHistoryHour)
+        local avgDay = average(paceHistoryDay)
+        local avgWeek = average(paceHistoryWeek)
+
+        averagePaceLabel:SetText(string.format("Average Pace: %s / Hour | %s / Day | %s / Week",
+            formatNumber(avgHour), formatNumber(avgDay), formatNumber(avgWeek)))
+
+        lastRebirthTime = now
+        lastRebirthValue = rebirthsStat.Value
+    end
+end
 
 local function managePets(petName)
     for _, folder in pairs(localPlayer.petsFolder:GetChildren()) do
@@ -107,7 +180,7 @@ local function fastRebirthLoop()
 end
 
 -- Fast Rebirth Toggle
-packSection:AddToggle("FastRebirth", {
+FastRebTab:AddToggle("FastRebirth", {
     Title = "Fast Rebirth",
     Default = false,
     Callback = function(state)
@@ -161,7 +234,7 @@ end)
 local sizeRunning = false
 local sizeThread = nil
 
-packSection:AddToggle("SetSize1", {
+FastRebTab:AddToggle("SetSize1", {
     Title = "Set Size 1",
     Default = false,
     Callback = function(bool)
@@ -179,7 +252,7 @@ packSection:AddToggle("SetSize1", {
 })
 
 -- Anti Lag Button
-packSection:AddButton({
+FastRebTab:AddButton({
     Title = "Anti Lag",
     Callback = function()
         local player = game.Players.LocalPlayer
@@ -259,7 +332,7 @@ packSection:AddButton({
 local lockRunning = false
 local lockThread = nil
 
-packSection:AddToggle("LockPosition", {
+FastRebTab:AddToggle("LockPosition", {
     Title = "Lock Position",
     Default = false,
     Callback = function(state)
@@ -305,7 +378,7 @@ task.spawn(function()
     end
 end)
 
-packSection:AddToggle("AutoShake", {
+FastRebTab:AddToggle("AutoShake", {
     Title = "Auto Shake",
     Default = false,
     Callback = function(state)
@@ -317,7 +390,7 @@ packSection:AddToggle("AutoShake", {
 })
 
 -- Spin Fortune Wheel
-packSection:AddToggle("SpinFortuneWheel", {
+FastRebTab:AddToggle("SpinFortuneWheel", {
     Title = "Spin Fortune Wheel",
     Default = false,
     Callback = function(bool)
@@ -334,7 +407,7 @@ packSection:AddToggle("SpinFortuneWheel", {
 })
 
 -- Jungle Lift
-packSection:AddButton({
+FastRebTab:AddButton({
     Title = "Jungle Lift",
     Callback = function()
         local player = game.Players.LocalPlayer
@@ -349,7 +422,7 @@ packSection:AddButton({
 })
 
 -- Fast Farm Tab
-local fastSection = strengthTab:AddSection("PACKS FARM STRENGTH")
+local FarmingTab = Window:AddTab({Title = "Fast Farm", Icon = "lucide-zap"})
 
 local strengthStat = leaderstats:WaitForChild("Strength")
 local durabilityStat = localPlayer:WaitForChild("Durability")
@@ -363,13 +436,13 @@ local initialStrength = strengthStat.Value
 local initialDurability = durabilityStat.Value
 
 -- UI Elements for Fast Farm
-local stopwatchLabel = fastSection:AddLabel("0d 0h 0m 0s - Fast Rep Inactive")
-local projectedStrengthLabel = fastSection:AddLabel("Strength Pace: 0 /Hour | 0 /Day | 0 /Week")
-local projectedDurabilityLabel = fastSection:AddLabel("Durability Pace: 0 /Hour | 0 /Day | 0 /Week")
-local averageStrengthLabel = fastSection:AddLabel("Average Strength Pace: 0 /Hour | 0 /Day | 0 /Week")
-local averageDurabilityLabel = fastSection:AddLabel("Average Durability Pace: 0 /Hour | 0 /Day | 0 /Week")
-local strengthLabel = fastSection:AddLabel("Strength: 0 | Gained: 0")
-local durabilityLabel = fastSection:AddLabel("Durability: 0 | Gained: 0")
+local stopwatchLabel = FarmingTab:AddLabel("0d 0h 0m 0s - Fast Rep Inactive")
+local projectedStrengthLabel = FarmingTab:AddLabel("Strength Pace: 0 /Hour | 0 /Day | 0 /Week")
+local projectedDurabilityLabel = FarmingTab:AddLabel("Durability Pace: 0 /Hour | 0 /Day | 0 /Week")
+local averageStrengthLabel = FarmingTab:AddLabel("Average Strength Pace: 0 /Hour | 0 /Day | 0 /Week")
+local averageDurabilityLabel = FarmingTab:AddLabel("Average Durability Pace: 0 /Hour | 0 /Day | 0 /Week")
+local strengthLabel = FarmingTab:AddLabel("Strength: 0 | Gained: 0")
+local durabilityLabel = FarmingTab:AddLabel("Durability: 0 | Gained: 0")
 
 -- Update labels
 task.spawn(function()
@@ -475,7 +548,7 @@ local function getPing()
     return pingStat and pingStat:GetValue() or 0
 end
 
-fastSection:AddInput("RepSpeed", {
+FarmingTab:AddInput("RepSpeed", {
     Title = "Rep Speed",
     Default = "1",
     Numeric = true,
@@ -504,7 +577,7 @@ local function fastRepLoop()
     end
 end
 
-fastSection:AddToggle("FastRep", {
+FarmingTab:AddToggle("FastRep", {
     Title = "Fast Rep",
     Default = false,
     Callback = function(state)
@@ -538,7 +611,7 @@ task.spawn(function()
     end
 end)
 
-fastSection:AddToggle("AutoEgg", {
+FarmingTab:AddToggle("AutoEgg", {
     Title = "Auto Egg",
     Default = false,
     Callback = function(state)
@@ -570,7 +643,7 @@ task.spawn(function()
     end
 end)
 
-fastSection:AddToggle("AutoShakeFarm", {
+FarmingTab:AddToggle("AutoShakeFarm", {
     Title = "Auto Shake",
     Default = false,
     Callback = function(state)
@@ -582,7 +655,7 @@ fastSection:AddToggle("AutoShakeFarm", {
 })
 
 -- Spin Fortune Wheel (duplicate for farming tab)
-fastSection:AddToggle("SpinFortuneWheelFarm", {
+FarmingTab:AddToggle("SpinFortuneWheelFarm", {
     Title = "Spin Fortune Wheel",
     Default = false,
     Callback = function(bool)
@@ -599,7 +672,7 @@ fastSection:AddToggle("SpinFortuneWheelFarm", {
 })
 
 -- Jungle Squat
-fastSection:AddButton({
+FarmingTab:AddButton({
     Title = "Jungle Squat",
     Callback = function()
         local player = game.Players.LocalPlayer
@@ -614,7 +687,7 @@ fastSection:AddButton({
 })
 
 -- Anti Lag (duplicate for farming tab)
-fastSection:AddButton({
+FarmingTab:AddButton({
     Title = "Anti Lag",
     Callback = function()
         local player = game.Players.LocalPlayer
@@ -691,7 +764,7 @@ fastSection:AddButton({
 })
 
 -- Equip Swift Samurai
-fastSection:AddButton({
+FarmingTab:AddButton({
     Title = "Equip Swift Samurai",
     Callback = function()
         local function unequipPets()
@@ -720,12 +793,12 @@ fastSection:AddButton({
 })
 
 -- Info Tab
-local infSection = infoTab:AddSection("INFORMATION")
+local infoTab = Window:AddTab({Title = "Info", Icon = "lucide-info"})
 
-infSection:AddLabel("Made by KYY ♥️")
-infSection:AddLabel("discord.gg/silencev1")
+infoTab:AddLabel("Made by Henne ♥️")
+infoTab:AddLabel("discord.gg/silencev1")
 
-infSection:AddButton({
+infoTab:AddButton({
     Title = "Copy Invite",
     Callback = function()
         local link = "https://discord.gg/9eFf93Kg8D"
@@ -746,7 +819,7 @@ infSection:AddButton({
     end
 })
 
-infSection:AddLabel("VERSION//6.9.6.9")
+infoTab:AddLabel("VERSION//2.0.0")
 
 -- Initialize SaveManager and InterfaceManager
 SaveManager:SetLibrary(Library)
@@ -765,7 +838,7 @@ SaveManager:LoadAutoloadConfig()
 
 -- Show notification
 Library:Notify({
-    Title = "Markyy Creampied ur ASS!",
-    Content = "Successfully loaded Kyypie-UI!",
+    Title = "SilenceV2Farming",
+    Content = "Successfully loaded with KyypieUI!",
     Duration = 5
 })
