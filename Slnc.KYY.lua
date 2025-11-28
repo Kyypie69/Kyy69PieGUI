@@ -55,6 +55,7 @@ local rebirthTab = Window:AddTab({Title = "Fast Rebirth", Icon = "lucide-refresh
 local strengthTab = Window:AddTab({Title = "Fast Strength", Icon = "lucide-zap"})
 local infoTab = Window:AddTab({Title = "Info", Icon = "lucide-info"})
 
+local packSection = rebirthTab:AddSection("PACKS FARM REBIRTH")
 
 -- grab the live value that the server updates
 local rebirthsObj = localPlayer:WaitForChild("leaderstats"):WaitForChild("Rebirths")
@@ -68,8 +69,6 @@ local function formatNumber(n)
     if n >= 1e3  then return string.format("%.2fK", n/1e3)  end
     return tostring(math.floor(n))
 end
-
-local packSection = rebirthTab:AddSection("PACKS FARM REBIRTH")
 
 -- state
 local isRunning      = false
@@ -88,112 +87,100 @@ local serverLabel        = packSection:AddLabel("Server-time tracker")
 local timeLabel          = packSection:AddLabel("0d 0h 0m 0s – Inactive")
 local paceLabel          = packSection:AddLabel("Pace: 0 / Hour | 0 / Day | 0 / Week")
 local averagePaceLabel   = packSection:AddLabel("Average Pace: 0 / Hour | 0 / Day | 0 / Week")
-local rebirthsStatsLabel = packSection:AddLabel(
-    "Rebirths: " .. formatNumber(rebirthsObj.Value) .. " | Gained: 0")
+local rebirthsStatsLabel = packSection:AddLabel("Rebirths: " .. formatNumber(rebirthsObj.Value) .. " | Gained: 0")
+
+--------------------------------------------------------------------
+--  Pace-viewer for “Fast Rebirth” tab
+--------------------------------------------------------------------
+local RunService = game:GetService("RunService")
+
+-- CONFIG ------------------------------------------------------------------
+local HISTORY_LIMIT = 10000          -- max rebirth-time stamps we keep
+---------------------------------------------------------------------------
+
+-- ring-buffer for time-stamps
+local timeStamps   = {}               -- unix times
+local tsIndex      = 0                -- next write position
+local tsCount      = 0                -- how many valid entries
+
+-- snapshot when the GUI opened
+local startTime    = os.time()
+local startRebirth = rebirthsObj.Value
 
 --------------------------------------------------------------------
 -- helpers
 --------------------------------------------------------------------
-local function updateRebirthsLabel()
-    local gained = rebirthsObj.Value - initialAmount
-    rebirthsStatsLabel:SetText(
-        "Rebirths: " .. formatNumber(rebirthsObj.Value) ..
-        " | Gained: " .. formatNumber(gained))
+local function unix() return os.time() end
+
+local function insertTimeStamp()
+    tsIndex = tsIndex + 1
+    if tsIndex > HISTORY_LIMIT then tsIndex = 1 end
+    timeStamps[tsIndex] = unix()
+    tsCount = math.min(tsCount + 1, HISTORY_LIMIT)
 end
 
-local function average(t)
-    local s = 0
-    for _,v in ipairs(t) do s = s + v end
-    return #t > 0 and (s/#t) or 0
-end
-
---------------------------------------------------------------------
--- pace calculator – runs every time Rebirths changes
---------------------------------------------------------------------
-local function onRebirthChanged()
-    updateRebirthsLabel()
-    if not isRunning then return end          -- only track while “running”
-
-    local newVal = rebirthsObj.Value
-    if newVal <= lastRebirthVal then return end -- ignore non-gains
-
-    rebirthCount = rebirthCount + 1
-    local now = tick()
-    local gained = newVal - lastRebirthVal
-    local timeTaken = now - lastRebirthTime
-
-    local perRebirth = timeTaken / gained
-    local hour = 3600  / perRebirth
-    local day  = 86400 / perRebirth
-    local week = 604800/ perRebirth
-
-    -- push into rolling history
-    table.insert(paceHistoryHour, hour)
-    table.insert(paceHistoryDay,  day)
-    table.insert(paceHistoryWeek, week)
-    if #paceHistoryHour > maxHistoryLength then
-        table.remove(paceHistoryHour, 1)
-        table.remove(paceHistoryDay,  1)
-        table.remove(paceHistoryWeek, 1)
+-- count how many stamps fall in the last N seconds
+local function countLast(seconds)
+    local cut = unix() - seconds
+    local c = 0
+    -- newest entries are at the highest indices
+    for i = 1, tsCount do
+        local idx = (tsIndex - i + 1)
+        if idx < 1 then idx = idx + HISTORY_LIMIT end
+        if timeStamps[idx] and timeStamps[idx] > cut then
+            c = c + 1
+        else
+            break        -- older ones will be even smaller
+        end
     end
-
-    -- update labels
-    paceLabel:SetText(string.format(
-        "Pace: %s / Hour | %s / Day | %s / Week",
-        formatNumber(hour), formatNumber(day), formatNumber(week)))
-
-    averagePaceLabel:SetText(string.format(
-        "Average Pace: %s / Hour | %s / Day | %s / Week",
-        formatNumber(average(paceHistoryHour)),
-        formatNumber(average(paceHistoryDay)),
-        formatNumber(average(paceHistoryWeek))))
-
-    lastRebirthVal = newVal
-    lastRebirthTime = now
+    return c
 end
-rebirthsObj.Changed:Connect(onRebirthChanged)
 
 --------------------------------------------------------------------
--- stop-watch updater
+-- detect rebirth
 --------------------------------------------------------------------
-RunService.Heartbeat:Connect(function()
-    if not isRunning then return end
-    local elapsed = tick() - startTime + totalElapsed
-    local d = math.floor(elapsed/86400)
-    local h = math.floor(elapsed%86400/3600)
-    local m = math.floor(elapsed%3600/60)
-    local s = math.floor(elapsed%60)
-    timeLabel:SetText(
-        string.format("%dd %dh %dm %ds – Rebirthing", d, h, m, s))
+rebirthsObj.Changed:Connect(function(new)
+    if new > rebirthsObj.Value then
+        insertTimeStamp()
+    end
 end)
 
 --------------------------------------------------------------------
--- toggle button (start / pause)
+-- update labels every second
 --------------------------------------------------------------------
-packSection:AddToggle("AutoTrack", {
-    Title = "Track rebirth pace",
-    Default = false,
-    Callback = function(v)
-        isRunning = v
-        if v then
-            startTime = tick()
-            initialAmount = rebirthsObj.Value
-            lastRebirthVal = rebirthsObj.Value
-            lastRebirthTime = tick()
-            rebirthCount = 0
-            paceHistoryHour, paceHistoryDay, paceHistoryWeek = {}, {}, {}
-        else
-            totalElapsed = totalElapsed + (tick() - startTime)
-            timeLabel:SetText(
-                string.format("%dd %dh %dm %ds – Paused",
-                    math.floor(totalElapsed/86400),
-                    math.floor(totalElapsed%86400/3600),
-                    math.floor(totalElapsed%3600/60),
-                    math.floor(totalElapsed%60)))
-        end
-    end
-})
+RunService.Heartbeat:Connect(function()
+    local now   = unix()
+    local gained = rebirthsObj.Value - startRebirth
 
+    -- counts
+    local lastHour = countLast(3600)
+    local lastDay  = countLast(86400)
+    local lastWeek = countLast(604800)
+
+    -- averages since script started
+    local elapsed = now - startTime
+    local avgHour = elapsed > 0 and (gained / elapsed * 3600) or 0
+    local avgDay  = avgHour * 24
+    local avgWeek = avgHour * 168
+
+    -- format
+    local function fmt(n) return string.format("%.0f", n) end
+
+    paceLabel:SetText(
+        string.format("Pace: %s / Hour | %s / Day | %s / Week",
+            fmt(lastHour), fmt(lastDay), fmt(lastWeek))
+    )
+
+    averagePaceLabel:SetText(
+        string.format("Average Pace: %s / Hour | %s / Day | %s / Week",
+            fmt(avgHour), fmt(avgDay), fmt(avgWeek))
+    )
+
+    rebirthsStatsLabel:SetText(
+        string.format("Rebirths: %s | Gained: %s",
+            formatNumber(rebirthsObj.Value), formatNumber(gained))
+    )
+end)
 local function managePets(petName)
     for _, folder in pairs(localPlayer.petsFolder:GetChildren()) do
         if folder:IsA("Folder") then
