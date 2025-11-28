@@ -363,13 +363,13 @@ local initialStrength = strengthStat.Value
 local initialDurability = durabilityStat.Value
 
 -- UI Elements for Fast Farm
-local stopwatchLabel = FarmingTab:AddLabel("0d 0h 0m 0s - Fast Rep Inactive")
-local projectedStrengthLabel = FarmingTab:AddLabel("Strength Pace: 0 /Hour | 0 /Day | 0 /Week")
-local projectedDurabilityLabel = FarmingTab:AddLabel("Durability Pace: 0 /Hour | 0 /Day | 0 /Week")
-local averageStrengthLabel = FarmingTab:AddLabel("Average Strength Pace: 0 /Hour | 0 /Day | 0 /Week")
-local averageDurabilityLabel = FarmingTab:AddLabel("Average Durability Pace: 0 /Hour | 0 /Day | 0 /Week")
-local strengthLabel = FarmingTab:AddLabel("Strength: 0 | Gained: 0")
-local durabilityLabel = FarmingTab:AddLabel("Durability: 0 | Gained: 0")
+local stopwatchLabel = fastSection:AddLabel("0d 0h 0m 0s - Fast Rep Inactive")
+local projectedStrengthLabel = fastSection:AddLabel("Strength Pace: 0 /Hour | 0 /Day | 0 /Week")
+local projectedDurabilityLabel = fastSection:AddLabel("Durability Pace: 0 /Hour | 0 /Day | 0 /Week")
+local averageStrengthLabel = fastSection:AddLabel("Average Strength Pace: 0 /Hour | 0 /Day | 0 /Week")
+local averageDurabilityLabel = fastSection:AddLabel("Average Durability Pace: 0 /Hour | 0 /Day | 0 /Week")
+local strengthLabel = fastSection:AddLabel("Strength: 0 | Gained: 0")
+local durabilityLabel = fastSection:AddLabel("Durability: 0 | Gained: 0")
 
 -- Update labels
 task.spawn(function()
