@@ -1,11 +1,11 @@
---[[  Silence V2  ➜  EleriumV2xKYY  (rev3)  ]]
+--[[  EleriumV2xKYY  (ver.69)  ]]
 local Library = loadstring(game:HttpGet(
     "https://raw.githubusercontent.com/Kyypie69/Library.UI/refs/heads/main/KYY.luau"))()
 
 local Win = Library.new({
     MainColor      = Color3.fromRGB(138,43,226),
     ToggleKey      = Enum.KeyCode.Insert,
-    MinSize        = Vector2.new(450,350),
+    MinSize        = Vector2.new(450,320),
     CanResize      = false
 })
 
@@ -102,8 +102,8 @@ end)
 
 -------------------- window / tabs --------------------
 local Main = Win:CreateWindow("KYY HUB 0.6.9 pos  |  PACKS Farming UI","Markyy")
-local RebirthTab = Main:CreateTab("Fast Rebirth")
-local StrengthTab= Main:CreateTab("Fast Strength")
+local RebirthTab = Main:CreateTab("REB1RTH")
+local StrengthTab= Main:CreateTab("STR3NGTH")
 
 -------------------- Fast Rebirth --------------------
 local rebStartTime = 0; local rebElapsed = 0; local rebRunning = false
