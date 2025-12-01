@@ -5,7 +5,7 @@ local Library = loadstring(game:HttpGet(
 local Win = Library.new({
     MainColor      = Color3.fromRGB(138,43,226),
     ToggleKey      = Enum.KeyCode.Insert,
-    MinSize        = Vector2.new(550,650),
+    MinSize        = Vector2.new(450,350),
     CanResize      = false
 })
 
@@ -101,7 +101,7 @@ RS.ChildAdded:Connect(function(c)
 end)
 
 -------------------- window / tabs --------------------
-local Main = Win:CreateWindow("Silence V2  |  Elerium","")
+local Main = Win:CreateWindow("KYY HUB 0.6.9 pos  |  PACKS Farming UI","Markyy")
 local RebirthTab = Main:CreateTab("Fast Rebirth")
 local StrengthTab= Main:CreateTab("Fast Strength")
 
