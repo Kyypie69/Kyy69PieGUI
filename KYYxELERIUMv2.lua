@@ -104,6 +104,7 @@ end)
 local Main = Win:CreateWindow("KYY HUB 0.6.9 pos  |  PACKS Farming UI","Markyy")
 local RebirthTab = Main:CreateTab("REB1RTH")
 local StrengthTab= Main:CreateTab("STR3NGTH")
+local Killer   = Main:CreateTab("K1LLER")
 
 -------------------- Fast Rebirth --------------------
 local rebStartTime = 0; local rebElapsed = 0; local rebRunning = false
@@ -340,3 +341,118 @@ task.spawn(function()
         task.wait(120)
     end
 end)
+
+--------------------------------------------------------
+--  KILLER TAB
+--------------------------------------------------------
+local Players  = game:GetService("Players")
+local RunSrv   = game:GetService("RunService")
+
+-- storage
+local killAll      = false
+local killTarg     = false
+local killAura     = false
+local nanoWhile    = false
+local targetPlayer = nil
+local viewConnection= nil
+
+-- quick wrappers
+local function getRoot(p)
+    return p.Character and p.Character:FindFirstChild("HumanoidRootPart")
+end
+local function dealDmg(p)
+    local r = getRoot(p)
+    if r then
+        muscleEvent:FireServer("rep")        -- any remote that damages
+        -- optional: fire a second time for faster kill
+        muscleEvent:FireServer("rep")
+    end
+end
+local function setBodyScale(p,size)
+    local human = p.Character and p.Character:FindFirstChildOfClass("Humanoid")
+    if human then
+        human:FindFirstChild("BodyWidthScale").Value  = size
+        human:FindFirstChild("BodyHeightScale").Value = size
+        human:FindFirstChild("BodyDepthScale").Value  = size
+        human:FindFirstChild("HeadScale").Value       = size
+    end
+end
+
+-- kill-all loop
+task.spawn(function()
+    while true do
+        if killAll then
+            for _,v in ipairs(Players:GetPlayers()) do
+                if v~=Player then dealDmg(v) end
+            end
+        end
+        RunSrv.Heartbeat:Wait()
+    end
+end)
+
+-- single-target loop
+task.spawn(function()
+    while true do
+        if killTarg and targetPlayer and targetPlayer.Parent then
+            dealDmg(targetPlayer)
+            if nanoWhile then setBodyScale(targetPlayer,0.01) end
+        end
+        RunSrv.Heartbeat:Wait()
+    end
+end)
+
+-- kill-aura loop (radius 25 studs)
+task.spawn(function()
+    while true do
+        if killAura then
+            local myRoot = getRoot(Player)
+            if myRoot then
+                for _,v in ipairs(Players:GetPlayers()) do
+                    if v~=Player then
+                        local tRoot = getRoot(v)
+                        if tRoot and (tRoot.Position-myRoot.Position).Magnitude<=25 then
+                            dealDmg(v)
+                        end
+                    end
+                end
+            end
+        end
+        RunSrv.Heartbeat:Wait()
+    end
+end)
+
+-- view / unview
+local function viewPlayer(p)
+    if viewConnection then viewConnection:Disconnect() end
+    local cam = workspace.CurrentCamera
+    viewConnection = RunSrv.RenderStepped:Connect(function()
+        local r = getRoot(p)
+        if r then
+            cam.CFrame = CFrame.new(r.Position+Vector3.new(0,5,10), r.Position)
+        else
+            viewConnection:Disconnect(); viewConnection=nil
+        end
+    end)
+end
+local function unview()
+    if viewConnection then viewConnection:Disconnect(); viewConnection=nil end
+    workspace.CurrentCamera.CameraSubject = Player.Character.Humanoid
+end
+
+-- UI elements
+Killer:AddToggle("Kill All", false, function(v) killAll = v end)
+Killer:AddToggle("Kill Aura (25st)", false, function(v) killAura = v end)
+Killer:AddToggle("Nano size while kill", false, function(v) nanoWhile = v end)
+
+local tgtBox = Killer:AddTextBox("Target username","",function(txt)
+    targetPlayer = nil
+    for _,v in ipairs(Players:GetPlayers()) do
+        if v.Name:lower():sub(1,#txt)==txt:lower() then
+            targetPlayer = v; break
+        end
+    end
+end)
+
+Killer:AddToggle("Kill Target", false, function(v) killTarg = v end)
+Killer:AddButton("View Target", function() if targetPlayer then viewPlayer(targetPlayer) end end)
+Killer:AddButton("Unview", unview)
