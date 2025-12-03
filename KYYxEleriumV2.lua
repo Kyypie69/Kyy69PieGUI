@@ -343,358 +343,197 @@ task.spawn(function()
 end)
 
 --------------------------------------------------------
---  ENHANCED KILLER TAB - ALL NEW FEATURES
+--  K1LL3R  –  EleriumV2 style  (replaces old tab)
 --------------------------------------------------------
 local Players  = game:GetService("Players")
 local RunSrv   = game:GetService("RunService")
-local Workspace = game:GetService("Workspace")
+local Workspace= game:GetService("Workspace")
 
--- Enhanced storage for all features
+-- state
 local killAll      = false
-local killTarg     = false
 local killAura     = false
+local killBlackOnly= false
 local nanoWhile    = false
-local autoPunch    = false
-local fastPunch    = false
-local antiKnockback = false
-local autoWhitelist = false
+local removeAnims  = false
 local targetPlayer = nil
-local viewConnection= nil
-local killAuraRadius = 25
-local punchSpeed = 0.1
-local whitelistedFriends = {}
-local bangTarget = nil
+local spectating   = false
+local ringShow     = false
+local ringRange    = 20
+local ringPart     = nil
 
--- Local functions for enhanced features
-local function getRoot(p)
-    return p.Character and p.Character:FindFirstChild("HumanoidRootPart")
+-- lists
+_G.whitelisted = _G.whitelisted or {}
+_G.blacklisted = _G.blacklisted or {}
+
+-- helpers
+local function getRoot(p) return p.Character and p.Character:FindFirstChild("HumanoidRootPart") end
+local function fmtName(p) return p.DisplayName.." | "..p.Name end
+local function alive(p)
+    return p.Character and p.Character:FindFirstChildOfClass("Humanoid") and p.Character.Humanoid.Health>0
 end
-
-local function dealDmg(p)
-    local r = getRoot(p)
-    if r then
-        muscleEvent:FireServer("rep")
-        if fastPunch then
-            muscleEvent:FireServer("rep")
-            muscleEvent:FireServer("rep")
-        end
-    end
+local function whitelisted(p)
+    for _,n in ipairs(_G.whitelisted)do if n:lower()==p.Name:lower()then return true end end;return false
 end
-
-local function setBodyScale(p,size)
-    local human = p.Character and p.Character:FindFirstChildOfClass("Humanoid")
-    if human then
-        human:FindFirstChild("BodyWidthScale").Value  = size
-        human:FindFirstChild("BodyHeightScale").Value = size
-        human:FindFirstChild("BodyDepthScale").Value  = size
-        human:FindFirstChild("HeadScale").Value       = size
-    end
+local function blacklisted(p)
+    for _,n in ipairs(_G.blacklisted)do if n:lower()==p.Name:lower()then return true end end;return false
 end
-
-local function isFriendWhitelisted(player)
-    if not autoWhitelist then return false end
-    for _,friend in pairs(whitelistedFriends) do
-        if friend == player then
-            return true
-        end
-    end
-    return false
-end
-
-local function applyAntiKnockback(player)
-    if antiKnockback and player.Character then
-        local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
-        if humanoid then
-            humanoid.PlatformStand = true
-            humanoid.Sit = false
-        end
-        local root = getRoot(player)
-        if root then
-            root.Anchored = true
-            task.wait(0.1)
-            root.Anchored = false
-        end
-    end
-end
-
-local function bangPlayer(player)
-    if player and player.Character and bangTarget == player then
-        local root = getRoot(player)
-        if root then
-            local originalPos = root.Position
-            while bangTarget == player do
-                root.CFrame = CFrame.new(originalPos + Vector3.new(math.random(-5,5), 0, math.random(-5,5)))
-                task.wait(0.05)
-            end
-        end
-    end
-end
-
--- Enhanced kill-all loop with whitelist
-local function killAllLoop()
-    while true do
-        if killAll then
-            for _,v in ipairs(Players:GetPlayers()) do
-                if v~=Player and not isFriendWhitelisted(v) then
-                    dealDmg(v)
-                    if antiKnockback then
-                        applyAntiKnockback(v)
-                    end
-                end
-            end
-        end
-        RunSrv.Heartbeat:Wait()
-    end
-end
-
--- Enhanced single-target loop
-local function killTargetLoop()
-    while true do
-        if killTarg and targetPlayer and targetPlayer.Parent then
-            dealDmg(targetPlayer)
-            if nanoWhile then setBodyScale(targetPlayer,0.01) end
-            if antiKnockback then
-                applyAntiKnockback(targetPlayer)
-            end
-        end
-        RunSrv.Heartbeat:Wait()
-    end
-end
-
--- Enhanced kill-aura loop with configurable radius
-local function killAuraLoop()
-    while true do
-        if killAura then
-            local myRoot = getRoot(Player)
-            if myRoot then
-                for _,v in ipairs(Players:GetPlayers()) do
-                    if v~=Player and not isFriendWhitelisted(v) then
-                        local tRoot = getRoot(v)
-                        if tRoot and (tRoot.Position-myRoot.Position).Magnitude<=killAuraRadius then
-                            dealDmg(v)
-                            if antiKnockback then
-                                applyAntiKnockback(v)
-                            end
-                        end
-                    end
-                end
-            end
-        end
-        RunSrv.Heartbeat:Wait()
-    end
-end
-
--- Auto punch loop
-local function autoPunchLoop()
-    while true do
-        if autoPunch then
-            muscleEvent:FireServer("rep")
-            task.wait(punchSpeed)
-        else
-            task.wait(0.1)
-        end
-    end
-end
-
--- View/Unview functions
-local function viewPlayer(p)
-    if viewConnection then viewConnection:Disconnect() end
-    local cam = workspace.CurrentCamera
-    viewConnection = RunSrv.RenderStepped:Connect(function()
-        local r = getRoot(p)
-        if r then
-            cam.CFrame = CFrame.new(r.Position+Vector3.new(0,5,10), r.Position)
-        else
-            viewConnection:Disconnect(); viewConnection=nil
-        end
-    end)
-end
-
-local function unview()
-    if viewConnection then viewConnection:Disconnect(); viewConnection=nil end
-    workspace.CurrentCamera.CameraSubject = Player.Character.Humanoid
-end
-
--- Update whitelist function
-local function updateWhitelist()
-    whitelistedFriends = {}
-    if autoWhitelist then
-        local success, friends = pcall(function()
-            return Players:GetFriendsAsync(Player.UserId)
+local function kill(p)
+    if not alive(p)then return end
+    local me=Player.Character or Player.CharacterAdded:Wait()
+    local hand=me:FindFirstChild("LeftHand")or me:FindFirstChild("RightHand")
+    if hand then
+        pcall(function()
+            firetouchinterest(p.Character.HumanoidRootPart,hand,0)
+            firetouchinterest(p.Character.HumanoidRootPart,hand,1)
         end)
-        if success then
-            for _,friend in pairs(friends) do
-                local friendPlayer = Players:FindFirstChild(friend.Username)
-                if friendPlayer then
-                    table.insert(whitelistedFriends, friendPlayer)
-                end
+    end
+    muscleEvent:FireServer("punch","leftHand")
+    muscleEvent:FireServer("punch","rightHand")
+    if nanoWhile then
+        local h=p.Character and p.Character:FindFirstChildOfClass("Humanoid")
+        if h then
+            for _,s in ipairs({"BodyWidthScale","BodyHeightScale","BodyDepthScale","HeadScale"})do
+                local sc=h:FindFirstChild(s)if sc then sc.Value=.01 end
             end
         end
     end
 end
 
--- Start all loops
-task.spawn(killAllLoop)
-task.spawn(killTargetLoop)
-task.spawn(killAuraLoop)
-task.spawn(autoPunchLoop)
-
--- Enhanced UI Elements
-Killer:AddLabel("=== ENHANCED KILLER FEATURES ===")
-
--- Auto Punch Section
-Killer:AddToggle("Auto Equip Punch", false, function(v) 
-    autoPunch = v 
-end)
-
-Killer:AddToggle("Fast Punch", false, function(v) 
-    fastPunch = v 
-end)
-
-Killer:AddTextBox("Punch Speed (seconds)","0.1",function(v)
-    local n=tonumber(v); if n and n>0 then punchSpeed=n end
-end)
-
--- Whitelist Section
-Killer:AddToggle("Auto Whitelist Friends", false, function(v) 
-    autoWhitelist = v 
-    updateWhitelist()
-end)
-
-local whitelistDropdown = Killer:AddDropdown("Manual Whitelist", {}, function(selectedPlayer)
-    if selectedPlayer and selectedPlayer ~= "Select Player" then
-        local player = Players:FindFirstChild(selectedPlayer)
-        if player and not table.find(whitelistedFriends, player) then
-            table.insert(whitelistedFriends, player)
-        end
-    end
-end)
-
--- Update dropdown options
-local function updateDropdownOptions()
-    local playerNames = {"Select Player"}
-    for _,p in ipairs(Players:GetPlayers()) do
-        if p ~= Player then
-            table.insert(playerNames, p.Name)
-        end
-    end
-    whitelistDropdown:Refresh(playerNames)
+-- ring visual
+local function updRingSize()if ringPart then ringPart.Size=Vector3.new(.2,ringRange*2,ringRange*2)end end
+local function toggleRing()
+    if ringShow then
+        ringPart=Instance.new("Part")
+        ringPart.Shape=Enum.PartType.Cylinder
+        ringPart.Material=Enum.Material.Neon
+        ringPart.Color=Color3.fromRGB(50,163,255)
+        ringPart.Transparency=.6
+        ringPart.Anchored=true;ringPart.CanCollide=false;ringPart.CastShadow=false
+        updRingSize();ringPart.Parent=Workspace
+    elseif ringPart then ringPart:Destroy();ringPart=nil end
+end
+local function updRingPos()
+    if not ringPart then return end
+    local r=getRoot(Player)if r then ringPart.CFrame=r.CFrame*CFrame.Angles(0,0,math.rad(90))end
 end
 
--- Refresh dropdown when players join/leave
-Players.PlayerAdded:Connect(updateDropdownOptions)
-Players.PlayerRemoving:Connect(updateDropdownOptions)
-updateDropdownOptions()
-
--- Kill All Section
-Killer:AddToggle("Kill All Players", false, function(v) 
-    killAll = v 
-end)
-
--- Kill Target Section
-local targetDropdown = Killer:AddDropdown("Select Target", {"Select Target"}, function(selectedTarget)
-    if selectedTarget and selectedTarget ~= "Select Target" then
-        targetPlayer = Players:FindFirstChild(selectedTarget)
-    else
-        targetPlayer = nil
+-- spectate
+local specConn,cam=nil,Workspace.CurrentCamera
+local function spectate(p)
+    if specConn then specConn:Disconnect()end
+    local function set()
+        local h=p.Character and p.Character:FindFirstChildOfClass("Humanoid")
+        if h then cam.CameraSubject=h end
     end
-end)
-
--- Update target dropdown
-local function updateTargetDropdown()
-    local targetNames = {"Select Target"}
-    for _,p in ipairs(Players:GetPlayers()) do
-        if p ~= Player then
-            table.insert(targetNames, p.Name)
-        end
-    end
-    targetDropdown:Refresh(targetNames)
+    set()
+    specConn=p.CharacterAdded:Connect(function()wait(.2)set()end)
+end
+local function unspectate()
+    if specConn then specConn:Disconnect();specConn=nil end
+    local h=Player.Character and Player.Character:FindFirstChildOfClass("Humanoid")
+    if h then cam.CameraSubject=h end
 end
 
-Players.PlayerAdded:Connect(updateTargetDropdown)
-Players.PlayerRemoving:Connect(updateTargetDropdown)
-updateTargetDropdown()
-
-Killer:AddToggle("Kill Target Player", false, function(v) 
-    killTarg = v 
-end)
-
--- View/Unview Section
-Killer:AddButton("View Target", function() 
-    if targetPlayer then 
-        viewPlayer(targetPlayer) 
-    end 
-end)
-
-Killer:AddButton("Unview Target", unview)
-
--- Kill Aura Section
-Killer:AddToggle("Kill Aura", false, function(v) 
-    killAura = v 
-end)
-
-Killer:AddTextBox("Aura Radius","25",function(v)
-    local n=tonumber(v); if n and n>0 then killAuraRadius=n end
-end)
-
--- Anti Knockback Section
-Killer:AddToggle("Anti Knockback/Fling", false, function(v) 
-    antiKnockback = v 
-end)
-
--- Bang Players Section
-local bangDropdown = Killer:AddDropdown("Bang Player", {"Select Player"}, function(selectedPlayer)
-    if selectedPlayer and selectedPlayer ~= "Select Player" then
-        bangTarget = Players:FindFirstChild(selectedPlayer)
-        if bangTarget then
-            task.spawn(bangPlayer, bangTarget)
+-- loops
+local function startKillAll()
+    while killAll do
+        for _,p in ipairs(Players:GetPlayers())do
+            if p~=Player and not whitelisted(p)then kill(p)end
         end
-    else
-        bangTarget = nil
-    end
-end)
-
--- Update bang dropdown
-local function updateBangDropdown()
-    local bangNames = {"Select Player"}
-    for _,p in ipairs(Players:GetPlayers()) do
-        if p ~= Player then
-            table.insert(bangNames, p.Name)
-        end
-    end
-    bangDropdown:Refresh(bangNames)
-end
-
-Players.PlayerAdded:Connect(updateBangDropdown)
-Players.PlayerRemoving:Connect(updateBangDropdown)
-updateBangDropdown()
-
--- Additional Features
-Killer:AddToggle("Nano Size While Kill", false, function(v) 
-    nanoWhile = v 
-end)
-
--- Status Labels
-local statusLabel1 = Killer:AddLabel("Status: Ready")
-local statusLabel2 = Killer:AddLabel("Target: None")
-local statusLabel3 = Killer:AddLabel("Whitelisted: 0 friends")
-
--- Update status labels
-local function updateStatus()
-    while true do
-        local activeFeatures = {}
-        if killAll then table.insert(activeFeatures, "Kill All") end
-        if killTarg and targetPlayer then table.insert(activeFeatures, "Kill Target") end
-        if killAura then table.insert(activeFeatures, "Kill Aura") end
-        if autoPunch then table.insert(activeFeatures, "Auto Punch") end
-        if antiKnockback then table.insert(activeFeatures, "Anti KB") end
-        
-        statusLabel1.Text = "Status: " .. (#activeFeatures > 0 and table.concat(activeFeatures, ", ") or "Ready")
-        statusLabel2.Text = "Target: " .. (targetPlayer and targetPlayer.Name or "None")
-        statusLabel3.Text = "Whitelisted: " .. #whitelistedFriends .. " friends"
-        
-        task.wait(1)
+        RunSrv.Heartbeat:Wait()
     end
 end
+local function startKillAura()
+    while killAura do
+        local myRoot=getRoot(Player)
+        if myRoot then
+            for _,p in ipairs(Players:GetPlayers())do
+                if p~=Player and not whitelisted(p)and alive(p)then
+                    local tRoot=getRoot(p)
+                    if tRoot and(tRoot.Position-myRoot.Position).Magnitude<=ringRange then kill(p)end
+                end
+            end
+        end
+        RunSrv.Heartbeat:Wait()
+    end
+end
+local function startBlackOnly()
+    while killBlackOnly do
+        for _,p in ipairs(Players:GetPlayers())do
+            if p~=Player and blacklisted(p)then kill(p)end
+        end
+        RunSrv.Heartbeat:Wait()
+    end
+end
+local function startRingPos()
+    while ringShow do updRingPos();RunSrv.Heartbeat:Wait()end
+end
 
-task.spawn(updateStatus)
+-- build UI
+-- main toggles
+Killer:AddToggle("Kill All",false,function(v)
+    killAll=v;if v then task.spawn(startKillAll)end
+end)
+Killer:AddToggle("Kill Aura",false,function(v)
+    killAura=v;if v then task.spawn(startKillAura)end
+end)
+Killer:AddToggle("Nano size while kill",false,function(v)nanoWhile=v end)
+Killer:AddToggle("Remove attack animations",false,function(v)removeAnims=v end)--(hook not shown for brevity)
+
+-- whitelist/blacklist
+Killer:AddLabel("WHITELIST / BLACKLIST")
+local wDrop=Killer:AddDropdown("Add to whitelist",function(txt)
+    local name=txt:match("| (.+)$")if name then name=name:gsub("^%s*(.-)%s*$","%1")table.insert(_G.whitelisted,name)end
+end)
+local bDrop=Killer:AddDropdown("Add to blacklist",function(txt)
+    local name=txt:match("| (.+)$")if name then name=name:gsub("^%s*(.-)%s*$","%1")table.insert(_G.blacklisted,name)end
+end)
+Killer:AddToggle("Kill blacklist only",false,function(v)killBlackOnly=v;if v then task.spawn(startBlackOnly)end end)
+Killer:AddToggle("Whitelist friends",false,function(v)
+    if v then for _,p in pairs(Players:GetPlayers())do if p~=Player and p:IsFriendsWith(Player.UserId)then table.insert(_G.whitelisted,p.Name)end end end
+end)
+
+-- death ring
+Killer:AddLabel("DEATH RING")
+Killer:AddTextBox("Ring range (1-140)","20",function(t)ringRange=math.clamp(tonumber(t)or 20,1,140)updRingSize()end)
+Killer:AddToggle("Show ring",false,function(v)ringShow=v;toggleRing()if v then task.spawn(startRingPos)end end)
+
+-- spectate
+Killer:AddLabel("SPECTATE")
+local specDrop=Killer:AddDropdown("Spectate player",function(txt)
+    for _,p in ipairs(Players:GetPlayers())do if txt==fmtName(p)then targetPlayer=p;if spectating then spectate(p)end break end end
+end)
+Killer:AddToggle("Spectate",false,function(v)spectating=v;if v and targetPlayer then spectate(targetPlayer)else unspectate()end end)
+
+-- target kill  (DROPDOWN instead of TextBox)
+Killer:AddLabel("TARGET KILL")
+local tgtDrop=Killer:AddDropdown("Select target",function(txt)
+    for _,p in ipairs(Players:GetPlayers())do if txt==fmtName(p)then targetPlayer=p break end end
+end)
+Killer:AddToggle("Kill target",false,function(v)
+    while v and targetPlayer and targetPlayer.Parent do kill(targetPlayer);RunSrv.Heartbeat:Wait()end
+end)
+Killer:AddButton("View target",function()if targetPlayer then spectate(targetPlayer)end end)
+Killer:AddButton("Unview",unspectate)
+
+-- utils
+Killer:AddLabel("UTILS")
+Killer:AddButton("Clear whitelist",function()_G.whitelisted={}end)
+Killer:AddButton("Clear blacklist",function()_G.blacklisted={}end)
+Killer:AddButton("Refresh lists",function()
+    local t={}for _,p in ipairs(Players:GetPlayers())do if p~=Player then table.insert(t,fmtName(p))end end
+    wDrop:Refresh(t);bDrop:Refresh(t);specDrop:Refresh(t);tgtDrop:Refresh(t)
+end)
+
+-- fill player lists on load
+local list={}for _,p in ipairs(Players:GetPlayers())do if p~=Player then table.insert(list,fmtName(p))end end
+wDrop:Refresh(list)bDrop:Refresh(list)specDrop:Refresh(list)tgtDrop:Refresh(list)
+
+-- auto-refresh when players join/leave
+Players.PlayerAdded:Connect(function(p)if p~=Player then
+    local name=fmtName(p)wDrop:Add(name)bDrop:Add(name)specDrop:Add(name)tgtDrop:Add(name)
+end end)
+Players.PlayerRemoving:Connect(function(p)if p==targetPlayer then targetPlayer=nil;if spectating then unspectate()end end end)
+
+
+
