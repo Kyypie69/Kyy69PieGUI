@@ -449,6 +449,32 @@ Killer:AddToggle("Kill Aura",false,function(v)killAura=v;if v then task.spawn(st
 Killer:AddToggle("Nano size while kill",false,function(v)nanoWhile=v end)
 Killer:AddToggle("Remove attack animations",false,function(v)removeAnims=v end)
 
+--------------------------------------------------------
+--  DROPDOWN VISIBILITY FIX  –  drop after Killer tab
+--------------------------------------------------------
+-- grab the dropdown objects we already built
+local wDrop = Killer and Killer:FindFirstChild("Add to whitelist") or nil
+local bDrop = Killer and Killer:FindFirstChild("Add to blacklist") or nil
+
+-- helper: rebuild the choice list from the live tables
+local function refreshWhiteBlack()
+    if not (wDrop and bDrop) then return end
+    local t = {}
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= Player then table.insert(t, fmtName(p)) end
+    end
+    wDrop:Refresh(t)   -- EleriumV2 native method
+    bDrop:Refresh(t)
+end
+
+-- refresh every time the user clicks the tab (guarantees visibility)
+Killer:GetPropertyChangedSignal("Visible"):Connect(function()
+    if Killer.Visible then refreshWhiteBlack() end
+end)
+
+-- also refresh immediately once on load
+refreshWhiteBlack()
+
 -- whitelist/blacklist
 Killer:AddLabel("WHITELIST / BLACKLIST")
 local wAdd=Killer:AddDropdown("Add to whitelist",function(txt)local n=txt:match("| (.+)$")if n then n=n:gsub("^%s*(.-)%s*$","%1")table.insert(_G.whitelisted,n)end end)
