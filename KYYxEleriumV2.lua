@@ -1,11 +1,11 @@
---[[  KYYxERIUMv2 Perfect - Fixed Killer Tab with Auto Equip Functions ]]
+--[[  EleriumV2xKYY ENHANCED (ver.70)  ]]
 local Library = loadstring(game:HttpGet(
     "https://raw.githubusercontent.com/Kyypie69/Library.UI/refs/heads/main/KYY.luau"))()
 
 local Win = Library.new({
     MainColor      = Color3.fromRGB(138,43,226),
     ToggleKey      = Enum.KeyCode.Insert,
-    MinSize        = Vector2.new(450,320),
+    MinSize        = Vector2.new(550,400),
     CanResize      = false
 })
 
@@ -100,413 +100,433 @@ RS.ChildAdded:Connect(function(c)
     if table.find(frameBlockList,c.Name) and c:IsA("GuiObject") then c.Visible = false end
 end)
 
--------------------- MAIN AUTOFARM FLAGS --------------------
-local autofarmEnabled = false
-local autoBossEnabled = false
-local autoRebirthEnabled = false
-local autoTrainEnabled = false
-local punchSpamEnabled = false
-local currentTraining = "durability"
-local rebirthAt = 1
-local trainDelay = 0.3
+-------------------- window / tabs --------------------
+local Main = Win:CreateWindow("KYY HUB 0.7.0 | ENHANCED KILLER UI","Markyy")
+local RebirthTab = Main:CreateTab("REB1RTH")
+local StrengthTab= Main:CreateTab("STR3NGTH")
+local Killer   = Main:CreateTab("K1LLER")
 
--------------------- KILLER TAB VARIABLES --------------------
-local killAllEnabled = false
-local killTargetEnabled = false
-local killAuraEnabled = false
-local nanoKillEnabled = false
-local whitelistEnabled = false
-local autoWhitelistFriends = false
-local selectedTarget = nil
-local whitelistedPlayers = {}
-local auraRadius = 25
-local killCount = 0
-local startTime = tick()
-local lastPaceUpdate = tick()
+-------------------- Fast Rebirth --------------------
+local rebStartTime = 0; local rebElapsed = 0; local rebRunning = false
+local rebPaceHist = {}; local maxHist = 20; local rebCount = 0
+local lastRebTime = tick(); local lastRebVal = rebirths.Value; local initReb = rebirths.Value
 
--------------------- PLAYER DROPDOWN FUNCTIONS --------------------
-local function getPlayerList()
-    local players = {}
-    for _, v in ipairs(game:GetService("Players"):GetPlayers()) do
-        if v ~= Player then
-            table.insert(players, v.Name)
-        end
-    end
-    return players
+local rebTimeLbl   = RebirthTab:AddLabel("0d 0h 0m 0s – Inactive")
+local rebPaceLbl   = RebirthTab:AddLabel("Pace: 0 /h  |  0 /d  |  0 /w")
+local rebAvgLbl    = RebirthTab:AddLabel("Average: 0 /h  |  0 /d  |  0 /w")
+local rebGainLbl   = RebirthTab:AddLabel("Rebirths: "..fmt(initReb).."  |  Gained: 0")
+
+local function updateRebDisp()
+    local e = rebRunning and (tick()-rebStartTime+rebElapsed) or rebElapsed
+    local d,h,m,s = math.floor(e/86400),math.floor(e%86400/3600),math.floor(e%3600/60),math.floor(e%60)
+    rebTimeLbl.Text = string.format("%dd %dh %dm %ds – %s",d,h,m,s,rebRunning and "Rebirthing" or "Paused")
 end
 
-local function updatePlayerDropdowns()
-    local playerList = getPlayerList()
-    
-    -- Update target dropdown
-    if TargetDropdown then
-        TargetDropdown.Options = playerList
-        if #playerList == 0 then
-            TargetDropdown.Options = {"NO PLAYERS FOUND"}
-        end
+local function calcRebPace()
+    rebCount=rebCount+1; if rebCount<2 then lastRebTime=tick(); lastRebVal=rebirths.Value; return end
+    local now,gained = tick(),rebirths.Value-lastRebVal
+    if gained<=0 then return end
+    local t = (now-lastRebTime)/gained
+    local ph,pd,pw = 3600/t,86400/t,604800/t
+    rebPaceLbl.Text = string.format("Pace: %s /h  |  %s /d  |  %s /w",fmt(ph),fmt(pd),fmt(pw))
+    table.insert(rebPaceHist,{h=ph,d=pd,w=pw})
+    if #rebPaceHist>maxHist then table.remove(rebPaceHist,1) end
+    local sumH,sumD,sumW=0,0,0
+    for _,v in pairs(rebPaceHist) do sumH=sumH+v.h; sumD=sumD+v.d; sumW=sumW+v.w; end
+    local n=#rebPaceHist
+    rebAvgLbl.Text = string.format("Average: %s /h  |  %s /d  |  %s /w",fmt(sumH/n),fmt(sumD/n),fmt(sumW/n))
+    lastRebTime=now; lastRebVal=rebirths.Value
+end
+
+rebirths.Changed:Connect(function()
+    calcRebPace()
+    rebGainLbl.Text = "Rebirths: "..fmt(rebirths.Value).."  |  Gained: "..fmt(rebirths.Value-initReb)
+end)
+
+-- fast rebirth loop
+local function doRebirth()
+    local target = 5000+rebirths.Value*2550
+    while rebRunning and strength.Value<target do
+        local reps = Player.MembershipType==Enum.MembershipType.Premium and 8 or 14
+        for _=1,reps do muscleEvent:FireServer("rep") end
+        task.wait(0.02)
     end
-    
-    -- Update whitelist dropdown  
-    if WhitelistDropdown then
-        WhitelistDropdown.Options = playerList
-        if #playerList == 0 then
-            WhitelistDropdown.Options = {"NO PLAYERS FOUND"}
-        end
-    end
-    
-    -- Update bang dropdown
-    if BangDropdown then
-        BangDropdown.Options = playerList
-        if #playerList == 0 then
-            BangDropdown.Options = {"NO PLAYERS FOUND"}
-        end
+    if rebRunning and strength.Value>=target then
+        equipEight("Tribal Overlord"); task.wait(0.25)
+        local b=rebirths.Value
+        repeat RS.rEvents.rebirthRemote:InvokeServer("rebirthRequest"); task.wait(0.05)
+        until rebirths.Value>b or not rebRunning
     end
 end
 
--------------------- AUTO EQUIP FUNCTIONS --------------------
-local function autoEquipPunch()
-    local punchTool = Player.Backpack:FindFirstChild("Punch") or Player.Character:FindFirstChild("Punch")
-    if punchTool then
-        Player.Character.Humanoid:EquipTool(punchTool)
-        return true
+local function rebLoop()
+    while rebRunning do
+        equipEight("Swift Samurai")
+        doRebirth()
+        task.wait(0.5)
     end
-    return false
 end
 
-local function autoEquipFast()
-    local fastTool = Player.Backpack:FindFirstChild("Fast") or Player.Character:FindFirstChild("Fast")
-    if fastTool then
-        Player.Character.Humanoid:EquipTool(fastTool)
-        return true
-    end
-    return false
-end
-
--------------------- KILLER TAB FUNCTIONS --------------------
-local function getTargetPlayer(name)
-    for _, v in ipairs(game:GetService("Players"):GetPlayers()) do
-        if v.Name == name and v ~= Player then
-            return v
-        end
-    end
-    return nil
-end
-
-local function isPlayerInRange(player, radius)
-    if not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then
-        return false
-    end
-    if not Player.Character or not Player.Character:FindFirstChild("HumanoidRootPart") then
-        return false
-    end
-    
-    local distance = (player.Character.HumanoidRootPart.Position - Player.Character.HumanoidRootPart.Position).Magnitude
-    return distance <= radius
-end
-
-local function killPlayer(targetPlayer)
-    if not targetPlayer or not targetPlayer.Character then return end
-    
-    -- Auto equip punch if available
-    autoEquipPunch()
-    
-    -- Apply NaN size if enabled
-    if nanoKillEnabled and targetPlayer.Character:FindFirstChild("Humanoid") then
-        targetPlayer.Character:FindFirstChild("Humanoid").BodyDepthScale.Value = 0.01
-        targetPlayer.Character:FindFirstChild("Humanoid").BodyHeightScale.Value = 0.01
-        targetPlayer.Character:FindFirstChild("Humanoid").BodyWidthScale.Value = 0.01
-        targetPlayer.Character:FindFirstChild("Humanoid").HeadScale.Value = 0.01
-    end
-    
-    -- Damage the player
-    muscleEvent:FireServer("punch", targetPlayer.Character)
-    killCount = killCount + 1
-end
-
--------------------- MAIN UI --------------------
-local MainTab = Win:Tab("Main")
-local KillerTab = Win:Tab("Killer") 
-local TeleportsTab = Win:Tab("Teleports")
-local MiscTab = Win:Tab("Misc")
-
--------------------- MAIN TAB --------------------
-MainTab:Label("💪 Strength & Training")
-MainTab:Toggle("Auto Train",false,function(v)
-    autoTrainEnabled = v
-end)
-MainTab:Dropdown("Training Type",{"durability","strength"},function(v)
-    currentTraining = v
-end)
-MainTab:Slider("Train Delay",0.1,1,0.3,function(v)
-    trainDelay = v
-end)
-
-MainTab:Label("🔄 Rebirth Settings")
-MainTab:Toggle("Auto Rebirth",false,function(v)
-    autoRebirthEnabled = v
-end)
-MainTab:Slider("Rebirth At",1,10,1,function(v)
-    rebirthAt = v
-end)
-
-MainTab:Label("🥊 Combat")
-MainTab:Toggle("Punch Spam",false,function(v)
-    punchSpamEnabled = v
-end)
-
--------------------- KILLER TAB --------------------
-KillerTab:Label("🥊 Combat Automation")
-
--- Auto Punch Toggle
-local autoPunchEnabled = false
-KillerTab:Toggle("Auto Punch", false, function(v)
-    autoPunchEnabled = v
-end)
-
--- Auto Fast Punch Toggle  
-local autoFastPunchEnabled = false
-KillerTab:Toggle("Auto Fast Punch", false, function(v)
-    autoFastPunchEnabled = v
-end)
-
--- Auto Equip Functionality
-local autoEquipPunchEnabled = false
-KillerTab:Toggle("Auto Equip Punch", false, function(v)
-    autoEquipPunchEnabled = v
-end)
-
-local autoEquipFastEnabled = false  
-KillerTab:Toggle("Auto Equip Fast", false, function(v)
-    autoEquipFastEnabled = v
-end)
-
-KillerTab:Label("🛡️ Protection")
-KillerTab:Toggle("Anti Knockback",false,function(v)
+RebirthTab:AddToggle("Fast Rebirth",false,function(v)
+    rebRunning=v
     if v then
-        Player.CharacterAdded:Connect(function(char)
-            local hum = char:WaitForChild("Humanoid")
-            hum:SetStateEnabled(Enum.HumanoidStateType.FallingDown,false)
-            hum:SetStateEnabled(Enum.HumanoidStateType.Ragdoll,false)
-        end)
-        if Player.Character then
-            local hum = Player.Character:WaitForChild("Humanoid")
-            hum:SetStateEnabled(Enum.HumanoidStateType.FallingDown,false)
-            hum:SetStateEnabled(Enum.HumanoidStateType.Ragdoll,false)
-        end
+        rebStartTime=tick(); rebCount=0
+        task.spawn(rebLoop)
+    else
+        rebElapsed=rebElapsed+(tick()-rebStartTime)
+        updateRebDisp()
     end
 end)
 
-KillerTab:Toggle("Anti Fling",false,function(v)
-    if v then
-        game:GetService("RunService").Heartbeat:Connect(function()
-            if Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") then
-                local vel = Player.Character.HumanoidRootPart.Velocity
-                if vel.Magnitude > 100 then
-                    Player.Character.HumanoidRootPart.Velocity = Vector3.new(0,0,0)
-                end
-            end
-        end)
-    end
+-- Hide-Frames toggle
+RebirthTab:AddToggle("Hide Frames",false,function(s)
+    if s then hideFrames() end
 end)
 
-KillerTab:Label("👥 Player Management")
-
--- Fixed Dropdowns with proper player detection
-TargetDropdown = KillerTab:Dropdown("Select Target", {"NO PLAYERS FOUND"}, function(v)
-    if v ~= "NO PLAYERS FOUND" then
-        selectedTarget = v
-    end
+-- Anti-AFK button (rebirth tab)
+local rebAntiAfkEnabled=false
+RebirthTab:AddButton("Anti AFK (ON)",function()
+    rebAntiAfkEnabled=true
 end)
 
-WhitelistDropdown = KillerTab:Dropdown("Whitelist Player", {"NO PLAYERS FOUND"}, function(v)
-    if v ~= "NO PLAYERS FOUND" then
-        whitelistedPlayers[v] = true
-    end
-end)
+RebirthTab:AddButton("Equip 8× Swift Samurai",function() equipEight("Swift Samurai") end)
+RebirthTab:AddButton("Anti Lag",antiLag)
+RebirthTab:AddButton("TP Jungle Lift",tpJungleLift)
 
-BangDropdown = KillerTab:Dropdown("Bang Player", {"NO PLAYERS FOUND"}, function(v)
-    if v ~= "NO PLAYERS FOUND" then
-        local target = getTargetPlayer(v)
-        if target then
-            killPlayer(target)
-        end
-    end
-end)
-
-KillerTab:Toggle("Enable Whitelist",false,function(v)
-    whitelistEnabled = v
-end)
-
-KillerTab:Toggle("Auto Whitelist Friends",false,function(v)
-    autoWhitelistFriends = v
-    if v then
-        for _, friend in ipairs(game:GetService("Players"):GetPlayers()) do
-            if friend ~= Player and friend:IsFriendsWith(Player.UserId) then
-                whitelistedPlayers[friend.Name] = true
-            end
-        end
-    end
-end)
-
-KillerTab:Button("Clear Whitelist", function()
-    whitelistedPlayers = {}
-end)
-
-KillerTab:Label("🎯 Target System")
-KillerTab:Toggle("Kill Target",false,function(v)
-    killTargetEnabled = v
-end)
-
-KillerTab:Toggle("Kill All",false,function(v)
-    killAllEnabled = v
-end)
-
-KillerTab:Toggle("Kill Aura",false,function(v)
-    killAuraEnabled = v
-end)
-
-KillerTab:Slider("Aura Radius",5,100,25,function(v)
-    auraRadius = v
-end)
-
-KillerTab:Toggle("NaN Size Kill",false,function(v)
-    nanoKillEnabled = v
-end)
-
-KillerTab:Button("View Target", function()
-    if selectedTarget then
-        local target = getTargetPlayer(selectedTarget)
-        if target and target.Character then
-            workspace.CurrentCamera.CameraSubject = target.Character.Humanoid
-        end
-    end
-end)
-
-KillerTab:Button("Unview", function()
-    if Player.Character then
-        workspace.CurrentCamera.CameraSubject = Player.Character.Humanoid
-    end
-end)
-
--- Kill Pace Display
-local killPaceLabel = KillerTab:Label("Kill Pace: 0 kills/hour")
-local totalKillsLabel = KillerTab:Label("Total Kills: 0")
-
-KillerTab:Button("Reset Kill Counter", function()
-    killCount = 0
-    startTime = tick()
-end)
-
--------------------- TELEPORTS TAB --------------------
-TeleportsTab:Label("🏋️ Training Areas")
-TeleportsTab:Button("Jungle Lift",tpJungleLift)
-TeleportsTab:Button("Jungle Squat",tpJungleSquat)
-
--------------------- MISC TAB --------------------
-MiscTab:Label("🎮 Performance")
-MiscTab:Button("Anti Lag",antiLag)
-MiscTab:Button("Hide Frames",hideFrames)
-
-MiscTab:Label("🐶 Pet Management")
-MiscTab:Button("Unequip All",unequipAll)
-MiscTab:Dropdown("Equip 8 Pets",{"Sea","Galaxy","Cartoon","Steam","Cute","Lava","Ice","Forest"},equipEight)
-
--------------------- MAIN LOOPS --------------------
--- Update player dropdowns periodically
+-- auto protein egg
+local eggRunning=false
 task.spawn(function()
     while true do
-        updatePlayerDropdowns()
-        task.wait(5) -- Update every 5 seconds
+        if eggRunning then toolActivate("Protein Egg","proteinEgg"); task.wait(1800) else task.wait(1) end
+    end
+end)
+RebirthTab:AddToggle("Auto Protein Egg",false,function(s) eggRunning=s; if s then toolActivate("Protein Egg","proteinEgg") end end)
+
+-------------------- Fast Strength --------------------
+local strStart=0; local strElapsed=0; local strRun=false; local track=false
+local initStr=strength.Value; local initDur=durability.Value
+local strHist={}; local durHist={}; local calcInt=10
+
+local strTimeLbl  = StrengthTab:AddLabel("0d 0h 0m 0s – Inactive")
+local strPaceLbl  = StrengthTab:AddLabel("Str Pace: 0 /h  |  0 /d  |  0 /w")
+local durPaceLbl  = StrengthTab:AddLabel("Dur Pace: 0 /h  |  0 /d  |  0 /w")
+local strAvgLbl   = StrengthTab:AddLabel("Avg Str: 0 /h  |  0 /d  |  0 /w")
+local durAvgLbl   = StrengthTab:AddLabel("Avg Dur: 0 /h  |  0 /d  |  0 /w")
+local strGainLbl  = StrengthTab:AddLabel("Strength: 0  |  Gained: 0")
+local durGainLbl  = StrengthTab:AddLabel("Durability: 0  |  Gained: 0")
+
+local function updateStrDisp()
+    local e = strRun and (tick()-strStart+strElapsed) or strElapsed
+    local d,h,m,s = math.floor(e/86400),math.floor(e%86400/3600),math.floor(e%3600/60),math.floor(e%60)
+    strTimeLbl.Text = string.format("%dd %dh %dm %ds – %s",d,h,m,s,strRun and "Running" or "Paused")
+end
+
+-- fast rep loop
+local repsPerTick=20
+local function getPing()
+    local st=game:GetService("Stats")
+    local p=st:FindFirstChild("PerformanceStats") and st.PerformanceStats:FindFirstChild("Ping")
+    return p and p:GetValue() or 0
+end
+
+local function fastRep()
+    while strRun do
+        local t0=tick()
+        while tick()-t0<0.75 and strRun do
+            for i=1,repsPerTick do muscleEvent:FireServer("rep") end
+            task.wait(0.02)
+        end
+        while strRun and getPing()>=350 do task.wait(1) end
+    end
+end
+
+StrengthTab:AddTextBox("Rep Speed","20",function(v)
+    local n=tonumber(v); if n and n>0 then repsPerTick=math.floor(n) end
+end)
+StrengthTab:AddToggle("Fast Strength",false,function(v)
+    strRun=v
+    if v then
+        strStart=tick(); track=true; strHist={}; durHist={}
+        task.spawn(fastRep)
+    else
+        strElapsed=strElapsed+(tick()-strStart); track=false; updateStrDisp()
     end
 end)
 
--- Main autofarm loop
-local function mainLoop()
+-- Hide-Frames toggle
+StrengthTab:AddToggle("Hide Frames",false,function(s)
+    if s then hideFrames() end
+end)
+
+-- Anti-AFK button (strength tab)
+local strAntiAfkEnabled=false
+StrengthTab:AddButton("Anti AFK (ON)",function()
+    strAntiAfkEnabled=true
+end)
+
+StrengthTab:AddButton("Equip 8× Swift Samurai",function() equipEight("Swift Samurai") end)
+StrengthTab:AddButton("Anti Lag",antiLag)
+StrengthTab:AddButton("TP Jungle Squat",tpJungleSquat)
+
+-- auto egg + shake
+local shakeRunning=false; local eggRunning2=false
+task.spawn(function()
     while true do
-        task.wait(0.1)
-        
-        -- Auto train
-        if autoTrainEnabled then
-            if currentTraining == "durability" then
-                muscleEvent:FireServer("durability")
-            else
-                muscleEvent:FireServer("punch")
+        if eggRunning2 then toolActivate("Protein Egg","proteinEgg"); task.wait(1800) else task.wait(1) end
+    end
+end)
+task.spawn(function()
+    while true do
+        if shakeRunning then toolActivate("Tropical Shake","tropicalShake"); task.wait(900) else task.wait(1) end
+    end
+end)
+StrengthTab:AddToggle("Auto Protein Egg",false,function(s) eggRunning2=s; if s then toolActivate("Protein Egg","proteinEgg") end end)
+StrengthTab:AddToggle("Auto Tropical Shake",false,function(s) shakeRunning=s; if s then toolActivate("Tropical Shake","tropicalShake") end end)
+
+-------------------- stat loops --------------------
+-- rebirth timer
+task.spawn(function()
+    while true do updateRebDisp(); task.wait(0.1) end
+end)
+
+-- strength/durability timer + pace
+task.spawn(function()
+    local lastCalc=tick()
+    while true do
+        local now=tick()
+        updateStrDisp()
+        strGainLbl.Text = "Strength: "..fmt(strength.Value).."  |  Gained: "..fmt(strength.Value-initStr)
+        durGainLbl.Text = "Durability: "..fmt(durability.Value).."  |  Gained: "..fmt(durability.Value-initDur)
+
+        if strRun then
+            table.insert(strHist,{t=now,v=strength.Value})
+            table.insert(durHist,{t=now,v=durability.Value})
+            while #strHist>0 and now-strHist[1].t>calcInt do table.remove(strHist,1) end
+            while #durHist>0 and now-durHist[1].t>calcInt do table.remove(durHist,1) end
+
+            if now-lastCalc>=calcInt then
+                lastCalc=now
+                if #strHist>=2 then
+                    local d=strHist[#strHist].v-strHist[1].v
+                    local ps=d/calcInt
+                    strPaceLbl.Text=string.format("Str Pace: %s /h  |  %s /d  |  %s /w",fmt(ps*3600),fmt(ps*86400),fmt(ps*604800))
+                end
+                if #durHist>=2 then
+                    local d=durHist[#durHist].v-durHist[1].v
+                    local ps=d/calcInt
+                    durPaceLbl.Text=string.format("Dur Pace: %s /h  |  %s /d  |  %s /w",fmt(ps*3600),fmt(ps*86400),fmt(ps*604800))
+                end
+                local tot=strElapsed+(now-strStart)
+                if tot>0 then
+                    local sps=(strength.Value-initStr)/tot
+                    strAvgLbl.Text=string.format("Avg Str: %s /h  |  %s /d  |  %s /w",fmt(sps*3600),fmt(sps*86400),fmt(sps*604800))
+                    local dps=(durability.Value-initDur)/tot
+                    durAvgLbl.Text=string.format("Avg Dur: %s /h  |  %s /d  |  %s /w",fmt(dps*3600),fmt(dps*86400),fmt(dps*604800))
+                end
             end
-            task.wait(trainDelay)
         end
-        
-        -- Auto rebirth
-        if autoRebirthEnabled and rebirths.Value >= rebirthAt then
-            RS.rEvents.rebirthEvent:FireServer()
-            task.wait(1)
+        task.wait(0.05)
+    end
+end)
+
+-- universal anti-afk (triggers when any button pressed)
+local GC=game:GetService("GuiService")
+local UIS=game:GetService("UserInputService")
+GC.MenuOpened:Connect(function() GC:CloseMenu() end)
+task.spawn(function()
+    while true do
+        if rebAntiAfkEnabled or strAntiAfkEnabled then
+            UIS:SendKeyEvent(false,Enum.KeyCode.LeftShift,false,game)
         end
-        
-        -- Punch spam
-        if punchSpamEnabled then
-            muscleEvent:FireServer("punch")
-            task.wait(0.2)
-        end
-        
-        -- Auto equip functionality
-        if autoEquipPunchEnabled then
-            autoEquipPunch()
-        end
-        
-        if autoEquipFastEnabled then
-            autoEquipFast()
-        end
-        
-        -- Auto punch and fast punch
-        if autoPunchEnabled then
-            muscleEvent:FireServer("punch")
-            task.wait(0.3)
-        end
-        
-        if autoFastPunchEnabled then
-            muscleEvent:FireServer("punch")
-            task.wait(0.15)
+        task.wait(120)
+    end
+end)
+
+--------------------------------------------------------
+--  ENHANCED KILLER TAB - ALL NEW FEATURES
+--------------------------------------------------------
+local Players  = game:GetService("Players")
+local RunSrv   = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
+
+-- Enhanced storage for all features
+local killAll      = false
+local killTarg     = false
+local killAura     = false
+local nanoWhile    = false
+local autoPunch    = false
+local fastPunch    = false
+local antiKnockback = false
+local autoWhitelist = false
+local targetPlayer = nil
+local viewConnection= nil
+local killAuraRadius = 25
+local punchSpeed = 0.1
+local whitelistedFriends = {}
+local bangTarget = nil
+
+-- Local functions for enhanced features
+local function getRoot(p)
+    return p.Character and p.Character:FindFirstChild("HumanoidRootPart")
+end
+
+local function dealDmg(p)
+    local r = getRoot(p)
+    if r then
+        muscleEvent:FireServer("rep")
+        if fastPunch then
+            muscleEvent:FireServer("rep")
+            muscleEvent:FireServer("rep")
         end
     end
 end
 
--- Killer loop
-local function killerLoop()
-    while true do
-        task.wait(0.1)
-        
-        -- Update kill pace every minute
-        if tick() - lastPaceUpdate >= 60 then
-            local elapsedHours = (tick() - startTime) / 3600
-            local killsPerHour = killCount / math.max(elapsedHours, 0.001)
-            killPaceLabel.Text = "Kill Pace: " .. string.format("%.1f", killsPerHour) .. " kills/hour"
-            totalKillsLabel.Text = "Total Kills: " .. tostring(killCount)
-            lastPaceUpdate = tick()
+local function setBodyScale(p,size)
+    local human = p.Character and p.Character:FindFirstChildOfClass("Humanoid")
+    if human then
+        human:FindFirstChild("BodyWidthScale").Value  = size
+        human:FindFirstChild("BodyHeightScale").Value = size
+        human:FindFirstChild("BodyDepthScale").Value  = size
+        human:FindFirstChild("HeadScale").Value       = size
+    end
+end
+
+local function isFriendWhitelisted(player)
+    if not autoWhitelist then return false end
+    for _,friend in pairs(whitelistedFriends) do
+        if friend == player then
+            return true
         end
-        
-        -- Kill target
-        if killTargetEnabled and selectedTarget then
-            local target = getTargetPlayer(selectedTarget)
-            if target and (not whitelistEnabled or not whitelistedPlayers[selectedTarget]) then
-                killPlayer(target)
+    end
+    return false
+end
+
+local function applyAntiKnockback(player)
+    if antiKnockback and player.Character then
+        local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
+        if humanoid then
+            humanoid.PlatformStand = true
+            humanoid.Sit = false
+        end
+        local root = getRoot(player)
+        if root then
+            root.Anchored = true
+            task.wait(0.1)
+            root.Anchored = false
+        end
+    end
+end
+
+local function bangPlayer(player)
+    if player and player.Character and bangTarget == player then
+        local root = getRoot(player)
+        if root then
+            local originalPos = root.Position
+            while bangTarget == player do
+                root.CFrame = CFrame.new(originalPos + Vector3.new(math.random(-5,5), 0, math.random(-5,5)))
+                task.wait(0.05)
             end
         end
-        
-        -- Kill all
-        if killAllEnabled then
-            for _, v in ipairs(game:GetService("Players"):GetPlayers()) do
-                if v ~= Player and (not whitelistEnabled or not whitelistedPlayers[v.Name]) then
-                    killPlayer(v)
+    end
+end
+
+-- Enhanced kill-all loop with whitelist
+local function killAllLoop()
+    while true do
+        if killAll then
+            for _,v in ipairs(Players:GetPlayers()) do
+                if v~=Player and not isFriendWhitelisted(v) then
+                    dealDmg(v)
+                    if antiKnockback then
+                        applyAntiKnockback(v)
+                    end
                 end
             end
         end
-        
-        -- Kill aura
-        if killAuraEnabled then
-            for _, v in ipairs(game:GetService("Players"):GetPlayers()) do
-                if v ~= Player and (not whitelistEnabled or not whitelistedPlayers[v.Name]) then
-                    if isPlayerInRange(v, auraRadius) then
-                        killPlayer(v)
+        RunSrv.Heartbeat:Wait()
+    end
+end
+
+-- Enhanced single-target loop
+local function killTargetLoop()
+    while true do
+        if killTarg and targetPlayer and targetPlayer.Parent then
+            dealDmg(targetPlayer)
+            if nanoWhile then setBodyScale(targetPlayer,0.01) end
+            if antiKnockback then
+                applyAntiKnockback(targetPlayer)
+            end
+        end
+        RunSrv.Heartbeat:Wait()
+    end
+end
+
+-- Enhanced kill-aura loop with configurable radius
+local function killAuraLoop()
+    while true do
+        if killAura then
+            local myRoot = getRoot(Player)
+            if myRoot then
+                for _,v in ipairs(Players:GetPlayers()) do
+                    if v~=Player and not isFriendWhitelisted(v) then
+                        local tRoot = getRoot(v)
+                        if tRoot and (tRoot.Position-myRoot.Position).Magnitude<=killAuraRadius then
+                            dealDmg(v)
+                            if antiKnockback then
+                                applyAntiKnockback(v)
+                            end
+                        end
                     end
+                end
+            end
+        end
+        RunSrv.Heartbeat:Wait()
+    end
+end
+
+-- Auto punch loop
+local function autoPunchLoop()
+    while true do
+        if autoPunch then
+            muscleEvent:FireServer("rep")
+            task.wait(punchSpeed)
+        else
+            task.wait(0.1)
+        end
+    end
+end
+
+-- View/Unview functions
+local function viewPlayer(p)
+    if viewConnection then viewConnection:Disconnect() end
+    local cam = workspace.CurrentCamera
+    viewConnection = RunSrv.RenderStepped:Connect(function()
+        local r = getRoot(p)
+        if r then
+            cam.CFrame = CFrame.new(r.Position+Vector3.new(0,5,10), r.Position)
+        else
+            viewConnection:Disconnect(); viewConnection=nil
+        end
+    end)
+end
+
+local function unview()
+    if viewConnection then viewConnection:Disconnect(); viewConnection=nil end
+    workspace.CurrentCamera.CameraSubject = Player.Character.Humanoid
+end
+
+-- Update whitelist function
+local function updateWhitelist()
+    whitelistedFriends = {}
+    if autoWhitelist then
+        local success, friends = pcall(function()
+            return Players:GetFriendsAsync(Player.UserId)
+        end)
+        if success then
+            for _,friend in pairs(friends) do
+                local friendPlayer = Players:FindFirstChild(friend.Username)
+                if friendPlayer then
+                    table.insert(whitelistedFriends, friendPlayer)
                 end
             end
         end
@@ -514,11 +534,167 @@ local function killerLoop()
 end
 
 -- Start all loops
-task.spawn(mainLoop)
-task.spawn(killerLoop)
+task.spawn(killAllLoop)
+task.spawn(killTargetLoop)
+task.spawn(killAuraLoop)
+task.spawn(autoPunchLoop)
 
--- Initialize player dropdowns on startup
-updatePlayerDropdowns()
+-- Enhanced UI Elements
+Killer:AddLabel("=== ENHANCED KILLER FEATURES ===")
 
-print("KYYxERIUMv2 Perfect loaded successfully!")
-print("All Killer Tab features are now working!")
+-- Auto Punch Section
+Killer:AddToggle("Auto Equip Punch", false, function(v) 
+    autoPunch = v 
+end)
+
+Killer:AddToggle("Fast Punch", false, function(v) 
+    fastPunch = v 
+end)
+
+Killer:AddTextBox("Punch Speed (seconds)","0.1",function(v)
+    local n=tonumber(v); if n and n>0 then punchSpeed=n end
+end)
+
+-- Whitelist Section
+Killer:AddToggle("Auto Whitelist Friends", false, function(v) 
+    autoWhitelist = v 
+    updateWhitelist()
+end)
+
+local whitelistDropdown = Killer:AddDropdown("Manual Whitelist", {}, function(selectedPlayer)
+    if selectedPlayer and selectedPlayer ~= "Select Player" then
+        local player = Players:FindFirstChild(selectedPlayer)
+        if player and not table.find(whitelistedFriends, player) then
+            table.insert(whitelistedFriends, player)
+        end
+    end
+end)
+
+-- Update dropdown options
+local function updateDropdownOptions()
+    local playerNames = {"Select Player"}
+    for _,p in ipairs(Players:GetPlayers()) do
+        if p ~= Player then
+            table.insert(playerNames, p.Name)
+        end
+    end
+    whitelistDropdown:Refresh(playerNames)
+end
+
+-- Refresh dropdown when players join/leave
+Players.PlayerAdded:Connect(updateDropdownOptions)
+Players.PlayerRemoving:Connect(updateDropdownOptions)
+updateDropdownOptions()
+
+-- Kill All Section
+Killer:AddToggle("Kill All Players", false, function(v) 
+    killAll = v 
+end)
+
+-- Kill Target Section
+local targetDropdown = Killer:AddDropdown("Select Target", {"Select Target"}, function(selectedTarget)
+    if selectedTarget and selectedTarget ~= "Select Target" then
+        targetPlayer = Players:FindFirstChild(selectedTarget)
+    else
+        targetPlayer = nil
+    end
+end)
+
+-- Update target dropdown
+local function updateTargetDropdown()
+    local targetNames = {"Select Target"}
+    for _,p in ipairs(Players:GetPlayers()) do
+        if p ~= Player then
+            table.insert(targetNames, p.Name)
+        end
+    end
+    targetDropdown:Refresh(targetNames)
+end
+
+Players.PlayerAdded:Connect(updateTargetDropdown)
+Players.PlayerRemoving:Connect(updateTargetDropdown)
+updateTargetDropdown()
+
+Killer:AddToggle("Kill Target Player", false, function(v) 
+    killTarg = v 
+end)
+
+-- View/Unview Section
+Killer:AddButton("View Target", function() 
+    if targetPlayer then 
+        viewPlayer(targetPlayer) 
+    end 
+end)
+
+Killer:AddButton("Unview Target", unview)
+
+-- Kill Aura Section
+Killer:AddToggle("Kill Aura", false, function(v) 
+    killAura = v 
+end)
+
+Killer:AddTextBox("Aura Radius","25",function(v)
+    local n=tonumber(v); if n and n>0 then killAuraRadius=n end
+end)
+
+-- Anti Knockback Section
+Killer:AddToggle("Anti Knockback/Fling", false, function(v) 
+    antiKnockback = v 
+end)
+
+-- Bang Players Section
+local bangDropdown = Killer:AddDropdown("Bang Player", {"Select Player"}, function(selectedPlayer)
+    if selectedPlayer and selectedPlayer ~= "Select Player" then
+        bangTarget = Players:FindFirstChild(selectedPlayer)
+        if bangTarget then
+            task.spawn(bangPlayer, bangTarget)
+        end
+    else
+        bangTarget = nil
+    end
+end)
+
+-- Update bang dropdown
+local function updateBangDropdown()
+    local bangNames = {"Select Player"}
+    for _,p in ipairs(Players:GetPlayers()) do
+        if p ~= Player then
+            table.insert(bangNames, p.Name)
+        end
+    end
+    bangDropdown:Refresh(bangNames)
+end
+
+Players.PlayerAdded:Connect(updateBangDropdown)
+Players.PlayerRemoving:Connect(updateBangDropdown)
+updateBangDropdown()
+
+-- Additional Features
+Killer:AddToggle("Nano Size While Kill", false, function(v) 
+    nanoWhile = v 
+end)
+
+-- Status Labels
+local statusLabel1 = Killer:AddLabel("Status: Ready")
+local statusLabel2 = Killer:AddLabel("Target: None")
+local statusLabel3 = Killer:AddLabel("Whitelisted: 0 friends")
+
+-- Update status labels
+local function updateStatus()
+    while true do
+        local activeFeatures = {}
+        if killAll then table.insert(activeFeatures, "Kill All") end
+        if killTarg and targetPlayer then table.insert(activeFeatures, "Kill Target") end
+        if killAura then table.insert(activeFeatures, "Kill Aura") end
+        if autoPunch then table.insert(activeFeatures, "Auto Punch") end
+        if antiKnockback then table.insert(activeFeatures, "Anti KB") end
+        
+        statusLabel1.Text = "Status: " .. (#activeFeatures > 0 and table.concat(activeFeatures, ", ") or "Ready")
+        statusLabel2.Text = "Target: " .. (targetPlayer and targetPlayer.Name or "None")
+        statusLabel3.Text = "Whitelisted: " .. #whitelistedFriends .. " friends"
+        
+        task.wait(1)
+    end
+end
+
+task.spawn(updateStatus)
