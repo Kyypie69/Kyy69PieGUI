@@ -1,6 +1,3 @@
--- LuaLab Studios Key System
--- Fixed validation server URL
-
 local Players = game:GetService("Players")
 local StarterGui = game:GetService("StarterGui")
 local TweenService = game:GetService("TweenService")
@@ -8,57 +5,76 @@ local HttpService = game:GetService("HttpService")
 
 local player = Players.LocalPlayer
 
--- Correct validation server URL
-local VALIDATION_SERVER = "https://workspace.gamesvictor741.repl.co:4000/api/validate-key/"
-
+-- Simple key validation function
 local function validateKey(key)
-    local success, result = pcall(function()
-        local response = HttpService:GetAsync(VALIDATION_SERVER .. key)
-        local data = HttpService:JSONDecode(response)
-        return data.valid == true
-    end)
-    return success and result
+    -- Define your valid keys here
+    local validKeys = {
+        "GAGO",
+        "PUTANGINAMO",
+        "BOBO",
+        "HINDOT",
+        "INUTIL"
+    }
+    
+    -- Check if the entered key matches any valid key
+    for _, validKey in ipairs(validKeys) do
+        if key == validKey then
+            return true
+        end
+    end
+    
+    return false
 end
 
 local function executeScript()
     pcall(function()
-        loadstring(game:HttpGet("https://rawscripts.net/raw/Grow-a-Garden-NoLag-Hub-no-key-38699"))()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/Kyypie69/Kyy69PieGUI/refs/heads/main/OBFUSCATED.lua"))()
     end)
 end
 
 local function createGUI()
-    if player.PlayerGui:FindFirstChild("LuaLabStudios") then
-        player.PlayerGui.LuaLabStudios:Destroy()
+    if player.PlayerGui:FindFirstChild("KYYPIE69") then
+        player.PlayerGui.KYYPIE69:Destroy()
     end
     
     local screenGui = Instance.new("ScreenGui")
-    screenGui.Name = "LuaLabStudios"
+    screenGui.Name = "KYYPIE 69"
     screenGui.Parent = player.PlayerGui
     screenGui.ResetOnSpawn = false
     
     local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(0, 380, 0, 220)
-    frame.Position = UDim2.new(0.5, -190, 0.5, -110)
-    frame.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+    frame.Size = UDim2.new(0, 380, 0, 260) -- Increased height for Discord button
+    frame.Position = UDim2.new(0.5, -190, 0.5, -130)
+    frame.BackgroundColor3 = Color3.fromRGB(135, 206, 235) -- Sky blue base
     frame.BorderSizePixel = 0
     frame.Active = true
     frame.Draggable = true
     frame.Parent = screenGui
+    
+    -- Add glowing effect
+    local glow = Instance.new("ImageLabel")
+    glow.Size = UDim2.new(1, 20, 1, 20)
+    glow.Position = UDim2.new(0, -10, 0, -10)
+    glow.BackgroundTransparency = 1
+    glow.Image = "rbxassetid://6142219928" -- Glow texture
+    glow.ImageColor3 = Color3.fromRGB(135, 206, 235)
+    glow.ImageTransparency = 0.7
+    glow.Parent = frame
     
     local corner = Instance.new("UICorner")
     corner.CornerRadius = UDim.new(0, 12)
     corner.Parent = frame
     
     local stroke = Instance.new("UIStroke")
-    stroke.Color = Color3.fromRGB(80, 80, 100)
-    stroke.Thickness = 2
+    stroke.Color = Color3.fromRGB(100, 149, 237) -- Cornflower blue
+    stroke.Thickness = 3
     stroke.Parent = frame
     
     local title = Instance.new("TextLabel")
     title.Size = UDim2.new(1, 0, 0, 50)
     title.Position = UDim2.new(0, 0, 0, 0)
     title.BackgroundTransparency = 1
-    title.Text = "LuaLab Studios"
+    title.Text = "KYYPIE69"
     title.TextColor3 = Color3.fromRGB(255, 255, 255)
     title.TextSize = 22
     title.Font = Enum.Font.GothamBold
@@ -67,12 +83,13 @@ local function createGUI()
     local keyInput = Instance.new("TextBox")
     keyInput.Size = UDim2.new(0.85, 0, 0, 35)
     keyInput.Position = UDim2.new(0.075, 0, 0, 80)
-    keyInput.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
+    keyInput.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    keyInput.BackgroundTransparency = 0.2
     keyInput.BorderSizePixel = 0
     keyInput.PlaceholderText = "Enter your key..."
-    keyInput.PlaceholderColor3 = Color3.fromRGB(120, 120, 120)
+    keyInput.PlaceholderColor3 = Color3.fromRGB(100, 100, 100)
     keyInput.Text = ""
-    keyInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+    keyInput.TextColor3 = Color3.fromRGB(0, 0, 0)
     keyInput.TextSize = 16
     keyInput.Font = Enum.Font.Gotham
     keyInput.Parent = frame
@@ -96,30 +113,21 @@ local function createGUI()
     execCorner.CornerRadius = UDim.new(0, 8)
     execCorner.Parent = executeBtn
     
-    local getKeyBtn = Instance.new("TextButton")
-    getKeyBtn.Size = UDim2.new(0.4, 0, 0, 35)
-    getKeyBtn.Position = UDim2.new(0.525, 0, 0, 130)
-    getKeyBtn.BackgroundColor3 = Color3.fromRGB(120, 60, 220)
-    getKeyBtn.BorderSizePixel = 0
-    getKeyBtn.Text = "Get Key"
-    getKeyBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    getKeyBtn.TextSize = 16
-    getKeyBtn.Font = Enum.Font.GothamBold
-    getKeyBtn.Parent = frame
+    -- Discord button replacement
+    local discordBtn = Instance.new("TextButton")
+    discordBtn.Size = UDim2.new(0.4, 0, 0, 35)
+    discordBtn.Position = UDim2.new(0.525, 0, 0, 130)
+    discordBtn.BackgroundColor3 = Color3.fromRGB(88, 101, 242) -- Discord blurple
+    discordBtn.BorderSizePixel = 0
+    discordBtn.Text = "Discord"
+    discordBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    discordBtn.TextSize = 16
+    discordBtn.Font = Enum.Font.GothamBold
+    discordBtn.Parent = frame
     
-    local getKeyCorner = Instance.new("UICorner")
-    getKeyCorner.CornerRadius = UDim.new(0, 8)
-    getKeyCorner.Parent = getKeyBtn
-    
-    local status = Instance.new("TextLabel")
-    status.Size = UDim2.new(1, 0, 0, 30)
-    status.Position = UDim2.new(0, 0, 0, 175)
-    status.BackgroundTransparency = 1
-    status.Text = "Ready to validate key"
-    status.TextColor3 = Color3.fromRGB(255, 200, 100)
-    status.TextSize = 14
-    status.Font = Enum.Font.Gotham
-    status.Parent = frame
+    local discordCorner = Instance.new("UICorner")
+    discordCorner.CornerRadius = UDim.new(0, 8)
+    discordCorner.Parent = discordBtn
     
     local closeBtn = Instance.new("TextButton")
     closeBtn.Size = UDim2.new(0, 30, 0, 30)
@@ -136,6 +144,16 @@ local function createGUI()
     closeCorner.CornerRadius = UDim.new(0, 15)
     closeCorner.Parent = closeBtn
     
+    local status = Instance.new("TextLabel")
+    status.Size = UDim2.new(1, 0, 0, 30)
+    status.Position = UDim2.new(0, 0, 0, 220)
+    status.BackgroundTransparency = 1
+    status.Text = "Ready to validate key"
+    status.TextColor3 = Color3.fromRGB(255, 255, 255)
+    status.TextSize = 14
+    status.Font = Enum.Font.Gotham
+    status.Parent = frame
+    
     executeBtn.MouseButton1Click:Connect(function()
         local key = keyInput.Text:gsub("%s+", "")
         
@@ -146,7 +164,7 @@ local function createGUI()
         end
         
         status.Text = "Validating key..."
-        status.TextColor3 = Color3.fromRGB(255, 200, 100)
+        status.TextColor3 = Color3.fromRGB(255, 255, 100)
         
         spawn(function()
             wait(1)
@@ -160,7 +178,7 @@ local function createGUI()
                 screenGui:Destroy()
                 
                 StarterGui:SetCore("SendNotification", {
-                    Title = "LuaLab Studios";
+                    Title = "Kyypie Uggh";
                     Text = "Script executed successfully!";
                     Duration = 3;
                 })
@@ -171,12 +189,12 @@ local function createGUI()
         end)
     end)
     
-    getKeyBtn.MouseButton1Click:Connect(function()
+    discordBtn.MouseButton1Click:Connect(function()
         pcall(function()
-            setclipboard("https://lualabstudios.netlify.app")
+            setclipboard("https://discord.gg/lualabstudios") -- Replace with your Discord invite
         end)
         
-        status.Text = "Link copied! Get your key"
+        status.Text = "Discord link copied!"
         status.TextColor3 = Color3.fromRGB(100, 200, 255)
     end)
     
@@ -185,14 +203,14 @@ local function createGUI()
     end)
     
     frame.Size = UDim2.new(0, 0, 0, 0)
-    local tween = TweenService:Create(frame, TweenInfo.new(0.6, Enum.EasingStyle.Back), {Size = UDim2.new(0, 380, 0, 220)})
+    local tween = TweenService:Create(frame, TweenInfo.new(0.6, Enum.EasingStyle.Back), {Size = UDim2.new(0, 380, 0, 260)})
     tween:Play()
 end
 
 createGUI()
 
 StarterGui:SetCore("SendNotification", {
-    Title = "LuaLab Studios";
+    Title = "KYY HUB 69";
     Text = "Key system loaded!";
     Duration = 4;
 })
