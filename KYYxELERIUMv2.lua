@@ -73,6 +73,20 @@ local function tpJungleSquat()
     Vim:SendKeyEvent(false,Enum.KeyCode.E,false,game)
 end
 
+-- PASTE INTO COMMAND BAR OR NEW SCRIPT
+local lock = false
+local con  = nil
+local saved = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame
+
+con = game:GetService("RunService").Heartbeat:Connect(function()
+    if not lock then con:Disconnect() return end
+    game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = saved
+end)
+
+-- turn on/off by typing these two lines in console
+-- lock = true     -- freeze
+-- lock = false    -- release
+
 local function antiLag()
     -- NO GUI destruction
     for _,v in pairs(workspace:GetDescendants()) do
