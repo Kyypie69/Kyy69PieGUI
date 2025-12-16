@@ -192,27 +192,49 @@ RebirthTab:AddButton("Equip 8× Swift Samurai",function() equipEight("Swift Samu
 RebirthTab:AddButton("Anti Lag",antiLag)
 
 --------------------------------------------------------
---  Position Lock  (Rebirth tab)
+--  Position Lock  (Rebirth tab)  –  FIXED
 --------------------------------------------------------
-local posLockConn = nil   -- heartbeat connection
+local posLockConn = nil
 local lockEnabled   = false
+local savedCFrame   = nil
 
+local function applyLock()
+    -- grab current position once, then keep snapping to it
+    local root = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
+    if root then savedCFrame = root.CFrame end
+    if not savedCFrame then return end   -- safety
+
+    posLockConn = RunService.Heartbeat:Connect(function()
+        local r = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
+        if r then r.CFrame = savedCFrame end
+    end)
+end
+
+local function stopLock()
+    if posLockConn then posLockConn:Disconnect() end
+    posLockConn = nil
+end
+
+-- toggle callback
 local function updatePosLock(state)
     lockEnabled = state
     if state then
-        local root = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
-        if not root then return end
-        local saved = root.CFrame
-        posLockConn = RunService.Heartbeat:Connect(function()
-            local r = Player.Character and Player.Character:FindChild("HumanoidRootPart")
-            if r then r.CFrame = saved end
-        end)
+        applyLock()
     else
-        if posLockConn then posLockConn:Disconnect(); posLockConn = nil end
+        stopLock()
     end
 end
 
--- toggle inside Rebirth tab
+-- if character dies we re-grab the lock position instantly
+Player.CharacterAdded:Connect(function(char)
+    if lockEnabled then
+        stopLock()
+        task.wait(.1)        -- let root spawn
+        applyLock()
+    end
+end)
+
+-- UI toggle in Rebirth tab
 RebirthTab:AddToggle("Lock Position", false, updatePosLock)
 RebirthTab:AddButton("TP Jungle Lift",tpJungleLift)
 
