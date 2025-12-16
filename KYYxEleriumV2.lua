@@ -74,53 +74,53 @@ local function tpJungleSquat()
 end
 
 --------------------------------------------------------------------
---  NEW anti-lag:  black world, 0 lighting,  NO gui touched
+--  REAL black-screen: world gone, GUIs stay, sky stays black
 --------------------------------------------------------------------
 local function antiLag()
-    -- 1) wipe every visual instance that is NOT a GUI
-    for _,desc in ipairs(workspace:GetDescendants()) do
-        if  desc:IsA("BasePart")              or
-            desc:IsA("MeshPart")              or
-            desc:IsA("UnionOperation")        or
-            desc:IsA("TrussPart")             or
-            desc:IsA("CornerWedgePart")       or
-            desc:IsA("WedgePart")             or
-            desc:IsA("SpawnLocation")         or
-            desc:IsA("Model")                 or  -- clear models too
-            desc:IsA("Folder")                then
-            -- only clear parts / models / folders
-            if not desc:IsA("GuiObject")      and
-               not desc:FindFirstChildOfClass("ScreenGui") and
-               not desc:FindFirstChildOfClass("SurfaceGui") and
-               not desc:FindFirstChildOfClass("BillboardGui") then
-                desc:Destroy()
+    -- 1) destroy every physical instance that the renderer sees
+    for _, desc in ipairs(workspace:GetDescendants()) do
+        -- skip every kind of GUI so our hub / game menus survive
+        if  not desc:IsA("GuiObject")                    and
+            not desc:FindFirstChildOfClass("ScreenGui")  and
+            not desc:FindFirstChildOfClass("SurfaceGui") and
+            not desc:FindFirstChildOfClass("BillboardGui")
+        then
+            -- anything that can be rendered goes away
+            if  desc:IsA("BasePart")        or
+                desc:IsA("MeshPart")        or
+                desc:IsA("UnionOperation")  or
+                desc:IsA("TrussPart")       or
+                desc:IsA("CornerWedgePart") or
+                desc:IsA("WedgePart")       or
+                desc:IsA("SpawnLocation")   or
+                desc:IsA("Model")           or
+                desc:IsA("Folder")          or
+                desc:IsA("ParticleEmitter") or
+                desc:IsA("PointLight")      or
+                desc:IsA("SpotLight")       or
+                desc:IsA("SurfaceLight")    or
+                desc:IsA("Sky")             or
+                desc:IsA("Decal")           or
+                desc:IsA("Texture")
+            then
+                pcall(function() desc:Destroy() end)
             end
         end
     end
 
-    -- 2) wipe emitters / lights
-    for _,v in ipairs(workspace:GetDescendants()) do
-        if v:IsA("ParticleEmitter") or
-           v:IsA("PointLight")      or
-           v:IsA("SpotLight")       or
-           v:IsA("SurfaceLight")    then
-            v:Destroy()
-        end
-    end
-
-    -- 3) lighting → black void
+    -- 2) lighting → absolute void
     local l = game:GetService("Lighting")
-    for _,sky in ipairs(l:GetChildren()) do
+    for _, sky in ipairs(l:GetChildren()) do
         if sky:IsA("Sky") then sky:Destroy() end
     end
-    local sky = Instance.new("Sky")
-    sky.SkyboxBk = "rbxassetid://0"
-    sky.SkyboxDn = "rbxassetid://0"
-    sky.SkyboxFt = "rbxassetid://0"
-    sky.SkyboxLf = "rbxassetid://0"
-    sky.SkyboxRt = "rbxassetid://0"
-    sky.SkyboxUp = "rbxassetid://0"
-    sky.Parent   = l
+    local blackSky = Instance.new("Sky")
+    blackSky.SkyboxBk = "rbxassetid://0"
+    blackSky.SkyboxDn = "rbxassetid://0"
+    blackSky.SkyboxFt = "rbxassetid://0"
+    blackSky.SkyboxLf = "rbxassetid://0"
+    blackSky.SkyboxRt = "rbxassetid://0"
+    blackSky.SkyboxUp = "rbxassetid://0"
+    blackSky.Parent = l
 
     l.Brightness      = 0
     l.ClockTime       = 0
@@ -128,7 +128,8 @@ local function antiLag()
     l.OutdoorAmbient  = Color3.new(0,0,0)
     l.Ambient         = Color3.new(0,0,0)
     l.FogColor        = Color3.new(0,0,0)
-    l.FogEnd          = 100
+    l.FogEnd          = 0
+    l.GlobalShadows   = false
 end
 
 -------------------- hide-frames helper --------------------
