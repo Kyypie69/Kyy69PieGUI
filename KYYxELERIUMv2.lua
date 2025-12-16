@@ -206,50 +206,51 @@ RebirthTab:AddButton("Equip 8× Swift Samurai",function() equipEight("Swift Samu
 RebirthTab:AddButton("Anti Lag",antiLag)
 
 --------------------------------------------------------
---  Position Lock  (Rebirth tab)  –  FIXED
+--  Position Lock  (Rebirth tab)  –  TELEPORT + ANCHOR
 --------------------------------------------------------
-local posLockConn = nil
-local lockEnabled   = false
-local savedCFrame   = nil
+local lockConn   = nil
+local lockEnabled = false
+local savedPos   = nil
 
-local function applyLock()
-    -- grab current position once, then keep snapping to it
+local function stopLock()
+    if lockConn then lockConn:Disconnect() end
+    lockConn = nil
+    local r = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
+    if r then r.Anchored = false end
+end
+
+local function startLock()
     local root = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
-    if root then savedCFrame = root.CFrame end
-    if not savedCFrame then return end   -- safety
+    if not root then return end
+    savedPos = root.CFrame
+    root.Anchored = true          -- try anchor first (instant freeze on many gym games)
 
-    posLockConn = RunService.Heartbeat:Connect(function()
+    -- fallback teleport loop if anchor gets overridden
+    lockConn = RunService.Heartbeat:Connect(function()
         local r = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
-        if r then r.CFrame = savedCFrame end
+        if r then
+            r.Anchored = true
+            r.CFrame = savedPos   -- still attempt CFrame every frame
+        end
     end)
 end
 
-local function stopLock()
-    if posLockConn then posLockConn:Disconnect() end
-    posLockConn = nil
-end
-
--- toggle callback
 local function updatePosLock(state)
     lockEnabled = state
-    if state then
-        applyLock()
-    else
-        stopLock()
-    end
+    if state then startLock() else stopLock() end
 end
 
--- if character dies we re-grab the lock position instantly
+-- respawn support
 Player.CharacterAdded:Connect(function(char)
     if lockEnabled then
         stopLock()
-        task.wait(.1)        -- let root spawn
-        applyLock()
+        task.wait(.2)
+        startLock()
     end
 end)
 
--- UI toggle in Rebirth tab
-RebirthTab:AddToggle("Lock Position", false, updatePosLock)
+-- UI toggle
+RebirthTab:AddToggle("Lock 69 Position", false, updatePosLock)
 RebirthTab:AddButton("TP Jungle Lift",tpJungleLift)
 
 -- auto protein egg
