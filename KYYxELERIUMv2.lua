@@ -329,14 +329,80 @@ task.spawn(function()
     end
 end)
 
--- universal anti-afk (triggers when any button pressed)
-local GC=game:GetService("GuiService")
-local UIS=game:GetService("UserInputService")
-GC.MenuOpened:Connect(function() GC:CloseMenu() end)
+--------------------------------------------------------
+--  ANTI-AFK  (universal, shared by Rebirth & Strength)
+--------------------------------------------------------
+-- GUI already created above – we just reuse it
+local Players            = game:GetService("Players")
+local UIS                = game:GetService("UserInputService")
+local GuiService         = game:GetService("GuiService")
+
+local player             = Players.LocalPlayer
+local rebAntiAfkEnabled  = false   -- toggled in Rebirth tab
+local strAntiAfkEnabled  = false   -- toggled in Strength tab
+
+-- build the overlay exactly like you had it
+local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
+gui.Name = "AntiAFKOverlay"
+
+local textLabel = Instance.new("TextLabel", gui)
+textLabel.Size = UDim2.new(0, 200, 0, 50)
+textLabel.Position = UDim2.new(0.5, -100, 0, -50)
+textLabel.TextColor3 = Color3.fromRGB(50, 255, 50)
+textLabel.Font = Enum.Font.GothamBold
+textLabel.TextSize = 20
+textLabel.BackgroundTransparency = 1
+textLabel.TextTransparency = 1
+textLabel.Text = "ANTI AFK"
+
+local timerLabel = Instance.new("TextLabel", gui)
+timerLabel.Size = UDim2.new(0, 200, 0, 30)
+timerLabel.Position = UDim2.new(0.5, -100, 0, -20)
+timerLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+timerLabel.Font = Enum.Font.GothamBold
+timerLabel.TextSize = 18
+timerLabel.BackgroundTransparency = 1
+timerLabel.TextTransparency = 1
+timerLabel.Text = "00:00:00"
+
+local startTime = tick()
+
+-- running timer
+task.spawn(function()
+    while true do
+        local elapsed = tick() - startTime
+        local h = math.floor(elapsed / 3600)
+        local m = math.floor((elapsed % 3600) / 60)
+        local s = math.floor(elapsed % 60)
+        timerLabel.Text = string.format("%02d:%02d:%02d", h, m, s)
+        task.wait(1)
+    end
+end)
+
+-- fade in/out animation
+task.spawn(function()
+    while true do
+        for i = 0, 1, 0.01 do
+            textLabel.TextTransparency = 1 - i
+            timerLabel.TextTransparency = 1 - i
+            task.wait(0.015)
+        end
+        task.wait(1.5)
+        for i = 0, 1, 0.01 do
+            textLabel.TextTransparency = i
+            timerLabel.TextTransparency = i
+            task.wait(0.015)
+        end
+        task.wait(0.8)
+    end
+end)
+
+-- universal shift-tap anti-afk (same as rest of the hub)
+GuiService.MenuOpened:Connect(function() GuiService:CloseMenu() end)
 task.spawn(function()
     while true do
         if rebAntiAfkEnabled or strAntiAfkEnabled then
-            UIS:SendKeyEvent(false,Enum.KeyCode.LeftShift,false,game)
+            UIS:SendKeyEvent(false, Enum.KeyCode.LeftShift, false, game)
         end
         task.wait(120)
     end
