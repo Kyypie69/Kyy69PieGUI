@@ -73,19 +73,62 @@ local function tpJungleSquat()
     Vim:SendKeyEvent(false,Enum.KeyCode.E,false,game)
 end
 
+--------------------------------------------------------------------
+--  NEW anti-lag:  black world, 0 lighting,  NO gui touched
+--------------------------------------------------------------------
 local function antiLag()
-    -- NO GUI destruction
-    for _,v in pairs(workspace:GetDescendants()) do
-        if v:IsA("ParticleEmitter") or v:IsA("PointLight") or v:IsA("SpotLight") or v:IsA("SurfaceLight") then
+    -- 1) wipe every visual instance that is NOT a GUI
+    for _,desc in ipairs(workspace:GetDescendants()) do
+        if  desc:IsA("BasePart")              or
+            desc:IsA("MeshPart")              or
+            desc:IsA("UnionOperation")        or
+            desc:IsA("TrussPart")             or
+            desc:IsA("CornerWedgePart")       or
+            desc:IsA("WedgePart")             or
+            desc:IsA("SpawnLocation")         or
+            desc:IsA("Model")                 or  -- clear models too
+            desc:IsA("Folder")                then
+            -- only clear parts / models / folders
+            if not desc:IsA("GuiObject")      and
+               not desc:FindFirstChildOfClass("ScreenGui") and
+               not desc:FindFirstChildOfClass("SurfaceGui") and
+               not desc:FindFirstChildOfClass("BillboardGui") then
+                desc:Destroy()
+            end
+        end
+    end
+
+    -- 2) wipe emitters / lights
+    for _,v in ipairs(workspace:GetDescendants()) do
+        if v:IsA("ParticleEmitter") or
+           v:IsA("PointLight")      or
+           v:IsA("SpotLight")       or
+           v:IsA("SurfaceLight")    then
             v:Destroy()
         end
     end
+
+    -- 3) lighting → black void
     local l = game:GetService("Lighting")
-    for _,s in pairs(l:GetChildren()) do if s:IsA("Sky") then s:Destroy() end end
-    local sky = Instance.new("Sky"); sky.SkyboxBk="rbxassetid://0"; sky.SkyboxDn="rbxassetid://0"; sky.SkyboxFt="rbxassetid://0";
-    sky.SkyboxLf="rbxassetid://0"; sky.SkyboxRt="rbxassetid://0"; sky.SkyboxUp="rbxassetid://0"; sky.Parent=l;
-    l.Brightness=0; l.ClockTime=0; l.TimeOfDay="00:00:00"; l.OutdoorAmbient=Color3.new(0,0,0);
-    l.Ambient=Color3.new(0,0,0); l.FogColor=Color3.new(0,0,0); l.FogEnd=100
+    for _,sky in ipairs(l:GetChildren()) do
+        if sky:IsA("Sky") then sky:Destroy() end
+    end
+    local sky = Instance.new("Sky")
+    sky.SkyboxBk = "rbxassetid://0"
+    sky.SkyboxDn = "rbxassetid://0"
+    sky.SkyboxFt = "rbxassetid://0"
+    sky.SkyboxLf = "rbxassetid://0"
+    sky.SkyboxRt = "rbxassetid://0"
+    sky.SkyboxUp = "rbxassetid://0"
+    sky.Parent   = l
+
+    l.Brightness      = 0
+    l.ClockTime       = 0
+    l.TimeOfDay       = "00:00:00"
+    l.OutdoorAmbient  = Color3.new(0,0,0)
+    l.Ambient         = Color3.new(0,0,0)
+    l.FogColor        = Color3.new(0,0,0)
+    l.FogEnd          = 100
 end
 
 -------------------- hide-frames helper --------------------
