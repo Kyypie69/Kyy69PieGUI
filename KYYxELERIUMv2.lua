@@ -191,6 +191,30 @@ end)
 
 RebirthTab:AddButton("Equip 8× Swift Samurai",function() equipEight("Swift Samurai") end)
 RebirthTab:AddButton("Anti Lag",antiLag)
+
+--------------------------------------------------------
+--  Position Lock  (Rebirth tab)
+--------------------------------------------------------
+local posLockConn = nil   -- heartbeat connection
+local lockEnabled   = false
+
+local function updatePosLock(state)
+    lockEnabled = state
+    if state then
+        local root = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
+        if not root then return end
+        local saved = root.CFrame
+        posLockConn = RunService.Heartbeat:Connect(function()
+            local r = Player.Character and Player.Character:FindChild("HumanoidRootPart")
+            if r then r.CFrame = saved end
+        end)
+    else
+        if posLockConn then posLockConn:Disconnect(); posLockConn = nil end
+    end
+end
+
+-- toggle inside Rebirth tab
+RebirthTab:AddToggle("Lock Position", false, updatePosLock)
 RebirthTab:AddButton("TP Jungle Lift",tpJungleLift)
 
 -- auto protein egg
