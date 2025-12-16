@@ -185,7 +185,7 @@ end)
 
 -- Anti-AFK button (rebirth tab)
 local rebAntiAfkEnabled=false
-RebirthTab:AddButton("Anti AFK (ON)",function()
+RebirthTab:AddButton("Anti AFK",function()
     rebAntiAfkEnabled=true
 end)
 
@@ -260,7 +260,7 @@ end)
 
 -- Anti-AFK button (strength tab)
 local strAntiAfkEnabled=false
-StrengthTab:AddButton("Anti AFK (ON)",function()
+StrengthTab:AddButton("Anti AFK",function()
     strAntiAfkEnabled=true
 end)
 
@@ -394,17 +394,6 @@ task.spawn(function()
             task.wait(0.015)
         end
         task.wait(0.8)
-    end
-end)
-
--- universal shift-tap anti-afk (same as rest of the hub)
-GuiService.MenuOpened:Connect(function() GuiService:CloseMenu() end)
-task.spawn(function()
-    while true do
-        if rebAntiAfkEnabled or strAntiAfkEnabled then
-            UIS:SendKeyEvent(false, Enum.KeyCode.LeftShift, false, game)
-        end
-        task.wait(120)
     end
 end)
 
