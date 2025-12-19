@@ -168,7 +168,7 @@ local function getPlayerDisplayText(player)
 end
 
 -------------------- window / tabs --------------------
-local Main = Win:CreateWindow("KYY HUB 0.69 | Skidded","Markyy")
+local Main = Win:CreateWindow("KYY HUB 0.69 | POTANG INA MO 🖕🏻","Markyy")
 local RebirthTab = Main:CreateTab("REB1RTH")
 local StrengthTab= Main:CreateTab("STR3NGTH")
 local KillerTab = Main:CreateTab("KILL3R")
@@ -935,7 +935,7 @@ local function createSpectateDropdown()
     end
     
     -- Create dropdown with proper KYY library syntax
-local specdropdown = KillerTab:CreateDropdown("Spectate Player", playerOptions, nil, 0.25, function(selectedText)
+local specdropdown = KillerTab:AddDropdown("Spectate Player", playerOptions, nil, 0.25, function(selectedText)
         for _, player in ipairs(game.Players:GetPlayers()) do
             local optionText = player.DisplayName .. " | " .. player.Name
             if selectedText == optionText then
