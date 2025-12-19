@@ -1,11 +1,12 @@
---[[  EleriumV2xKYY ENHANCED (ver.70)  ]]
+--[[  EleriumV2xKYY  (ver.70)  ]]
+-- Complete script with REB1RTH, STR3NGTH, and KILL3R tabs
 local Library = loadstring(game:HttpGet(
     "https://raw.githubusercontent.com/Kyypie69/Library.UI/refs/heads/main/KYY.luau"))()
 
 local Win = Library.new({
     MainColor      = Color3.fromRGB(138,43,226),
     ToggleKey      = Enum.KeyCode.Insert,
-    MinSize        = Vector2.new(550,400),
+    MinSize        = Vector2.new(450,320),
     CanResize      = false
 })
 
@@ -73,63 +74,18 @@ local function tpJungleSquat()
     Vim:SendKeyEvent(false,Enum.KeyCode.E,false,game)
 end
 
---------------------------------------------------------------------
---  REAL black-screen: world gone, GUIs stay, sky stays black
---------------------------------------------------------------------
 local function antiLag()
-    -- 1) destroy every physical instance that the renderer sees
-    for _, desc in ipairs(workspace:GetDescendants()) do
-        -- skip every kind of GUI so our hub / game menus survive
-        if  not desc:IsA("GuiObject")                    and
-            not desc:FindFirstChildOfClass("ScreenGui")  and
-            not desc:FindFirstChildOfClass("SurfaceGui") and
-            not desc:FindFirstChildOfClass("BillboardGui")
-        then
-            -- anything that can be rendered goes away
-            if  desc:IsA("BasePart")        or
-                desc:IsA("MeshPart")        or
-                desc:IsA("UnionOperation")  or
-                desc:IsA("TrussPart")       or
-                desc:IsA("CornerWedgePart") or
-                desc:IsA("WedgePart")       or
-                desc:IsA("SpawnLocation")   or
-                desc:IsA("Model")           or
-                desc:IsA("Folder")          or
-                desc:IsA("ParticleEmitter") or
-                desc:IsA("PointLight")      or
-                desc:IsA("SpotLight")       or
-                desc:IsA("SurfaceLight")    or
-                desc:IsA("Sky")             or
-                desc:IsA("Decal")           or
-                desc:IsA("Texture")
-            then
-                pcall(function() desc:Destroy() end)
-            end
+    for _,v in pairs(workspace:GetDescendants()) do
+        if v:IsA("ParticleEmitter") or v:IsA("PointLight") or v:IsA("SpotLight") or v:IsA("SurfaceLight") then
+            v:Destroy()
         end
     end
-
-    -- 2) lighting → absolute void
     local l = game:GetService("Lighting")
-    for _, sky in ipairs(l:GetChildren()) do
-        if sky:IsA("Sky") then sky:Destroy() end
-    end
-    local blackSky = Instance.new("Sky")
-    blackSky.SkyboxBk = "rbxassetid://0"
-    blackSky.SkyboxDn = "rbxassetid://0"
-    blackSky.SkyboxFt = "rbxassetid://0"
-    blackSky.SkyboxLf = "rbxassetid://0"
-    blackSky.SkyboxRt = "rbxassetid://0"
-    blackSky.SkyboxUp = "rbxassetid://0"
-    blackSky.Parent = l
-
-    l.Brightness      = 0
-    l.ClockTime       = 0
-    l.TimeOfDay       = "00:00:00"
-    l.OutdoorAmbient  = Color3.new(0,0,0)
-    l.Ambient         = Color3.new(0,0,0)
-    l.FogColor        = Color3.new(0,0,0)
-    l.FogEnd          = 0
-    l.GlobalShadows   = false
+    for _,s in pairs(l:GetChildren()) do if s:IsA("Sky") then s:Destroy() end end
+    local sky = Instance.new("Sky"); sky.SkyboxBk="rbxassetid://0"; sky.SkyboxDn="rbxassetid://0"; sky.SkyboxFt="rbxassetid://0";
+    sky.SkyboxLf="rbxassetid://0"; sky.SkyboxRt="rbxassetid://0"; sky.SkyboxUp="rbxassetid://0"; sky.Parent=l;
+    l.Brightness=0; l.ClockTime=0; l.TimeOfDay="00:00:00"; l.OutdoorAmbient=Color3.new(0,0,0);
+    l.Ambient=Color3.new(0,0,0); l.FogColor=Color3.new(0,0,0); l.FogEnd=100
 end
 
 -------------------- hide-frames helper --------------------
@@ -144,13 +100,80 @@ RS.ChildAdded:Connect(function(c)
     if table.find(frameBlockList,c.Name) and c:IsA("GuiObject") then c.Visible = false end
 end)
 
+-------------------- KILL3R TAB FUNCTIONS --------------------
+local function checkCharacter()
+    if not Player.Character then
+        repeat task.wait() until Player.Character
+    end
+    return Player.Character
+end
+
+local function gettool()
+    for _, v in pairs(Player.Backpack:GetChildren()) do
+        if v.Name == "Punch" and Player.Character:FindFirstChild("Humanoid") then
+            Player.Character.Humanoid:EquipTool(v)
+        end
+    end
+    Player.muscleEvent:FireServer("punch", "leftHand")
+    Player.muscleEvent:FireServer("punch", "rightHand")
+end
+
+local function isPlayerAlive(player)
+    return player and player.Character and player.Character:FindFirstChild("HumanoidRootPart") and
+           player.Character:FindFirstChild("Humanoid") and player.Character.Humanoid.Health > 0
+end
+
+local function killPlayer(target)
+    if not isPlayerAlive(target) then return end
+    local character = checkCharacter()
+    if character and character:FindFirstChild("LeftHand") then
+        pcall(function()
+            firetouchinterest(target.Character.HumanoidRootPart, character.LeftHand, 0)
+            firetouchinterest(target.Character.HumanoidRootPart, character.LeftHand, 1)
+            gettool()
+        end)
+    end
+end
+
+-- Global kill lists
+_G.whitelistedPlayers = _G.whitelistedPlayers or {}
+_G.blacklistedPlayers = _G.blacklistedPlayers or {}
+_G.killAll = false
+_G.killBlacklistedOnly = false
+_G.whitelistFriends = false
+_G.deathRingEnabled = false
+_G.showDeathRing = false
+_G.deathRingRange = 20
+
+local function isWhitelisted(player)
+    for _, name in ipairs(_G.whitelistedPlayers) do
+        if name:lower() == player.Name:lower() then
+            return true
+        end
+    end
+    return false
+end
+
+local function isBlacklisted(player)
+    for _, name in ipairs(_G.blacklistedPlayers) do
+        if name:lower() == player.Name:lower() then
+            return true
+        end
+    end
+    return false
+end
+
+local function getPlayerDisplayText(player)
+    return player.DisplayName .. " | " .. player.Name
+end
+
 -------------------- window / tabs --------------------
-local Main = Win:CreateWindow("KYY HUB 0.7.0 | ENHANCED KILLER UI","Markyy")
+local Main = Win:CreateWindow("KYY HUB 0.7.0 | Complete Edition","Markyy")
 local RebirthTab = Main:CreateTab("REB1RTH")
 local StrengthTab= Main:CreateTab("STR3NGTH")
-local Killer   = Main:CreateTab("K1LLER")
+local KillerTab = Main:CreateTab("KILL3R")
 
--------------------- Fast Rebirth --------------------
+-------------------- REB1RTH TAB CONTENT --------------------
 local rebStartTime = 0; local rebElapsed = 0; local rebRunning = false
 local rebPaceHist = {}; local maxHist = 20; local rebCount = 0
 local lastRebTime = tick(); local lastRebVal = rebirths.Value; local initReb = rebirths.Value
@@ -229,12 +252,60 @@ end)
 
 -- Anti-AFK button (rebirth tab)
 local rebAntiAfkEnabled=false
-RebirthTab:AddButton("Anti AFK (ON)",function()
+RebirthTab:AddButton("Anti AFK",function()
     rebAntiAfkEnabled=true
 end)
 
 RebirthTab:AddButton("Equip 8× Swift Samurai",function() equipEight("Swift Samurai") end)
 RebirthTab:AddButton("Anti Lag",antiLag)
+
+--------------------------------------------------------
+--  Position Lock  (Rebirth tab)  –  TELEPORT + ANCHOR
+--------------------------------------------------------
+local lockConn   = nil
+local lockEnabled = false
+local savedPos   = nil
+local RunService = game:GetService("RunService")
+
+local function stopLock()
+    if lockConn then lockConn:Disconnect() end
+    lockConn = nil
+    local r = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
+    if r then r.Anchored = false end
+end
+
+local function startLock()
+    local root = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
+    if not root then return end
+    savedPos = root.CFrame
+    root.Anchored = true          -- try anchor first (instant freeze on many gym games)
+
+    -- fallback teleport loop if anchor gets overridden
+    lockConn = RunService.Heartbeat:Connect(function()
+        local r = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
+        if r then
+            r.Anchored = true
+            r.CFrame = savedPos   -- still attempt CFrame every frame
+        end
+    end)
+end
+
+local function updatePosLock(state)
+    lockEnabled = state
+    if state then startLock() else stopLock() end
+end
+
+-- respawn support
+Player.CharacterAdded:Connect(function(char)
+    if lockEnabled then
+        stopLock()
+        task.wait(.2)
+        startLock()
+    end
+end)
+
+-- UI toggle
+RebirthTab:AddToggle("Lock 69 Position", false, updatePosLock)
 RebirthTab:AddButton("TP Jungle Lift",tpJungleLift)
 
 -- auto protein egg
@@ -246,7 +317,7 @@ task.spawn(function()
 end)
 RebirthTab:AddToggle("Auto Protein Egg",false,function(s) eggRunning=s; if s then toolActivate("Protein Egg","proteinEgg") end end)
 
--------------------- Fast Strength --------------------
+-------------------- STR3NGTH TAB CONTENT --------------------
 local strStart=0; local strElapsed=0; local strRun=false; local track=false
 local initStr=strength.Value; local initDur=durability.Value
 local strHist={}; local durHist={}; local calcInt=10
@@ -304,7 +375,7 @@ end)
 
 -- Anti-AFK button (strength tab)
 local strAntiAfkEnabled=false
-StrengthTab:AddButton("Anti AFK (ON)",function()
+StrengthTab:AddButton("Anti AFK",function()
     strAntiAfkEnabled=true
 end)
 
@@ -327,7 +398,622 @@ end)
 StrengthTab:AddToggle("Auto Protein Egg",false,function(s) eggRunning2=s; if s then toolActivate("Protein Egg","proteinEgg") end end)
 StrengthTab:AddToggle("Auto Tropical Shake",false,function(s) shakeRunning=s; if s then toolActivate("Tropical Shake","tropicalShake") end end)
 
--------------------- stat loops --------------------
+-------------------- KILL3R TAB CONTENT --------------------
+-- Pet Selection for Kill Combo
+KillerTab:AddLabel("Kill Combo Pets:")
+local petDropdown = KillerTab:AddDropdown("Select Pet", function(text)
+    local petsFolder = Player.petsFolder
+    for _, folder in pairs(petsFolder:GetChildren()) do
+        if folder:IsA("Folder") then
+            for _, pet in pairs(folder:GetChildren()) do
+                RS.rEvents.equipPetEvent:FireServer("unequipPet", pet)
+            end
+        end
+    end
+    task.wait(0.2)
+
+    local petName = text
+    local petsToEquip = {}
+
+    for _, pet in pairs(Player.petsFolder.Unique:GetChildren()) do
+        if pet.Name == petName then
+            table.insert(petsToEquip, pet)
+        end
+    end
+
+    for i = 1, math.min(8, #petsToEquip) do
+        RS.rEvents.equipPetEvent:FireServer("equipPet", petsToEquip[i])
+        task.wait(0.1)
+    end
+end)
+petDropdown:Add("Wild Wizard")
+petDropdown:Add("Mighty Monster")
+
+-- Animation Removal
+KillerTab:AddToggle("Remove Attack Animations", false, function(bool)
+    if bool then
+        local blockedAnimations = {
+            ["rbxassetid://3638729053"] = true,
+            ["rbxassetid://3638767427"] = true,
+        }
+
+        local function setupAnimationBlocking()
+            local char = Player.Character
+            if not char or not char:FindFirstChild("Humanoid") then return end
+
+            local humanoid = char:FindFirstChild("Humanoid")
+
+            for _, track in pairs(humanoid:GetPlayingAnimationTracks()) do
+                if track.Animation then
+                    local animId = track.Animation.AnimationId
+                    local animName = track.Name:lower()
+
+                    if blockedAnimations[animId] or animName:match("punch") or animName:match("attack") or animName:match("right") then
+                        track:Stop()
+                    end
+                end
+            end
+
+            _G.AnimBlockConnection = humanoid.AnimationPlayed:Connect(function(track)
+                if track.Animation then
+                    local animId = track.Animation.AnimationId
+                    local animName = track.Name:lower()
+
+                    if blockedAnimations[animId] or animName:match("punch") or animName:match("attack") or animName:match("right") then
+                        track:Stop()
+                    end
+                end
+            end)
+        end
+
+        local function processTool(tool)
+            if tool and (tool.Name == "Punch" or tool.Name:match("Attack") or tool.Name:match("Right")) then
+                if not tool:GetAttribute("ActivatedOverride") then
+                    tool:SetAttribute("ActivatedOverride", true)
+
+                    _G.ToolConnections = _G.ToolConnections or {}
+                    _G.ToolConnections[tool] = tool.Activated:Connect(function()
+                        task.wait(0.05)
+                        local char = Player.Character
+                        if char and char:FindFirstChild("Humanoid") then
+                            for _, track in pairs(char.Humanoid:GetPlayingAnimationTracks()) do
+                                if track.Animation then
+                                    local animId = track.Animation.AnimationId
+                                    local animName = track.Name:lower()
+
+                                    if blockedAnimations[animId] or animName:match("punch") or animName:match("attack") or animName:match("right") then
+                                        track:Stop()
+                                    end
+                                end
+                            end
+                        end
+                    end)
+                end
+            end
+        end
+
+        local function overrideToolActivation()
+            for _, tool in pairs(Player.Backpack:GetChildren()) do
+                processTool(tool)
+            end
+
+            local char = Player.Character
+            if char then
+                for _, tool in pairs(char:GetChildren()) do
+                    if tool:IsA("Tool") then
+                        processTool(tool)
+                    end
+                end
+            end
+
+            _G.BackpackAddedConnection = Player.Backpack.ChildAdded:Connect(function(child)
+                if child:IsA("Tool") then
+                    task.wait(0.1)
+                    processTool(child)
+                end
+            end)
+
+            if char then
+                _G.CharacterToolAddedConnection = char.ChildAdded:Connect(function(child)
+                    if child:IsA("Tool") then
+                        task.wait(0.1)
+                        processTool(child)
+                    end
+                end)
+            end
+        end
+
+        _G.AnimMonitorConnection = game:GetService("RunService").Heartbeat:Connect(function()
+            if tick() % 0.5 < 0.01 then
+                local char = Player.Character
+                if char and char:FindFirstChild("Humanoid") then
+                    for _, track in pairs(char.Humanoid:GetPlayingAnimationTracks()) do
+                        if track.Animation then
+                            local animId = track.Animation.AnimationId
+                            local animName = track.Name:lower()
+
+                            if blockedAnimations[animId] or animName:match("punch") or animName:match("attack") or animName:match("right") then
+                                track:Stop()
+                            end
+                        end
+                    end
+                end
+            end
+        end)
+
+        _G.CharacterAddedConnection = Player.CharacterAdded:Connect(function(newChar)
+            task.wait(1)
+            setupAnimationBlocking()
+            overrideToolActivation()
+
+            if _G.CharacterToolAddedConnection then
+                _G.CharacterToolAddedConnection:Disconnect()
+            end
+
+            _G.CharacterToolAddedConnection = newChar.ChildAdded:Connect(function(child)
+                if child:IsA("Tool") then
+                    task.wait(0.1)
+                    processTool(child)
+                end
+            end)
+        end)
+
+        setupAnimationBlocking()
+        overrideToolActivation()
+    else
+        if _G.AnimBlockConnection then
+            _G.AnimBlockConnection:Disconnect()
+            _G.AnimBlockConnection = nil
+        end
+
+        if _G.AnimMonitorConnection then
+            _G.AnimMonitorConnection:Disconnect()
+            _G.AnimMonitorConnection = nil
+        end
+
+        if _G.CharacterAddedConnection then
+            _G.CharacterAddedConnection:Disconnect()
+            _G.CharacterAddedConnection = nil
+        end
+
+        if _G.BackpackAddedConnection then
+            _G.BackpackAddedConnection:Disconnect()
+            _G.BackpackAddedConnection = nil
+        end
+
+        if _G.CharacterToolAddedConnection then
+            _G.CharacterToolAddedConnection:Disconnect()
+            _G.CharacterAddedConnection = nil
+        end
+
+        if _G.ToolConnections then
+            for tool, connection in pairs(_G.ToolConnections) do
+                if connection then
+                    connection:Disconnect()
+                end
+                if tool and tool:GetAttribute("ActivatedOverride") then
+                    tool:SetAttribute("ActivatedOverride", nil)
+                end
+            end
+            _G.ToolConnections = nil
+        end
+    end
+end)
+
+-- NaN Combo (Egg+NaN+Punch)
+local comboActive = false
+local eggLoop, characterAddedConn
+
+local function ensureEggEquipped()
+    if not comboActive or not Player.Character then return end
+    
+    local eggsInHand = 0
+    for _, item in ipairs(Player.Character:GetChildren()) do
+        if item.Name == "Protein Egg" then
+            eggsInHand = 1
+            if eggsInHand > 1 then
+                item.Parent = Player.Backpack
+            end
+        end
+    end
+    
+    if eggsInHand == 0 then
+        local egg = Player.Backpack:FindFirstChild("Protein Egg")
+        if egg then
+            egg.Parent = Player.Character
+        end
+    end
+end
+
+KillerTab:AddToggle("NaN (Egg+NaN+Punch Combo)", false, function(bool)
+    comboActive = bool
+    
+    if bool then
+        local changeSpeedSizeRemote = RS.rEvents.changeSpeedSizeRemote
+        changeSpeedSizeRemote:InvokeServer("changeSize", 0/0)
+        
+        eggLoop = task.spawn(function()
+            while comboActive do
+                ensureEggEquipped()
+                task.wait(0.2)
+            end
+        end)
+        
+        characterAddedConn = Player.CharacterAdded:Connect(function(newChar)
+            task.wait(0.5)
+            ensureEggEquipped()
+        end)
+        
+        ensureEggEquipped()
+        
+    else
+        if eggLoop then task.cancel(eggLoop) end
+        if characterAddedConn then characterAddedConn:Disconnect() end
+    end
+end)
+
+KillerTab:AddButton("Disable Eggs", function()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/244ihssp/IlIIS/refs/heads/main/1"))()
+end)
+
+-- Kill All Functions
+KillerTab:AddLabel("Auto Kill:")
+
+local function updatePlayerLists()
+    local players = game.Players:GetPlayers()
+    local whitelistOptions = {}
+    local blacklistOptions = {}
+    
+    for _, player in ipairs(players) do
+        if player ~= Player then
+            local displayText = getPlayerDisplayText(player)
+            table.insert(whitelistOptions, displayText)
+            table.insert(blacklistOptions, displayText)
+        end
+    end
+    
+    return whitelistOptions, blacklistOptions
+end
+
+local whitelistDropdown = KillerTab:AddDropdown("Add to Whitelist", function(selectedText)
+    local playerName = selectedText:match("| (.+)$")
+    if playerName then
+        playerName = playerName:gsub("^%s*(.-)%s*$", "%1") 
+        for _, name in ipairs(_G.whitelistedPlayers) do
+            if name:lower() == playerName:lower() then return end
+        end
+        table.insert(_G.whitelistedPlayers, playerName)
+    end
+end)
+
+local blacklistDropdown = KillerTab:AddDropdown("Add to Killlist", function(selectedText)
+    local playerName = selectedText:match("| (.+)$")
+    if playerName then
+        playerName = playerName:gsub("^%s*(.-)%s*$", "%1") 
+        for _, name in ipairs(_G.blacklistedPlayers) do
+            if name:lower() == playerName:lower() then return end
+        end
+        table.insert(_G.blacklistedPlayers, playerName)
+    end
+end)
+
+-- Initialize dropdowns
+local function refreshDropdowns()
+    whitelistDropdown:Clear()
+    blacklistDropdown:Clear()
+    
+    local whitelistOptions, blacklistOptions = updatePlayerLists()
+    
+    for _, option in ipairs(whitelistOptions) do
+        whitelistDropdown:Add(option)
+    end
+    
+    for _, option in ipairs(blacklistOptions) do
+        blacklistDropdown:Add(option)
+    end
+end
+
+-- Initial population
+refreshDropdowns()
+
+-- Auto refresh when players join/leave
+game.Players.PlayerAdded:Connect(function()
+    refreshDropdowns()
+end)
+
+game.Players.PlayerRemoving:Connect(function()
+    refreshDropdowns()
+end)
+
+KillerTab:AddToggle("Kill Everyone", false, function(bool)
+    _G.killAll = bool
+    if bool then
+        if not _G.killAllConnection then
+            _G.killAllConnection = game:GetService("RunService").Heartbeat:Connect(function()
+                if _G.killAll then
+                    for _, player in ipairs(game:GetService("Players"):GetPlayers()) do
+                        if player ~= Player and not isWhitelisted(player) then
+                            killPlayer(player)
+                        end
+                    end
+                end
+            end)
+        end
+    else
+        if _G.killAllConnection then
+            _G.killAllConnection:Disconnect()
+            _G.killAllConnection = nil
+        end
+    end
+end)
+
+KillerTab:AddToggle("Whitelist Friends", false, function(bool)
+    _G.whitelistFriends = bool
+
+    if bool then
+        for _, player in pairs(game.Players:GetPlayers()) do
+            if player ~= Player and player:IsFriendsWith(Player.UserId) then
+                local playerName = player.Name
+                local alreadyWhitelisted = false
+                for _, name in ipairs(_G.whitelistedPlayers) do
+                    if name:lower() == playerName:lower() then
+                        alreadyWhitelisted = true
+                        break
+                    end
+                end
+                if not alreadyWhitelisted then
+                    table.insert(_G.whitelistedPlayers, playerName)
+                end
+            end
+        end
+
+        game.Players.PlayerAdded:Connect(function(player)
+            if _G.whitelistFriends and player:IsFriendsWith(Player.UserId) then
+                local playerName = player.Name
+                local alreadyWhitelisted = false
+                for _, name in ipairs(_G.whitelistedPlayers) do
+                    if name:lower() == playerName:lower() then
+                        alreadyWhitelisted = true
+                        break
+                    end
+                end
+                if not alreadyWhitelisted then
+                    table.insert(_G.whitelistedPlayers, playerName)
+                end
+            end
+        end)
+    end
+end)
+
+KillerTab:AddToggle("Kill List", false, function(bool)
+    _G.killBlacklistedOnly = bool
+    if bool then
+        if not _G.blacklistKillConnection then
+            _G.blacklistKillConnection = game:GetService("RunService").Heartbeat:Connect(function()
+                if _G.killBlacklistedOnly then
+                    for _, player in ipairs(game:GetService("Players"):GetPlayers()) do
+                        if player ~= Player and isBlacklisted(player) then
+                            killPlayer(player)
+                        end
+                    end
+                end
+            end)
+        end
+    else
+        if _G.blacklistKillConnection then
+            _G.blacklistKillConnection:Disconnect()
+            _G.blacklistKillConnection = nil
+        end
+    end
+end)
+
+-- Spectate System
+local selectedPlayerToSpectate = nil
+local spectating = false
+local currentTargetConnection = nil
+local camera = workspace.CurrentCamera
+
+local function updateSpectateTarget(player)
+    if currentTargetConnection then
+        currentTargetConnection:Disconnect()
+    end
+    
+    if player and player.Character then
+        local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
+        if humanoid then
+            camera.CameraSubject = humanoid
+            currentTargetConnection = player.CharacterAdded:Connect(function(newChar)
+                task.wait(0.2)
+                local newHumanoid = newChar:FindFirstChildOfClass("Humanoid")
+                if newHumanoid then
+                    camera.CameraSubject = newHumanoid
+                end
+            end)
+        end
+    end
+end
+
+local specdropdown = KillerTab:AddDropdown("Spectate Player", function(text)
+    for _, player in ipairs(game.Players:GetPlayers()) do
+        local optionText = player.DisplayName .. " | " .. player.Name
+        if text == optionText then
+            selectedPlayerToSpectate = player
+            if spectating then
+                updateSpectateTarget(player)
+            end
+            break
+        end
+    end
+end)
+
+KillerTab:AddToggle("Spectate", false, function(bool)
+    spectating = bool
+    if spectating and selectedPlayerToSpectate then
+        updateSpectateTarget(selectedPlayerToSpectate)
+    else
+        if currentTargetConnection then
+            currentTargetConnection:Disconnect()
+            currentTargetConnection = nil
+        end
+        local localPlayer = game.Players.LocalPlayer
+        if localPlayer.Character then
+            local humanoid = localPlayer.Character:FindFirstChildOfClass("Humanoid")
+            if humanoid then
+                camera.CameraSubject = humanoid
+            end
+        end
+    end
+end)
+
+-- Initialize spectate dropdown
+for _, player in ipairs(game.Players:GetPlayers()) do
+    if player ~= Player then
+        specdropdown:Add(player.DisplayName .. " | " .. player.Name)
+    end
+end
+
+game.Players.PlayerAdded:Connect(function(player)
+    if player ~= Player then
+        specdropdown:Add(player.DisplayName .. " | " .. player.Name)
+    end
+end)
+
+game.Players.PlayerRemoving:Connect(function(player)
+    if selectedPlayerToSpectate and selectedPlayerToSpectate == player then
+        selectedPlayerToSpectate = nil
+        if spectating then
+            -- This would need to be handled by the UI library
+        end
+    end
+end)
+
+-- Death Ring System
+KillerTab:AddLabel("Kill Aura:")
+
+local ringPart = nil
+local ringColor = Color3.fromRGB(50, 163, 255)
+local ringTransparency = 0.6
+
+local function updateRingSize()
+    if not ringPart then return end
+    local diameter = (_G.deathRingRange or 20) * 2
+    ringPart.Size = Vector3.new(0.2, diameter, diameter)
+end
+
+local function toggleRingVisual()
+    if _G.showDeathRing then
+        ringPart = Instance.new("Part")
+        ringPart.Shape = Enum.PartType.Cylinder
+        ringPart.Material = Enum.Material.Neon
+        ringPart.Color = ringColor
+        ringPart.Transparency = ringTransparency
+        ringPart.Anchored = true
+        ringPart.CanCollide = false
+        ringPart.CastShadow = false
+        updateRingSize()
+        ringPart.Parent = workspace
+    elseif ringPart then
+        ringPart:Destroy()
+        ringPart = nil
+    end
+end
+
+local function updateRingPosition()
+    if not ringPart then return end
+    local character = checkCharacter()
+    local rootPart = character and character:FindFirstChild("HumanoidRootPart")
+    if rootPart then
+        ringPart.CFrame = rootPart.CFrame * CFrame.Angles(0, 0, math.rad(90))
+    end
+end
+
+KillerTab:AddTextBox("Death Ring Range (1-140)", "20", function(text)
+    local range = tonumber(text)
+    if range then
+        _G.deathRingRange = math.clamp(range, 1, 140)
+        updateRingSize()
+    end
+end)
+
+KillerTab:AddToggle("Death Ring", false, function(bool)
+    _G.deathRingEnabled = bool
+    
+    if bool then
+        if not _G.deathRingConnection then
+            _G.deathRingConnection = game:GetService("RunService").Heartbeat:Connect(function()
+                updateRingPosition()
+                
+                local character = checkCharacter()
+                local myPosition = character and character:FindFirstChild("HumanoidRootPart") and character.HumanoidRootPart.Position
+                if not myPosition then return end
+
+                for _, player in ipairs(game:GetService("Players"):GetPlayers()) do
+                    if player ~= Player and not isWhitelisted(player) and isPlayerAlive(player) then
+                        local distance = (myPosition - player.Character.HumanoidRootPart.Position).Magnitude
+                        if distance <= (_G.deathRingRange or 20) then
+                            killPlayer(player)
+                        end
+                    end
+                end
+            end)
+        end
+    else
+        if _G.deathRingConnection then
+            _G.deathRingConnection:Disconnect()
+            _G.deathRingConnection = nil
+        end
+    end
+end)
+
+KillerTab:AddToggle("Show Death Ring", false, function(bool)
+    _G.showDeathRing = bool
+    toggleRingVisual()
+end)
+
+-- Status Labels
+local whitelistLabel = KillerTab:AddLabel("Whitelist: None")
+local blacklistLabel = KillerTab:AddLabel("Killlist: None")
+
+KillerTab:AddButton("Clear Whitelist", function()
+    _G.whitelistedPlayers = {}
+end)
+
+KillerTab:AddButton("Clear Blacklist", function()
+    _G.blacklistedPlayers = {}
+end)
+
+-- Update status labels
+local function updateWhitelistLabel()
+    if #_G.whitelistedPlayers == 0 then
+        whitelistLabel.Text = "Whitelist: None"
+    else
+        whitelistLabel.Text = "Whitelist: " .. table.concat(_G.whitelistedPlayers, ", ")
+    end
+end
+
+local function updateBlacklistLabel()
+    if #_G.blacklistedPlayers == 0 then
+        blacklistLabel.Text = "Killlist: None"
+    else
+        blacklistLabel.Text = "Killlist: " .. table.concat(_G.blacklistedPlayers, ", ")
+    end
+end
+
+-- Update labels periodically
+task.spawn(function()
+    while true do
+        updateWhitelistLabel()
+        updateBlacklistLabel()
+        task.wait(0.2)
+    end
+end)
+
+-- KILL3R Anti-AFK button
+KillerTab:AddButton("Anti AFK", function()
+    -- This would be handled by the existing Anti-AFK system
+end)
+
+-------------------- STAT LOOPS (Original Content) --------------------
 -- rebirth timer
 task.spawn(function()
     while true do updateRebDisp(); task.wait(0.1) end
@@ -373,211 +1059,70 @@ task.spawn(function()
     end
 end)
 
--- universal anti-afk (triggers when any button pressed)
-local GC=game:GetService("GuiService")
-local UIS=game:GetService("UserInputService")
-GC.MenuOpened:Connect(function() GC:CloseMenu() end)
+--------------------------------------------------------
+--  ANTI-AFK  (universal, shared by Rebirth & Strength & KILL3R)
+--------------------------------------------------------
+local Players            = game:GetService("Players")
+local UIS                = game:GetService("UserInputService")
+local GuiService         = game:GetService("GuiService")
+
+local player             = Players.LocalPlayer
+local rebAntiAfkEnabled  = false   -- toggled in Rebirth tab
+local strAntiAfkEnabled  = false   -- toggled in Strength tab
+local killerAntiAfkEnabled = false -- toggled in KILL3R tab
+
+-- build the overlay exactly like you had it
+local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
+gui.Name = "AntiAFKOverlay"
+
+local textLabel = Instance.new("TextLabel", gui)
+textLabel.Size = UDim2.new(0, 200, 0, 50)
+textLabel.Position = UDim2.new(0.5, -100, 0, -50)
+textLabel.TextColor3 = Color3.fromRGB(50, 255, 50)
+textLabel.Font = Enum.Font.GothamBold
+textLabel.TextSize = 20
+textLabel.BackgroundTransparency = 1
+textLabel.TextTransparency = 1
+textLabel.Text = "ANTI AFK"
+
+local timerLabel = Instance.new("TextLabel", gui)
+timerLabel.Size = UDim2.new(0, 200, 0, 30)
+timerLabel.Position = UDim2.new(0.5, -100, 0, -20)
+timerLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+timerLabel.Font = Enum.Font.GothamBold
+textLabel.TextSize = 18
+timerLabel.BackgroundTransparency = 1
+timerLabel.TextTransparency = 1
+timerLabel.Text = "00:00:00"
+
+local startTime = tick()
+
+-- running timer
 task.spawn(function()
     while true do
-        if rebAntiAfkEnabled or strAntiAfkEnabled then
-            UIS:SendKeyEvent(false,Enum.KeyCode.LeftShift,false,game)
+        local elapsed = tick() - startTime
+        local h = math.floor(elapsed / 3600)
+        local m = math.floor((elapsed % 3600) / 60)
+        local s = math.floor(elapsed % 60)
+        timerLabel.Text = string.format("%02d:%02d:%02d", h, m, s)
+        task.wait(1)
+    end
+end)
+
+-- fade in/out animation
+task.spawn(function()
+    while true do
+        for i = 0, 1, 0.01 do
+            textLabel.TextTransparency = 1 - i
+            timerLabel.TextTransparency = 1 - i
+            task.wait(0.015)
         end
-        task.wait(120)
-    end
-end)
-
---------------------------------------------------------
---  K1LL3R  –  EleriumV2 style  (replaces old tab)
---------------------------------------------------------
-local Players  = game:GetService("Players")
-local RunSrv   = game:GetService("RunService")
-local Workspace= game:GetService("Workspace")
-
--- state
-local killAll      = false
-local killAura     = false
-local killBlackOnly= false
-local nanoWhile    = false
-local removeAnims  = false
-local targetPlayer = nil
-local spectating   = false
-local ringShow     = false
-local ringRange    = 20
-local ringPart     = nil
-
--- lists
-_G.whitelisted = _G.whitelisted or {}
-_G.blacklisted = _G.blacklisted or {}
-
--- helpers
-local function getRoot(p) return p.Character and p.Character:FindFirstChild("HumanoidRootPart") end
-local function fmtName(p) return p.DisplayName.." | "..p.Name end
-local function alive(p)
-    return p.Character and p.Character:FindFirstChildOfClass("Humanoid") and p.Character.Humanoid.Health>0
-end
-local function whitelisted(p)
-    for _,n in ipairs(_G.whitelisted)do if n:lower()==p.Name:lower()then return true end end;return false
-end
-local function blacklisted(p)
-    for _,n in ipairs(_G.blacklisted)do if n:lower()==p.Name:lower()then return true end end;return false
-end
-local function kill(p)
-    if not alive(p)then return end
-    local me=Player.Character or Player.CharacterAdded:Wait()
-    local hand=me:FindFirstChild("LeftHand")or me:FindFirstChild("RightHand")
-    if hand then
-        pcall(function()
-            firetouchinterest(p.Character.HumanoidRootPart,hand,0)
-            firetouchinterest(p.Character.HumanoidRootPart,hand,1)
-        end)
-    end
-    muscleEvent:FireServer("punch","leftHand")
-    muscleEvent:FireServer("punch","rightHand")
-    if nanoWhile then
-        local h=p.Character and p.Character:FindFirstChildOfClass("Humanoid")
-        if h then
-            for _,s in ipairs({"BodyWidthScale","BodyHeightScale","BodyDepthScale","HeadScale"})do
-                local sc=h:FindFirstChild(s)if sc then sc.Value=.01 end
-            end
+        task.wait(1.5)
+        for i = 0, 1, 0.01 do
+            textLabel.TextTransparency = i
+            timerLabel.TextTransparency = i
+            task.wait(0.015)
         end
+        task.wait(0.8)
     end
-end
-
--- ring visual
-local function updRingSize()if ringPart then ringPart.Size=Vector3.new(.2,ringRange*2,ringRange*2)end end
-local function toggleRing()
-    if ringShow then
-        ringPart=Instance.new("Part")
-        ringPart.Shape=Enum.PartType.Cylinder
-        ringPart.Material=Enum.Material.Neon
-        ringPart.Color=Color3.fromRGB(50,163,255)
-        ringPart.Transparency=.6
-        ringPart.Anchored=true;ringPart.CanCollide=false;ringPart.CastShadow=false
-        updRingSize();ringPart.Parent=Workspace
-    elseif ringPart then ringPart:Destroy();ringPart=nil end
-end
-local function updRingPos()
-    if not ringPart then return end
-    local r=getRoot(Player)if r then ringPart.CFrame=r.CFrame*CFrame.Angles(0,0,math.rad(90))end
-end
-
--- spectate
-local specConn,cam=nil,Workspace.CurrentCamera
-local function spectate(p)
-    if specConn then specConn:Disconnect()end
-    local function set()
-        local h=p.Character and p.Character:FindFirstChildOfClass("Humanoid")
-        if h then cam.CameraSubject=h end
-    end
-    set()
-    specConn=p.CharacterAdded:Connect(function()wait(.2)set()end)
-end
-local function unspectate()
-    if specConn then specConn:Disconnect();specConn=nil end
-    local h=Player.Character and Player.Character:FindFirstChildOfClass("Humanoid")
-    if h then cam.CameraSubject=h end
-end
-
--- loops
-local function startKillAll()
-    while killAll do
-        for _,p in ipairs(Players:GetPlayers())do
-            if p~=Player and not whitelisted(p)then kill(p)end
-        end
-        RunSrv.Heartbeat:Wait()
-    end
-end
-local function startKillAura()
-    while killAura do
-        local myRoot=getRoot(Player)
-        if myRoot then
-            for _,p in ipairs(Players:GetPlayers())do
-                if p~=Player and not whitelisted(p)and alive(p)then
-                    local tRoot=getRoot(p)
-                    if tRoot and(tRoot.Position-myRoot.Position).Magnitude<=ringRange then kill(p)end
-                end
-            end
-        end
-        RunSrv.Heartbeat:Wait()
-    end
-end
-local function startBlackOnly()
-    while killBlackOnly do
-        for _,p in ipairs(Players:GetPlayers())do
-            if p~=Player and blacklisted(p)then kill(p)end
-        end
-        RunSrv.Heartbeat:Wait()
-    end
-end
-local function startRingPos()
-    while ringShow do updRingPos();RunSrv.Heartbeat:Wait()end
-end
-
--- build UI
--- main toggles
-Killer:AddToggle("Kill All",false,function(v)
-    killAll=v;if v then task.spawn(startKillAll)end
 end)
-Killer:AddToggle("Kill Aura",false,function(v)
-    killAura=v;if v then task.spawn(startKillAura)end
-end)
-Killer:AddToggle("Nano size while kill",false,function(v)nanoWhile=v end)
-Killer:AddToggle("Remove attack animations",false,function(v)removeAnims=v end)--(hook not shown for brevity)
-
--- whitelist/blacklist
-Killer:AddLabel("WHITELIST / BLACKLIST")
-local wDrop=Killer:AddDropdown("Add to whitelist",function(txt)
-    local name=txt:match("| (.+)$")if name then name=name:gsub("^%s*(.-)%s*$","%1")table.insert(_G.whitelisted,name)end
-end)
-local bDrop=Killer:AddDropdown("Add to blacklist",function(txt)
-    local name=txt:match("| (.+)$")if name then name=name:gsub("^%s*(.-)%s*$","%1")table.insert(_G.blacklisted,name)end
-end)
-Killer:AddToggle("Kill blacklist only",false,function(v)killBlackOnly=v;if v then task.spawn(startBlackOnly)end end)
-Killer:AddToggle("Whitelist friends",false,function(v)
-    if v then for _,p in pairs(Players:GetPlayers())do if p~=Player and p:IsFriendsWith(Player.UserId)then table.insert(_G.whitelisted,p.Name)end end end
-end)
-
--- death ring
-Killer:AddLabel("DEATH RING")
-Killer:AddTextBox("Ring range (1-140)","20",function(t)ringRange=math.clamp(tonumber(t)or 20,1,140)updRingSize()end)
-Killer:AddToggle("Show ring",false,function(v)ringShow=v;toggleRing()if v then task.spawn(startRingPos)end end)
-
--- spectate
-Killer:AddLabel("SPECTATE")
-local specDrop=Killer:AddDropdown("Spectate player",function(txt)
-    for _,p in ipairs(Players:GetPlayers())do if txt==fmtName(p)then targetPlayer=p;if spectating then spectate(p)end break end end
-end)
-Killer:AddToggle("Spectate",false,function(v)spectating=v;if v and targetPlayer then spectate(targetPlayer)else unspectate()end end)
-
--- target kill  (DROPDOWN instead of TextBox)
-Killer:AddLabel("TARGET KILL")
-local tgtDrop=Killer:AddDropdown("Select target",function(txt)
-    for _,p in ipairs(Players:GetPlayers())do if txt==fmtName(p)then targetPlayer=p break end end
-end)
-Killer:AddToggle("Kill target",false,function(v)
-    while v and targetPlayer and targetPlayer.Parent do kill(targetPlayer);RunSrv.Heartbeat:Wait()end
-end)
-Killer:AddButton("View target",function()if targetPlayer then spectate(targetPlayer)end end)
-Killer:AddButton("Unview",unspectate)
-
--- utils
-Killer:AddLabel("UTILS")
-Killer:AddButton("Clear whitelist",function()_G.whitelisted={}end)
-Killer:AddButton("Clear blacklist",function()_G.blacklisted={}end)
-Killer:AddButton("Refresh lists",function()
-    local t={}for _,p in ipairs(Players:GetPlayers())do if p~=Player then table.insert(t,fmtName(p))end end
-    wDrop:Refresh(t);bDrop:Refresh(t);specDrop:Refresh(t);tgtDrop:Refresh(t)
-end)
-
--- fill player lists on load
-local list={}for _,p in ipairs(Players:GetPlayers())do if p~=Player then table.insert(list,fmtName(p))end end
-wDrop:Refresh(list)bDrop:Refresh(list)specDrop:Refresh(list)tgtDrop:Refresh(list)
-
--- auto-refresh when players join/leave
-Players.PlayerAdded:Connect(function(p)if p~=Player then
-    local name=fmtName(p)wDrop:Add(name)bDrop:Add(name)specDrop:Add(name)tgtDrop:Add(name)
-end end)
-Players.PlayerRemoving:Connect(function(p)if p==targetPlayer then targetPlayer=nil;if spectating then unspectate()end end end)
-
-
-
