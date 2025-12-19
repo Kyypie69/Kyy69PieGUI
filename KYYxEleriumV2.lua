@@ -1,5 +1,5 @@
---[[  EleriumV2xKYY  (ver.70)  ]]
--- Complete script with REB1RTH, STR3NGTH, and KILL3R tabs
+--[[  EleriumV2xKYY  (ver.71)  ]]
+-- Fixed KILL3R tab with working killing features
 local Library = loadstring(game:HttpGet(
     "https://raw.githubusercontent.com/Kyypie69/Library.UI/refs/heads/main/KYY.luau"))()
 
@@ -101,6 +101,16 @@ RS.ChildAdded:Connect(function(c)
 end)
 
 -------------------- KILL3R TAB FUNCTIONS --------------------
+-- Global kill lists
+_G.whitelistedPlayers = _G.whitelistedPlayers or {}
+_G.blacklistedPlayers = _G.blacklistedPlayers or {}
+_G.killAll = false
+_G.killBlacklistedOnly = false
+_G.whitelistFriends = false
+_G.deathRingEnabled = false
+_G.showDeathRing = false
+_G.deathRingRange = 20
+
 local function checkCharacter()
     if not Player.Character then
         repeat task.wait() until Player.Character
@@ -114,8 +124,8 @@ local function gettool()
             Player.Character.Humanoid:EquipTool(v)
         end
     end
-    Player.muscleEvent:FireServer("punch", "leftHand")
-    Player.muscleEvent:FireServer("punch", "rightHand")
+    muscleEvent:FireServer("punch", "leftHand")
+    muscleEvent:FireServer("punch", "rightHand")
 end
 
 local function isPlayerAlive(player)
@@ -134,16 +144,6 @@ local function killPlayer(target)
         end)
     end
 end
-
--- Global kill lists
-_G.whitelistedPlayers = _G.whitelistedPlayers or {}
-_G.blacklistedPlayers = _G.blacklistedPlayers or {}
-_G.killAll = false
-_G.killBlacklistedOnly = false
-_G.whitelistFriends = false
-_G.deathRingEnabled = false
-_G.showDeathRing = false
-_G.deathRingRange = 20
 
 local function isWhitelisted(player)
     for _, name in ipairs(_G.whitelistedPlayers) do
@@ -168,7 +168,7 @@ local function getPlayerDisplayText(player)
 end
 
 -------------------- window / tabs --------------------
-local Main = Win:CreateWindow("KYY HUB 0.7.0 | Complete Edition","Markyy")
+local Main = Win:CreateWindow("KYY HUB 0.7.1 | Fixed KILL3R Edition","Markyy")
 local RebirthTab = Main:CreateTab("REB1RTH")
 local StrengthTab= Main:CreateTab("STR3NGTH")
 local KillerTab = Main:CreateTab("KILL3R")
@@ -426,6 +426,7 @@ local petDropdown = KillerTab:AddDropdown("Select Pet", function(text)
         task.wait(0.1)
     end
 end)
+
 petDropdown:Add("Wild Wizard")
 petDropdown:Add("Mighty Monster")
 
@@ -583,7 +584,7 @@ KillerTab:AddToggle("Remove Attack Animations", false, function(bool)
 
         if _G.CharacterToolAddedConnection then
             _G.CharacterToolAddedConnection:Disconnect()
-            _G.CharacterAddedConnection = nil
+            _G.CharacterToolAddedConnection = nil
         end
 
         if _G.ToolConnections then
@@ -629,8 +630,13 @@ KillerTab:AddToggle("NaN (Egg+NaN+Punch Combo)", false, function(bool)
     comboActive = bool
     
     if bool then
-        local changeSpeedSizeRemote = RS.rEvents.changeSpeedSizeRemote
-        changeSpeedSizeRemote:InvokeServer("changeSize", 0/0)
+        -- Check if changeSpeedSizeRemote exists
+        if RS:FindFirstChild("rEvents") and RS.rEvents:FindFirstChild("changeSpeedSizeRemote") then
+            local changeSpeedSizeRemote = RS.rEvents.changeSpeedSizeRemote
+            changeSpeedSizeRemote:InvokeServer("changeSize", 0/0)
+        else
+            print("changeSpeedSizeRemote not found - NaN size may not work")
+        end
         
         eggLoop = task.spawn(function()
             while comboActive do
@@ -683,6 +689,7 @@ local whitelistDropdown = KillerTab:AddDropdown("Add to Whitelist", function(sel
             if name:lower() == playerName:lower() then return end
         end
         table.insert(_G.whitelistedPlayers, playerName)
+        print("Added to whitelist: " .. playerName)
     end
 end)
 
@@ -694,6 +701,7 @@ local blacklistDropdown = KillerTab:AddDropdown("Add to Killlist", function(sele
             if name:lower() == playerName:lower() then return end
         end
         table.insert(_G.blacklistedPlayers, playerName)
+        print("Added to blacklist: " .. playerName)
     end
 end)
 
@@ -727,6 +735,7 @@ end)
 
 KillerTab:AddToggle("Kill Everyone", false, function(bool)
     _G.killAll = bool
+    print("Kill Everyone: " .. tostring(bool))
     if bool then
         if not _G.killAllConnection then
             _G.killAllConnection = game:GetService("RunService").Heartbeat:Connect(function()
@@ -738,17 +747,20 @@ KillerTab:AddToggle("Kill Everyone", false, function(bool)
                     end
                 end
             end)
+            print("Kill Everyone connection started")
         end
     else
         if _G.killAllConnection then
             _G.killAllConnection:Disconnect()
             _G.killAllConnection = nil
+            print("Kill Everyone connection stopped")
         end
     end
 end)
 
 KillerTab:AddToggle("Whitelist Friends", false, function(bool)
     _G.whitelistFriends = bool
+    print("Whitelist Friends: " .. tostring(bool))
 
     if bool then
         for _, player in pairs(game.Players:GetPlayers()) do
@@ -763,6 +775,7 @@ KillerTab:AddToggle("Whitelist Friends", false, function(bool)
                 end
                 if not alreadyWhitelisted then
                     table.insert(_G.whitelistedPlayers, playerName)
+                    print("Auto-whitelisted friend: " .. playerName)
                 end
             end
         end
@@ -779,6 +792,7 @@ KillerTab:AddToggle("Whitelist Friends", false, function(bool)
                 end
                 if not alreadyWhitelisted then
                     table.insert(_G.whitelistedPlayers, playerName)
+                    print("Auto-whitelisted new friend: " .. playerName)
                 end
             end
         end)
@@ -787,6 +801,7 @@ end)
 
 KillerTab:AddToggle("Kill List", false, function(bool)
     _G.killBlacklistedOnly = bool
+    print("Kill List: " .. tostring(bool))
     if bool then
         if not _G.blacklistKillConnection then
             _G.blacklistKillConnection = game:GetService("RunService").Heartbeat:Connect(function()
@@ -798,11 +813,13 @@ KillerTab:AddToggle("Kill List", false, function(bool)
                     end
                 end
             end)
+            print("Kill List connection started")
         end
     else
         if _G.blacklistKillConnection then
             _G.blacklistKillConnection:Disconnect()
             _G.blacklistKillConnection = nil
+            print("Kill List connection stopped")
         end
     end
 end)
@@ -848,6 +865,7 @@ end)
 
 KillerTab:AddToggle("Spectate", false, function(bool)
     spectating = bool
+    print("Spectate: " .. tostring(bool))
     if spectating and selectedPlayerToSpectate then
         updateSpectateTarget(selectedPlayerToSpectate)
     else
@@ -882,7 +900,14 @@ game.Players.PlayerRemoving:Connect(function(player)
     if selectedPlayerToSpectate and selectedPlayerToSpectate == player then
         selectedPlayerToSpectate = nil
         if spectating then
-            -- This would need to be handled by the UI library
+            -- Reset to local player
+            local localPlayer = game.Players.LocalPlayer
+            if localPlayer.Character then
+                local humanoid = localPlayer.Character:FindFirstChildOfClass("Humanoid")
+                if humanoid then
+                    camera.CameraSubject = humanoid
+                end
+            end
         end
     end
 end)
@@ -912,9 +937,11 @@ local function toggleRingVisual()
         ringPart.CastShadow = false
         updateRingSize()
         ringPart.Parent = workspace
+        print("Death ring visual created")
     elseif ringPart then
         ringPart:Destroy()
         ringPart = nil
+        print("Death ring visual destroyed")
     end
 end
 
@@ -932,35 +959,41 @@ KillerTab:AddTextBox("Death Ring Range (1-140)", "20", function(text)
     if range then
         _G.deathRingRange = math.clamp(range, 1, 140)
         updateRingSize()
+        print("Death ring range set to: " .. _G.deathRingRange)
     end
 end)
 
 KillerTab:AddToggle("Death Ring", false, function(bool)
     _G.deathRingEnabled = bool
+    print("Death Ring: " .. tostring(bool))
     
     if bool then
         if not _G.deathRingConnection then
             _G.deathRingConnection = game:GetService("RunService").Heartbeat:Connect(function()
-                updateRingPosition()
-                
-                local character = checkCharacter()
-                local myPosition = character and character:FindFirstChild("HumanoidRootPart") and character.HumanoidRootPart.Position
-                if not myPosition then return end
+                if _G.deathRingEnabled then
+                    updateRingPosition()
+                    
+                    local character = checkCharacter()
+                    local myPosition = character and character:FindFirstChild("HumanoidRootPart") and character.HumanoidRootPart.Position
+                    if not myPosition then return end
 
-                for _, player in ipairs(game:GetService("Players"):GetPlayers()) do
-                    if player ~= Player and not isWhitelisted(player) and isPlayerAlive(player) then
-                        local distance = (myPosition - player.Character.HumanoidRootPart.Position).Magnitude
-                        if distance <= (_G.deathRingRange or 20) then
-                            killPlayer(player)
+                    for _, player in ipairs(game:GetService("Players"):GetPlayers()) do
+                        if player ~= Player and not isWhitelisted(player) and isPlayerAlive(player) then
+                            local distance = (myPosition - player.Character.HumanoidRootPart.Position).Magnitude
+                            if distance <= (_G.deathRingRange or 20) then
+                                killPlayer(player)
+                            end
                         end
                     end
                 end
             end)
+            print("Death ring connection started")
         end
     else
         if _G.deathRingConnection then
             _G.deathRingConnection:Disconnect()
             _G.deathRingConnection = nil
+            print("Death ring connection stopped")
         end
     end
 end)
@@ -976,10 +1009,12 @@ local blacklistLabel = KillerTab:AddLabel("Killlist: None")
 
 KillerTab:AddButton("Clear Whitelist", function()
     _G.whitelistedPlayers = {}
+    print("Whitelist cleared")
 end)
 
 KillerTab:AddButton("Clear Blacklist", function()
     _G.blacklistedPlayers = {}
+    print("Blacklist cleared")
 end)
 
 -- Update status labels
@@ -1010,6 +1045,7 @@ end)
 
 -- KILL3R Anti-AFK button
 KillerTab:AddButton("Anti AFK", function()
+    print("KILL3R Anti-AFK activated")
     -- This would be handled by the existing Anti-AFK system
 end)
 
@@ -1090,7 +1126,7 @@ timerLabel.Size = UDim2.new(0, 200, 0, 30)
 timerLabel.Position = UDim2.new(0.5, -100, 0, -20)
 timerLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 timerLabel.Font = Enum.Font.GothamBold
-textLabel.TextSize = 18
+timerLabel.TextSize = 18
 timerLabel.BackgroundTransparency = 1
 timerLabel.TextTransparency = 1
 timerLabel.Text = "00:00:00"
