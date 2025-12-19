@@ -919,9 +919,18 @@ KillerTab:AddToggle("Spectate", false, function(bool)
     end
 end)
 
--- Fixed dropdown creation
-local function createSpectateDropdown()
-    local specdropdown = KillerTab:AddDropdown("Spectate Player", {}, function(text)
+-- Alternative dropdown creation if UpdateDropdown doesn't work:
+local function createSpectateDropdownAlternative()
+    local players = game.Players:GetPlayers()
+    local playerOptions = {}
+    
+    for _, player in ipairs(players) do
+        if player ~= Player then
+            table.insert(playerOptions, player.DisplayName .. " | " .. player.Name)
+        end
+    end
+    
+    local specdropdown = KillerTab:AddDropdown("Spectate Player", playerOptions, function(text)
         for _, player in ipairs(game.Players:GetPlayers()) do
             local optionText = player.DisplayName .. " | " .. player.Name
             if text == optionText then
