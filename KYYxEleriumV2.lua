@@ -635,7 +635,9 @@ end)
 -- Kill All Functions
 KillerTab:AddLabel("Auto Kill:")
 
-local function updatePlayerLists()
+-- Create dropdowns with proper initialization
+local function createPlayerDropdowns()
+    -- Get current players
     local players = game.Players:GetPlayers()
     local whitelistOptions = {}
     local blacklistOptions = {}
@@ -647,33 +649,38 @@ local function updatePlayerLists()
             table.insert(blacklistOptions, displayText)
         end
     end
-    
-    return whitelistOptions, blacklistOptions
+
+    -- Create whitelist dropdown with initial options
+    local whitelistDropdown = KillerTab:AddDropdown("Add to Whitelist", whitelistOptions, function(selectedText)
+        local playerName = selectedText:match("| (.+)$")
+        if playerName then
+            playerName = playerName:gsub("^%s*(.-)%s*$", "%1") 
+            for _, name in ipairs(_G.whitelistedPlayers) do
+                if name:lower() == playerName:lower() then return end
+            end
+            table.insert(_G.whitelistedPlayers, playerName)
+            print("Added to whitelist: " .. playerName)
+        end
+    end)
+
+    -- Create blacklist dropdown with initial options
+    local blacklistDropdown = KillerTab:AddDropdown("Add to Killlist", blacklistOptions, function(selectedText)
+        local playerName = selectedText:match("| (.+)$")
+        if playerName then
+            playerName = playerName:gsub("^%s*(.-)%s*$", "%1") 
+            for _, name in ipairs(_G.blacklistedPlayers) do
+                if name:lower() == playerName:lower() then return end
+            end
+            table.insert(_G.blacklistedPlayers, playerName)
+            print("Added to blacklist: " .. playerName)
+        end
+    end)
+
+    return whitelistDropdown, blacklistDropdown
 end
 
-local whitelistDropdown = KillerTab:AddDropdown("Add to Whitelist", function(selectedText)
-    local playerName = selectedText:match("| (.+)$")
-    if playerName then
-        playerName = playerName:gsub("^%s*(.-)%s*$", "%1") 
-        for _, name in ipairs(_G.whitelistedPlayers) do
-            if name:lower() == playerName:lower() then return end
-        end
-        table.insert(_G.whitelistedPlayers, playerName)
-        print("Added to whitelist: " .. playerName)
-    end
-end)
-
-local blacklistDropdown = KillerTab:AddDropdown("Add to Killlist", function(selectedText)
-    local playerName = selectedText:match("| (.+)$")
-    if playerName then
-        playerName = playerName:gsub("^%s*(.-)%s*$", "%1") 
-        for _, name in ipairs(_G.blacklistedPlayers) do
-            if name:lower() == playerName:lower() then return end
-        end
-        table.insert(_G.blacklistedPlayers, playerName)
-        print("Added to blacklist: " .. playerName)
-    end
-end)
+-- Initialize dropdowns
+local whitelistDropdown, blacklistDropdown = createPlayerDropdowns()
 
 -- Initialize dropdowns
 local function refreshDropdowns()
@@ -691,15 +698,33 @@ local function refreshDropdowns()
     end
 end
 
--- Initial population
-refreshDropdowns()
+-- Function to update dropdown options when players join/leave
+local function refreshDropdowns()
+    local players = game.Players:GetPlayers()
+    local whitelistOptions = {}
+    local blacklistOptions = {}
+    
+    for _, player in ipairs(players) do
+        if player ~= Player then
+            local displayText = getPlayerDisplayText(player)
+            table.insert(whitelistOptions, displayText)
+            table.insert(blacklistOptions, displayText)
+        end
+    end
+    
+    -- Update dropdown options using the proper method
+    whitelistDropdown:UpdateDropdown(whitelistOptions)
+    blacklistDropdown:UpdateDropdown(blacklistOptions)
+end
 
 -- Auto refresh when players join/leave
 game.Players.PlayerAdded:Connect(function()
+    task.wait(0.5) -- Small delay to ensure player data is loaded
     refreshDropdowns()
 end)
 
 game.Players.PlayerRemoving:Connect(function()
+    task.wait(0.1)
     refreshDropdowns()
 end)
 
