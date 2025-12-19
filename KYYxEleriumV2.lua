@@ -819,90 +819,165 @@ KillerTab:AddToggle("Kill List", false, function(bool)
     end
 end)
 
--- Spectate System
-local selectedPlayerToSpectate = nil
-local spectating = false
-local currentTargetConnection = nil
+-- SPECTATE SYSTEM FIXES
+local RunService = game:GetService("RunService")
 local camera = workspace.CurrentCamera
+local originalCameraSubject = nil
+local originalCameraType = nil
+local spectateConnection = nil
+local targetPlayer = nil
 
+-- Fixed spectate function
 local function updateSpectateTarget(player)
     if currentTargetConnection then
         currentTargetConnection:Disconnect()
+        currentTargetConnection = nil
     end
     
     if player and player.Character then
+        targetPlayer = player
+        
+        -- Get the humanoid for camera subject
         local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
         if humanoid then
+            -- Store original camera settings
+            if not originalCameraSubject then
+                originalCameraSubject = camera.CameraSubject
+                originalCameraType = camera.CameraType
+            end
+            
+            -- Set camera to follow the target
+            camera.CameraType = Enum.CameraType.Custom
             camera.CameraSubject = humanoid
+            
+            -- Set up connection for character respawns
             currentTargetConnection = player.CharacterAdded:Connect(function(newChar)
-                task.wait(0.2)
+                task.wait(0.5)
                 local newHumanoid = newChar:FindFirstChildOfClass("Humanoid")
-                if newHumanoid then
+                if newHumanoid and spectating then
                     camera.CameraSubject = newHumanoid
                 end
             end)
+            
+            print("Spectating: " .. player.Name)
+        else
+            print("No humanoid found for: " .. player.Name)
+        end
+    else
+        -- Reset camera if no valid target
+        if spectating then
+            stopSpectate()
         end
     end
 end
 
-local specdropdown = KillerTab:AddDropdown("Spectate Player", function(text)
-    for _, player in ipairs(game.Players:GetPlayers()) do
-        local optionText = player.DisplayName .. " | " .. player.Name
-        if text == optionText then
-            selectedPlayerToSpectate = player
-            if spectating then
-                updateSpectateTarget(player)
-            end
-            break
-        end
+-- Function to stop spectating and return to normal
+local function stopSpectate()
+    spectating = false
+    targetPlayer = nil
+    
+    if currentTargetConnection then
+        currentTargetConnection:Disconnect()
+        currentTargetConnection = nil
     end
-end)
-
-KillerTab:AddToggle("Spectate", false, function(bool)
-    spectating = bool
-    print("Spectate: " .. tostring(bool))
-    if spectating and selectedPlayerToSpectate then
-        updateSpectateTarget(selectedPlayerToSpectate)
+    
+    -- Reset camera to original state
+    if originalCameraSubject then
+        camera.CameraSubject = originalCameraSubject
+        camera.CameraType = originalCameraType or Enum.CameraType.Custom
+        originalCameraSubject = nil
+        originalCameraType = nil
     else
-        if currentTargetConnection then
-            currentTargetConnection:Disconnect()
-            currentTargetConnection = nil
-        end
+        -- Fallback to local player
         local localPlayer = game.Players.LocalPlayer
         if localPlayer.Character then
             local humanoid = localPlayer.Character:FindFirstChildOfClass("Humanoid")
             if humanoid then
                 camera.CameraSubject = humanoid
+                camera.CameraType = Enum.CameraType.Custom
             end
         end
     end
+    
+    print("Spectate stopped")
+end
+
+-- Fixed spectate toggle
+KillerTab:AddToggle("Spectate", false, function(bool)
+    spectating = bool
+    print("Spectate: " .. tostring(bool))
+    
+    if bool then
+        if selectedPlayerToSpectate then
+            updateSpectateTarget(selectedPlayerToSpectate)
+        else
+            print("No player selected for spectating")
+            spectating = false
+        end
+    else
+        stopSpectate()
+    end
 end)
 
--- Initialize spectate dropdown
-for _, player in ipairs(game.Players:GetPlayers()) do
-    if player ~= Player then
-        specdropdown:Add(player.DisplayName .. " | " .. player.Name)
+-- Fixed dropdown creation
+local function createSpectateDropdown()
+    local specdropdown = KillerTab:AddDropdown("Spectate Player", {}, function(text)
+        for _, player in ipairs(game.Players:GetPlayers()) do
+            local optionText = player.DisplayName .. " | " .. player.Name
+            if text == optionText then
+                selectedPlayerToSpectate = player
+                if spectating then
+                    updateSpectateTarget(player)
+                end
+                break
+            end
+        end
+    end)
+    
+    return specdropdown
+end
+
+-- Create the dropdown
+local specdropdown = createSpectateDropdown()
+
+-- Function to refresh spectate dropdown
+local function refreshSpectateDropdown()
+    specdropdown:Clear()
+    
+    for _, player in ipairs(game.Players:GetPlayers()) do
+        if player ~= Player then
+            specdropdown:Add(player.DisplayName .. " | " .. player.Name)
+        end
     end
 end
 
+-- Initialize dropdown
+refreshSpectateDropdown()
+
+-- Auto refresh when players join/leave
 game.Players.PlayerAdded:Connect(function(player)
-    if player ~= Player then
-        specdropdown:Add(player.DisplayName .. " | " .. player.Name)
-    end
+    task.wait(0.5)
+    refreshSpectateDropdown()
 end)
 
 game.Players.PlayerRemoving:Connect(function(player)
     if selectedPlayerToSpectate and selectedPlayerToSpectate == player then
         selectedPlayerToSpectate = nil
         if spectating then
-            -- Reset to local player
-            local localPlayer = game.Players.LocalPlayer
-            if localPlayer.Character then
-                local humanoid = localPlayer.Character:FindFirstChildOfClass("Humanoid")
-                if humanoid then
-                    camera.CameraSubject = humanoid
-                end
-            end
+            stopSpectate()
+        end
+    end
+    refreshSpectateDropdown()
+end)
+
+-- Handle character deaths/respawns
+game.Players.LocalPlayer.CharacterAdded:Connect(function(char)
+    if not spectating then
+        -- Reset original camera subject when local player respawns
+        task.wait(0.5)
+        local humanoid = char:FindFirstChildOfClass("Humanoid")
+        if humanoid then
+            originalCameraSubject = humanoid
         end
     end
 end)
