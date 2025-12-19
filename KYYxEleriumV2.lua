@@ -168,7 +168,7 @@ local function getPlayerDisplayText(player)
 end
 
 -------------------- window / tabs --------------------
-local Main = Win:CreateWindow("KYY HUB 0.7.1 | Fixed KILL3R Edition","Markyy")
+local Main = Win:CreateWindow("KYY HUB 0.69 | Skidded","Markyy")
 local RebirthTab = Main:CreateTab("REB1RTH")
 local StrengthTab= Main:CreateTab("STR3NGTH")
 local KillerTab = Main:CreateTab("KILL3R")
@@ -664,7 +664,7 @@ local function createPlayerDropdowns()
     end)
 
     -- Create blacklist dropdown with initial options
-    local blacklistDropdown = KillerTab:AddDropdown("Add to Killlist", blacklistOptions, function(selectedText)
+    local blacklistDropdown = KillerTab:AddDropdown("Add to Kill", blacklistOptions, function(selectedText)
         local playerName = selectedText:match("| (.+)$")
         if playerName then
             playerName = playerName:gsub("^%s*(.-)%s*$", "%1") 
@@ -794,7 +794,7 @@ KillerTab:AddToggle("Whitelist Friends", false, function(bool)
     end
 end)
 
-KillerTab:AddToggle("Kill List", false, function(bool)
+KillerTab:AddToggle("Kill Target", false, function(bool)
     _G.killBlacklistedOnly = bool
     print("Kill List: " .. tostring(bool))
     if bool then
@@ -935,7 +935,7 @@ local function createSpectateDropdown()
     end
     
     -- Create dropdown with proper KYY library syntax
-    specdropdown = KillerTab:CreateDropdown("Spectate Player", playerOptions, nil, 0.25, function(selectedText)
+local specdropdown = KillerTab:CreateDropdown("Spectate Player", playerOptions, nil, 0.25, function(selectedText)
         for _, player in ipairs(game.Players:GetPlayers()) do
             local optionText = player.DisplayName .. " | " .. player.Name
             if selectedText == optionText then
