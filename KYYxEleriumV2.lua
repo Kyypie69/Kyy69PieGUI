@@ -400,36 +400,6 @@ StrengthTab:AddToggle("Auto Tropical Shake",false,function(s) shakeRunning=s; if
 
 -------------------- KILL3R TAB CONTENT --------------------
 -- Pet Selection for Kill Combo
-KillerTab:AddLabel("Kill Combo Pets:")
-local petDropdown = KillerTab:AddDropdown("Select Pet", function(text)
-    local petsFolder = Player.petsFolder
-    for _, folder in pairs(petsFolder:GetChildren()) do
-        if folder:IsA("Folder") then
-            for _, pet in pairs(folder:GetChildren()) do
-                RS.rEvents.equipPetEvent:FireServer("unequipPet", pet)
-            end
-        end
-    end
-    task.wait(0.2)
-
-    local petName = text
-    local petsToEquip = {}
-
-    for _, pet in pairs(Player.petsFolder.Unique:GetChildren()) do
-        if pet.Name == petName then
-            table.insert(petsToEquip, pet)
-        end
-    end
-
-    for i = 1, math.min(8, #petsToEquip) do
-        RS.rEvents.equipPetEvent:FireServer("equipPet", petsToEquip[i])
-        task.wait(0.1)
-    end
-end)
-
-petDropdown:Add("Wild Wizard")
-petDropdown:Add("Mighty Monster")
-
 -- Animation Removal
 KillerTab:AddToggle("Remove Attack Animations", false, function(bool)
     if bool then
