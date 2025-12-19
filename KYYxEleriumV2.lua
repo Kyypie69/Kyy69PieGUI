@@ -919,8 +919,12 @@ KillerTab:AddToggle("Spectate", false, function(bool)
     end
 end)
 
--- Alternative dropdown creation if UpdateDropdown doesn't work:
-local function createSpectateDropdownAlternative()
+-- SPECTATE DROPDOWN FIX
+local specdropdown = nil
+
+-- Create the spectate dropdown with proper initialization
+local function createSpectateDropdown()
+    -- Get initial player list
     local players = game.Players:GetPlayers()
     local playerOptions = {}
     
@@ -930,14 +934,16 @@ local function createSpectateDropdownAlternative()
         end
     end
     
-    local specdropdown = KillerTab:AddDropdown("Spectate Player", playerOptions, function(text)
+    -- Create dropdown with proper KYY library syntax
+    specdropdown = KillerTab:CreateDropdown("Spectate Player", playerOptions, nil, 0.25, function(selectedText)
         for _, player in ipairs(game.Players:GetPlayers()) do
             local optionText = player.DisplayName .. " | " .. player.Name
-            if text == optionText then
+            if selectedText == optionText then
                 selectedPlayerToSpectate = player
                 if spectating then
                     updateSpectateTarget(player)
                 end
+                print("Selected player for spectate: " .. player.Name)
                 break
             end
         end
@@ -946,22 +952,26 @@ local function createSpectateDropdownAlternative()
     return specdropdown
 end
 
--- Create the dropdown
-local specdropdown = createSpectateDropdown()
-
 -- Function to refresh spectate dropdown
 local function refreshSpectateDropdown()
-    specdropdown:Clear()
+    local players = game.Players:GetPlayers()
+    local playerOptions = {}
     
-    for _, player in ipairs(game.Players:GetPlayers()) do
+    for _, player in ipairs(players) do
         if player ~= Player then
-            specdropdown:Add(player.DisplayName .. " | " .. player.Name)
+            table.insert(playerOptions, player.DisplayName .. " | " .. player.Name)
         end
+    end
+    
+    -- Update dropdown using proper KYY library method
+    if specdropdown then
+        specdropdown:UpdateDropdown(playerOptions)
+        print("Spectate dropdown refreshed with " .. #playerOptions .. " players")
     end
 end
 
--- Initialize dropdown
-refreshSpectateDropdown()
+-- Initialize the dropdown
+createSpectateDropdown()
 
 -- Auto refresh when players join/leave
 game.Players.PlayerAdded:Connect(function(player)
@@ -977,18 +987,6 @@ game.Players.PlayerRemoving:Connect(function(player)
         end
     end
     refreshSpectateDropdown()
-end)
-
--- Handle character deaths/respawns
-game.Players.LocalPlayer.CharacterAdded:Connect(function(char)
-    if not spectating then
-        -- Reset original camera subject when local player respawns
-        task.wait(0.5)
-        local humanoid = char:FindFirstChildOfClass("Humanoid")
-        if humanoid then
-            originalCameraSubject = humanoid
-        end
-    end
 end)
 
 -- Death Ring System
