@@ -1126,6 +1126,85 @@ KillerTab:AddButton("Anti AFK", function()
     -- This would be handled by the existing Anti-AFK system
 end)
 
+local antiKnockbackEnabled = false
+local antiKnockbackConn = nil
+
+-- Function to apply anti-knockback to a specific character
+local function applyAntiKnockback(character)
+    if not character then return end
+    
+    local rootPart = character:FindFirstChild("HumanoidRootPart")
+    if not rootPart then return end
+    
+    -- Remove existing anti-knockback if it exists
+    local existing = rootPart:FindFirstChild("KYYAntiFling")
+    if existing then existing:Destroy() end
+    
+    -- Create new BodyVelocity with unique name
+    local bodyVelocity = Instance.new("BodyVelocity")
+    bodyVelocity.Name = "KYYAntiFling"  -- Unique name to identify our anti-fling
+    bodyVelocity.MaxForce = Vector3.new(100000, 0, 100000)  -- Only X and Z axis
+    bodyVelocity.Velocity = Vector3.new(0, 0, 0)
+    bodyVelocity.P = 1250
+    bodyVelocity.Parent = rootPart
+end
+
+-- Function to remove anti-knockback from a specific character
+local function removeAntiKnockback(character)
+    if not character then return end
+    
+    local rootPart = character:FindFirstChild("HumanoidRootPart")
+    if not rootPart then return end
+    
+    local existing = rootPart:FindFirstChild("KYYAntiFling")
+    if existing then existing:Destroy() end
+end
+
+-- Function to update anti-knockback state
+local function updateAntiKnockback(state)
+    antiKnockbackEnabled = state
+    
+    if state then
+        -- Apply to current character
+        if Player.Character then
+            applyAntiKnockback(Player.Character)
+        end
+        
+        -- Set up connection for respawn handling
+        if antiKnockbackConn then antiKnockbackConn:Disconnect() end
+        antiKnockbackConn = Player.CharacterAdded:Connect(function(character)
+            -- Wait for character to fully load
+            task.wait(0.1)
+            applyAntiKnockback(character)
+        end)
+    else
+        -- Disconnect connection
+        if antiKnockbackConn then
+            antiKnockbackConn:Disconnect()
+            antiKnockbackConn = nil
+        end
+        
+        -- Remove from current character
+        if Player.Character then
+            removeAntiKnockback(Player.Character)
+        end
+    end
+end
+
+-- Handle character removal (cleanup)
+Player.CharacterRemoving:Connect(function(character)
+    if not antiKnockbackEnabled then return end
+    -- Don't remove here, let the CharacterAdded handle it
+end)
+
+-- Add the Anti Fling toggle to Killer Tab
+KillerTab:AddToggle("Anti Fling", false, function(bool)
+    updateAntiKnockback(bool)
+end)
+
+-- Add info label
+KillerTab:AddLabel("Prevents being flung by other players")
+
 -------------------- STAT LOOPS (Original Content) --------------------
 -- rebirth timer
 task.spawn(function()
