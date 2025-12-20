@@ -296,9 +296,10 @@ local timeDropdown = RebirthTab:AddDropdown("Change Time", function(selection)
     end
 end)
 
-timeDropdown:Add("Night")
-timeDropdown:Add("Day")
-timeDropdown:Add("Midnight")
+-- ⬇️  these three lines were missing
+local timeDropdown:Add("Night")
+local timeDropdown:Add("Day")
+local timeDropdown:Add("Midnight")
 
 -------------------- Fast Strength --------------------
 local strStart=0; local strElapsed=0; local strRun=false; local track=false
