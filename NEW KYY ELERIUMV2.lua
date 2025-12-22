@@ -283,24 +283,6 @@ RebirthTab:AddToggle("Spin Fortune Wheel", false, function(bool)
     end
 end)
 
--- NEW: Change Time
-local timeDropdown = RebirthTab:AddDropdown("Change Time", function(selection)
-    local lighting = game:GetService("Lighting")
-    
-    if selection == "Night" then
-        lighting.ClockTime = 0
-    elseif selection == "Day" then
-        lighting.ClockTime = 12
-    elseif selection == "Midnight" then
-        lighting.ClockTime = 6
-    end
-end)
-
--- ⬇️  these three lines were missing
-local timeDropdown:Add("Night")
-local timeDropdown:Add("Day")
-local timeDropdown:Add("Midnight")
-
 -------------------- Fast Strength --------------------
 local strStart=0; local strElapsed=0; local strRun=false; local track=false
 local initStr=strength.Value; local initDur=durability.Value
