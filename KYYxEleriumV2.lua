@@ -1,5 +1,4 @@
---[[  EleriumV2xKYY  (ver.71)  ]]
--- Fixed KILL3R tab with working killing features
+--[[  EleriumV2xKYY  (ver.69)  ]]
 local Library = loadstring(game:HttpGet(
     "https://raw.githubusercontent.com/Kyypie69/Library.UI/refs/heads/main/KYY.luau"))()
 
