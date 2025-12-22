@@ -1321,3 +1321,208 @@ task.spawn(function()
         task.wait(0.8)
     end
 end)
+
+-------------------- KILL COUNTER GUI SYSTEM --------------------
+-- Kill Statistics
+local killStats = {
+    totalKills = 0,
+    sessionKills = 0,
+    killStreak = 0,
+    bestStreak = 0,
+    startTime = tick(),
+    lastKillTime = 0,
+    killsPerMinute = 0,
+    killRate = 0
+}
+
+-- Create Kill Counter GUI
+local killGui = Instance.new("ScreenGui")
+killGui.Name = "KillCounterGUI"
+killGui.Parent = Player:WaitForChild("PlayerGui")
+
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 250, 0, 180)
+mainFrame.Position = UDim2.new(0.02, 0, 0.3, 0)
+mainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+mainFrame.BorderSizePixel = 2
+mainFrame.BorderColor3 = Color3.fromRGB(138, 43, 226)
+mainFrame.Active = true
+mainFrame.Draggable = true
+mainFrame.Parent = killGui
+
+-- Add corner radius
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 8)
+corner.Parent = mainFrame
+
+-- Title
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Size = UDim2.new(1, 0, 0, 25)
+titleLabel.Position = UDim2.new(0, 0, 0, 0)
+titleLabel.BackgroundTransparency = 1
+titleLabel.Text = "KILL COUNTER"
+titleLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
+titleLabel.Font = Enum.Font.GothamBold
+titleLabel.TextSize = 16
+titleLabel.Parent = mainFrame
+
+-- Timer Display
+local timerLabel = Instance.new("TextLabel")
+timerLabel.Size = UDim2.new(1, 0, 0, 20)
+timerLabel.Position = UDim2.new(0, 0, 0, 25)
+timerLabel.BackgroundTransparency = 1
+timerLabel.Text = "Session: 00:00:00"
+timerLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+timerLabel.Font = Enum.Font.Gotham
+timerLabel.TextSize = 14
+timerLabel.Parent = mainFrame
+
+-- Total Kills
+local totalKillsLabel = Instance.new("TextLabel")
+totalKillsLabel.Size = UDim2.new(1, 0, 0, 20)
+totalKillsLabel.Position = UDim2.new(0, 0, 0, 45)
+totalKillsLabel.BackgroundTransparency = 1
+totalKillsLabel.Text = "Total Kills: 0"
+totalKillsLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+totalKillsLabel.Font = Enum.Font.Gotham
+totalKillsLabel.TextSize = 14
+totalKillsLabel.Parent = mainFrame
+
+-- Session Kills
+local sessionKillsLabel = Instance.new("TextLabel")
+sessionKillsLabel.Size = UDim2.new(1, 0, 0, 20)
+sessionKillsLabel.Position = UDim2.new(0, 0, 0, 65)
+sessionKillsLabel.BackgroundTransparency = 1
+sessionKillsLabel.Text = "Session Kills: 0"
+sessionKillsLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
+sessionKillsLabel.Font = Enum.Font.Gotham
+sessionKillsLabel.TextSize = 14
+sessionKillsLabel.Parent = mainFrame
+
+-- Kill Streak
+local streakLabel = Instance.new("TextLabel")
+streakLabel.Size = UDim2.new(1, 0, 0, 20)
+streakLabel.Position = UDim2.new(0, 0, 0, 85)
+streakLabel.BackgroundTransparency = 1
+streakLabel.Text = "Streak: 0 | Best: 0"
+streakLabel.TextColor3 = Color3.fromRGB(255, 255, 0)
+streakLabel.Font = Enum.Font.Gotham
+streakLabel.TextSize = 14
+streakLabel.Parent = mainFrame
+
+-- Kills Per Minute
+local kpmLabel = Instance.new("TextLabel")
+kpmLabel.Size = UDim2.new(1, 0, 0, 20)
+kpmLabel.Position = UDim2.new(0, 0, 0, 105)
+kpmLabel.BackgroundTransparency = 1
+kpmLabel.Text = "KPM: 0.0 | Rate: 0.0/h"
+kpmLabel.TextColor3 = Color3.fromRGB(0, 255, 255)
+kpmLabel.Font = Enum.Font.Gotham
+kpmLabel.TextSize = 14
+kpmLabel.Parent = mainFrame
+
+-- Last Kill Time
+local lastKillLabel = Instance.new("TextLabel")
+lastKillLabel.Size = UDim2.new(1, 0, 0, 20)
+lastKillLabel.Position = UDim2.new(0, 0, 0, 125)
+lastKillLabel.BackgroundTransparency = 1
+lastKillLabel.Text = "Last Kill: Never"
+lastKillLabel.TextColor3 = Color3.fromRGB(255, 165, 0)
+lastKillLabel.Font = Enum.Font.Gotham
+lastKillLabel.TextSize = 14
+lastKillLabel.Parent = mainFrame
+
+-- Status
+local statusLabel = Instance.new("TextLabel")
+statusLabel.Size = UDim2.new(1, 0, 0, 20)
+statusLabel.Position = UDim2.new(0, 0, 0, 145)
+statusLabel.BackgroundTransparency = 1
+statusLabel.Text = "Status: Idle"
+statusLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+statusLabel.Font = Enum.Font.Gotham
+statusLabel.TextSize = 14
+statusLabel.Parent = mainFrame
+
+-- Timer Update Loop
+task.spawn(function()
+    while true do
+        local elapsed = tick() - killStats.startTime
+        local h = math.floor(elapsed / 3600)
+        local m = math.floor((elapsed % 3600) / 60)
+        local s = math.floor(elapsed % 60)
+        timerLabel.Text = string.format("Session: %02d:%02d:%02d", h, m, s)
+        
+        -- Update kills per minute
+        if killStats.sessionKills > 0 then
+            local minutes = elapsed / 60
+            killStats.killsPerMinute = killStats.sessionKills / minutes
+            killStats.killRate = killStats.sessionKills / (elapsed / 3600)
+            kpmLabel.Text = string.format("KPM: %.1f | Rate: %.1f/h", killStats.killsPerMinute, killStats.killRate)
+        end
+        
+        task.wait(1)
+    end
+end)
+
+-- Function to record a kill
+local function recordKill(playerName)
+    killStats.totalKills = killStats.totalKills + 1
+    killStats.sessionKills = killStats.sessionKills + 1
+    killStats.killStreak = killStats.killStreak + 1
+    killStats.lastKillTime = tick()
+    
+    if killStats.killStreak > killStats.bestStreak then
+        killStats.bestStreak = killStats.killStreak
+    end
+    
+    -- Update GUI
+    totalKillsLabel.Text = "Total Kills: " .. killStats.totalKills
+    sessionKillsLabel.Text = "Session Kills: " .. killStats.sessionKills
+    streakLabel.Text = string.format("Streak: %d | Best: %d", killStats.killStreak, killStats.bestStreak)
+    lastKillLabel.Text = "Last Kill: " .. playerName
+    statusLabel.Text = "Status: Active"
+    
+    -- Reset status after 3 seconds
+    task.wait(3)
+    statusLabel.Text = "Status: Idle"
+end
+
+-- Enhanced kill function with kill recording
+local originalKillPlayer = killPlayer
+killPlayer = function(target)
+    if not isPlayerAlive(target) then return end
+    local character = checkCharacter()
+    if character and character:FindFirstChild("LeftHand") then
+        pcall(function()
+            firetouchinterest(target.Character.HumanoidRootPart, character.LeftHand, 0)
+            firetouchinterest(target.Character.HumanoidRootPart, character.LeftHand, 1)
+            gettool()
+            
+            -- Record the kill
+            recordKill(target.Name)
+        end)
+    end
+end
+
+-- Reset streak when you die
+Player.CharacterAdded:Connect(function()
+    killStats.killStreak = 0
+    streakLabel.Text = string.format("Streak: %d | Best: %d", killStats.killStreak, killStats.bestStreak)
+end)
+
+-- Add GUI toggle to KillerTab
+KillerTab:AddToggle("Show Kill Counter", true, function(bool)
+    killGui.Enabled = bool
+end)
+
+KillerTab:AddButton("Reset Session Stats", function()
+    killStats.sessionKills = 0
+    killStats.killStreak = 0
+    killStats.startTime = tick()
+    sessionKillsLabel.Text = "Session Kills: 0"
+    streakLabel.Text = "Streak: 0 | Best: " .. killStats.bestStreak
+    kpmLabel.Text = "KPM: 0.0 | Rate: 0.0/h"
+    statusLabel.Text = "Session Reset"
+    task.wait(1)
+    statusLabel.Text = "Status: Idle"
+end)
