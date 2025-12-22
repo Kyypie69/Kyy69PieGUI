@@ -826,6 +826,9 @@ local originalCameraSubject = nil
 local originalCameraType = nil
 local spectateConnection = nil
 local targetPlayer = nil
+local spectating = false
+local selectedPlayerToSpectate = nil
+local currentTargetConnection = nil
 
 -- Fixed spectate function
 local function updateSpectateTarget(player)
@@ -935,7 +938,7 @@ local function createSpectateDropdown()
     end
     
     -- Create dropdown with proper KYY library syntax
-local specdropdown = KillerTab:AddDropdown("Spectate Player", playerOptions, nil, 0.25, function(selectedText)
+    specdropdown = KillerTab:AddDropdown("Spectate Player", playerOptions, function(selectedText)
         for _, player in ipairs(game.Players:GetPlayers()) do
             local optionText = player.DisplayName .. " | " .. player.Name
             if selectedText == optionText then
