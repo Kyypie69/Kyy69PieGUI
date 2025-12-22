@@ -1322,8 +1322,8 @@ task.spawn(function()
     end
 end)
 
--------------------- KILL COUNTER GUI SYSTEM --------------------
--- Kill Statistics
+-------------------- STYLED KILL COUNTER GUI --------------------
+-- Kill Statistics that sync with actual game deaths
 local killStats = {
     totalKills = 0,
     sessionKills = 0,
@@ -1332,116 +1332,378 @@ local killStats = {
     startTime = tick(),
     lastKillTime = 0,
     killsPerMinute = 0,
-    killRate = 0
+    killRate = 0,
+    leaderboardKills = 0,
+    lastLeaderboardCheck = 0
 }
 
--- Create Kill Counter GUI
+-- Track actual player deaths instead of just script kills
+local playerDeaths = {}
+local killConnection = nil
+local deathConnection = nil
+
+-- Create Kill Counter GUI with glowing light blue theme
 local killGui = Instance.new("ScreenGui")
 killGui.Name = "KillCounterGUI"
 killGui.Parent = Player:WaitForChild("PlayerGui")
+killGui.Enabled = false -- Auto-toggle turned OFF by default
 
 local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 250, 0, 180)
+mainFrame.Size = UDim2.new(0, 280, 0, 240) -- Increased height for separator lines
 mainFrame.Position = UDim2.new(0.02, 0, 0.3, 0)
-mainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+mainFrame.BackgroundColor3 = Color3.fromRGB(173, 216, 230) -- Light blue base
 mainFrame.BorderSizePixel = 2
-mainFrame.BorderColor3 = Color3.fromRGB(138, 43, 226)
+mainFrame.BorderColor3 = Color3.fromRGB(135, 206, 250) -- Lighter border
 mainFrame.Active = true
 mainFrame.Draggable = true
 mainFrame.Parent = killGui
 
--- Add corner radius
+-- Create glowing effect
+local glowFrame = Instance.new("Frame")
+glowFrame.Size = UDim2.new(1, 12, 1, 12)
+glowFrame.Position = UDim2.new(0, -6, 0, -6)
+glowFrame.BackgroundColor3 = Color3.fromRGB(173, 216, 230)
+glowFrame.BackgroundTransparency = 0.7
+glowFrame.BorderSizePixel = 0
+glowFrame.ZIndex = -1
+glowFrame.Parent = mainFrame
+
+local glowCorner = Instance.new("UICorner")
+glowCorner.CornerRadius = UDim.new(0, 12)
+glowCorner.Parent = glowFrame
+
+-- Add corner radius to main frame
 local corner = Instance.new("UICorner")
 corner.CornerRadius = UDim.new(0, 8)
 corner.Parent = mainFrame
 
--- Title
+-- Add gradient for glowing effect
+local gradient = Instance.new("UIGradient")
+gradient.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(135, 206, 250)),
+    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(173, 216, 230)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(135, 206, 250))
+})
+gradient.Rotation = 45
+gradient.Parent = mainFrame
+
+-- Title with calligraphy bold font
 local titleLabel = Instance.new("TextLabel")
 titleLabel.Size = UDim2.new(1, 0, 0, 25)
 titleLabel.Position = UDim2.new(0, 0, 0, 0)
 titleLabel.BackgroundTransparency = 1
-titleLabel.Text = "KILL COUNTER"
-titleLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
-titleLabel.Font = Enum.Font.GothamBold
-titleLabel.TextSize = 16
+titleLabel.Text = "⚔️ KILL COUNTER ⚔️"
+titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+titleLabel.Font = Enum.Font.Garamond -- Calligraphy style font
+titleLabel.TextSize = 18
+titleLabel.TextStrokeTransparency = 0
+titleLabel.TextStrokeColor3 = Color3.fromRGB(0, 100, 200)
 titleLabel.Parent = mainFrame
 
--- Timer Display
+-- Separator line 1
+local separator1 = Instance.new("Frame")
+separator1.Size = UDim2.new(0.9, 0, 0, 1)
+separator1.Position = UDim2.new(0.05, 0, 0, 25)
+separator1.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+separator1.BackgroundTransparency = 0.5
+separator1.BorderSizePixel = 0
+separator1.Parent = mainFrame
+
+-- Timer Display with calligraphy bold
 local timerLabel = Instance.new("TextLabel")
 timerLabel.Size = UDim2.new(1, 0, 0, 20)
-timerLabel.Position = UDim2.new(0, 0, 0, 25)
+timerLabel.Position = UDim2.new(0, 0, 0, 27)
 timerLabel.BackgroundTransparency = 1
 timerLabel.Text = "Session: 00:00:00"
 timerLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-timerLabel.Font = Enum.Font.Gotham
+timerLabel.Font = Enum.Font.Garamond
 timerLabel.TextSize = 14
+timerLabel.TextStrokeTransparency = 0.5
+timerLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
 timerLabel.Parent = mainFrame
 
--- Total Kills
+-- Separator line 2
+local separator2 = Instance.new("Frame")
+separator2.Size = UDim2.new(0.9, 0, 0, 1)
+separator2.Position = UDim2.new(0.05, 0, 0, 47)
+separator2.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+separator2.BackgroundTransparency = 0.5
+separator2.BorderSizePixel = 0
+separator2.Parent = mainFrame
+
+-- Total Kills with calligraphy bold (LARGER SIZE)
 local totalKillsLabel = Instance.new("TextLabel")
-totalKillsLabel.Size = UDim2.new(1, 0, 0, 20)
-totalKillsLabel.Position = UDim2.new(0, 0, 0, 45)
+totalKillsLabel.Size = UDim2.new(1, 0, 0, 25) -- Increased height
+totalKillsLabel.Position = UDim2.new(0, 0, 0, 48)
 totalKillsLabel.BackgroundTransparency = 1
 totalKillsLabel.Text = "Total Kills: 0"
 totalKillsLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-totalKillsLabel.Font = Enum.Font.Gotham
-totalKillsLabel.TextSize = 14
+totalKillsLabel.Font = Enum.Font.Garamond
+totalKillsLabel.TextSize = 18 -- Larger text size
+totalKillsLabel.TextStrokeTransparency = 0.5
+totalKillsLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
 totalKillsLabel.Parent = mainFrame
 
--- Session Kills
+-- Separator line 3
+local separator3 = Instance.new("Frame")
+separator3.Size = UDim2.new(0.9, 0, 0, 1)
+separator3.Position = UDim2.new(0.05, 0, 0, 73)
+separator3.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+separator3.BackgroundTransparency = 0.5
+separator3.BorderSizePixel = 0
+separator3.Parent = mainFrame
+
+-- Session Kills with calligraphy bold
 local sessionKillsLabel = Instance.new("TextLabel")
 sessionKillsLabel.Size = UDim2.new(1, 0, 0, 20)
-sessionKillsLabel.Position = UDim2.new(0, 0, 0, 65)
+sessionKillsLabel.Position = UDim2.new(0, 0, 0, 74)
 sessionKillsLabel.BackgroundTransparency = 1
 sessionKillsLabel.Text = "Session Kills: 0"
 sessionKillsLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
-sessionKillsLabel.Font = Enum.Font.Gotham
+sessionKillsLabel.Font = Enum.Font.Garamond
 sessionKillsLabel.TextSize = 14
+sessionKillsLabel.TextStrokeTransparency = 0.5
+sessionKillsLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
 sessionKillsLabel.Parent = mainFrame
 
--- Kill Streak
+-- Separator line 4
+local separator4 = Instance.new("Frame")
+separator4.Size = UDim2.new(0.9, 0, 0, 1)
+separator4.Position = UDim2.new(0.05, 0, 0, 94)
+separator4.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+separator4.BackgroundTransparency = 0.5
+separator4.BorderSizePixel = 0
+separator4.Parent = mainFrame
+
+-- Leaderboard Kills with calligraphy bold
+local leaderboardLabel = Instance.new("TextLabel")
+leaderboardLabel.Size = UDim2.new(1, 0, 0, 20)
+leaderboardLabel.Position = UDim2.new(0, 0, 0, 95)
+leaderboardLabel.BackgroundTransparency = 1
+leaderboardLabel.Text = "Leaderboard: 0"
+leaderboardLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
+leaderboardLabel.Font = Enum.Font.Garamond
+leaderboardLabel.TextSize = 14
+leaderboardLabel.TextStrokeTransparency = 0.5
+leaderboardLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+leaderboardLabel.Parent = mainFrame
+
+-- Separator line 5
+local separator5 = Instance.new("Frame")
+separator5.Size = UDim2.new(0.9, 0, 0, 1)
+separator5.Position = UDim2.new(0.05, 0, 0, 115)
+separator5.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+separator5.BackgroundTransparency = 0.5
+separator5.BorderSizePixel = 0
+separator5.Parent = mainFrame
+
+-- Kill Streak with calligraphy bold
 local streakLabel = Instance.new("TextLabel")
 streakLabel.Size = UDim2.new(1, 0, 0, 20)
-streakLabel.Position = UDim2.new(0, 0, 0, 85)
+streakLabel.Position = UDim2.new(0, 0, 0, 116)
 streakLabel.BackgroundTransparency = 1
 streakLabel.Text = "Streak: 0 | Best: 0"
 streakLabel.TextColor3 = Color3.fromRGB(255, 255, 0)
-streakLabel.Font = Enum.Font.Gotham
+streakLabel.Font = Enum.Font.Garamond
 streakLabel.TextSize = 14
+streakLabel.TextStrokeTransparency = 0.5
+streakLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
 streakLabel.Parent = mainFrame
 
--- Kills Per Minute
+-- Separator line 6
+local separator6 = Instance.new("Frame")
+separator6.Size = UDim2.new(0.9, 0, 0, 1)
+separator6.Position = UDim2.new(0.05, 0, 0, 136)
+separator6.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+separator6.BackgroundTransparency = 0.5
+separator6.BorderSizePixel = 0
+separator6.Parent = mainFrame
+
+-- Kills Per Minute with calligraphy bold
 local kpmLabel = Instance.new("TextLabel")
 kpmLabel.Size = UDim2.new(1, 0, 0, 20)
-kpmLabel.Position = UDim2.new(0, 0, 0, 105)
+kpmLabel.Position = UDim2.new(0, 0, 0, 137)
 kpmLabel.BackgroundTransparency = 1
 kpmLabel.Text = "KPM: 0.0 | Rate: 0.0/h"
 kpmLabel.TextColor3 = Color3.fromRGB(0, 255, 255)
-kpmLabel.Font = Enum.Font.Gotham
+kpmLabel.Font = Enum.Font.Garamond
 kpmLabel.TextSize = 14
+kpmLabel.TextStrokeTransparency = 0.5
+kpmLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
 kpmLabel.Parent = mainFrame
 
--- Last Kill Time
+-- Separator line 7
+local separator7 = Instance.new("Frame")
+separator7.Size = UDim2.new(0.9, 0, 0, 1)
+separator7.Position = UDim2.new(0.05, 0, 0, 157)
+separator7.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+separator7.BackgroundTransparency = 0.5
+separator7.BorderSizePixel = 0
+separator7.Parent = mainFrame
+
+-- Last Kill Info with calligraphy bold
 local lastKillLabel = Instance.new("TextLabel")
 lastKillLabel.Size = UDim2.new(1, 0, 0, 20)
-lastKillLabel.Position = UDim2.new(0, 0, 0, 125)
+lastKillLabel.Position = UDim2.new(0, 0, 0, 158)
 lastKillLabel.BackgroundTransparency = 1
 lastKillLabel.Text = "Last Kill: Never"
 lastKillLabel.TextColor3 = Color3.fromRGB(255, 165, 0)
-lastKillLabel.Font = Enum.Font.Gotham
+lastKillLabel.Font = Enum.Font.Garamond
 lastKillLabel.TextSize = 14
+lastKillLabel.TextStrokeTransparency = 0.5
+lastKillLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
 lastKillLabel.Parent = mainFrame
 
--- Status
+-- Separator line 8
+local separator8 = Instance.new("Frame")
+separator8.Size = UDim2.new(0.9, 0, 0, 1)
+separator8.Position = UDim2.new(0.05, 0, 0, 178)
+separator8.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+separator8.BackgroundTransparency = 0.5
+separator8.BorderSizePixel = 0
+separator8.Parent = mainFrame
+
+-- Sync Status with calligraphy bold
+local syncStatusLabel = Instance.new("TextLabel")
+syncStatusLabel.Size = UDim2.new(1, 0, 0, 20)
+syncStatusLabel.Position = UDim2.new(0, 0, 0, 179)
+syncStatusLabel.BackgroundTransparency = 1
+syncStatusLabel.Text = "Sync: Waiting..."
+syncStatusLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+syncStatusLabel.Font = Enum.Font.Garamond
+syncStatusLabel.TextSize = 14
+syncStatusLabel.TextStrokeTransparency = 0.5
+syncStatusLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+syncStatusLabel.Parent = mainFrame
+
+-- Separator line 9
+local separator9 = Instance.new("Frame")
+separator9.Size = UDim2.new(0.9, 0, 0, 1)
+separator9.Position = UDim2.new(0.05, 0, 0, 199)
+separator9.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+separator9.BackgroundTransparency = 0.5
+separator9.BorderSizePixel = 0
+separator9.Parent = mainFrame
+
+-- Status with calligraphy bold
 local statusLabel = Instance.new("TextLabel")
 statusLabel.Size = UDim2.new(1, 0, 0, 20)
-statusLabel.Position = UDim2.new(0, 0, 0, 145)
+statusLabel.Position = UDim2.new(0, 0, 0, 200)
 statusLabel.BackgroundTransparency = 1
 statusLabel.Text = "Status: Idle"
 statusLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-statusLabel.Font = Enum.Font.Gotham
+statusLabel.Font = Enum.Font.Garamond
 statusLabel.TextSize = 14
+statusLabel.TextStrokeTransparency = 0.5
+statusLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
 statusLabel.Parent = mainFrame
+
+-- Add pulsing glow effect
+task.spawn(function()
+    while true do
+        for i = 0, 1, 0.02 do
+            local transparency = 0.5 + (math.sin(i * math.pi * 2) * 0.3)
+            glowFrame.BackgroundTransparency = transparency
+            task.wait(0.05)
+        end
+    end
+end)
+
+-- Function to check leaderboard for kills
+local function checkLeaderboardKills()
+    local success, kills = pcall(function()
+        -- Try to find kills stat in common locations
+        local leaderstats = Player:FindFirstChild("leaderstats")
+        if leaderstats then
+            local killsStat = leaderstats:FindFirstChild("Kills") or leaderstats:FindFirstChild("kills") or leaderstats:FindFirstChild("KO") or leaderstats:FindFirstChild("Knockouts")
+            if killsStat then
+                return killsStat.Value
+            end
+        end
+        
+        -- Check for other common locations
+        local stats = Player:FindFirstChild("Stats")
+        if stats then
+            local killsStat = stats:FindFirstChild("Kills") or stats:FindFirstChild("kills")
+            if killsStat then
+                return killsStat.Value
+            end
+        end
+        
+        -- Check for DataFolder
+        local dataFolder = Player:FindFirstChild("DataFolder") or Player:FindFirstChild("data")
+        if dataFolder then
+            local killsStat = dataFolder:FindFirstChild("Kills") or dataFolder:FindFirstChild("kills")
+            if killsStat then
+                return killsStat.Value
+            end
+        end
+        
+        return 0
+    end)
+    
+    return success and kills or 0
+end
+
+-- Function to detect when someone dies (more reliable than relying on your kills)
+local function setupDeathDetection()
+    -- Monitor all players for deaths
+    local function monitorPlayerDeath(otherPlayer)
+        if otherPlayer == Player then return end -- Don't monitor yourself
+        
+        local function onCharacterAdded(character)
+            local humanoid = character:WaitForChild("Humanoid")
+            
+            humanoid.Died:Connect(function()
+                -- Check if this player was recently damaged by you
+                local deathTime = tick()
+                playerDeaths[otherPlayer.Name] = deathTime
+                
+                -- Check if you're nearby or have damaged them recently
+                local myCharacter = Player.Character
+                local theirCharacter = otherPlayer.Character
+                
+                if myCharacter and theirCharacter then
+                    local myRoot = myCharacter:FindFirstChild("HumanoidRootPart")
+                    local theirRoot = theirCharacter:FindFirstChild("HumanoidRootPart")
+                    
+                    if myRoot and theirRoot then
+                        local distance = (myRoot.Position - theirRoot.Position).Magnitude
+                        
+                        -- If you're within 50 studs, count it as your kill
+                        if distance <= 50 then
+                            recordKill(otherPlayer.Name)
+                        end
+                    end
+                end
+                
+                -- Also check if you have any active kill connections
+                if _G.killAll or _G.killBlacklistedOnly or _G.deathRingEnabled then
+                    task.wait(0.1) -- Small delay to ensure our kill function triggered
+                    recordKill(otherPlayer.Name)
+                end
+            end)
+        end
+        
+        if otherPlayer.Character then
+            onCharacterAdded(otherPlayer.Character)
+        end
+        
+        otherPlayer.CharacterAdded:Connect(onCharacterAdded)
+    end
+    
+    -- Monitor all existing players
+    for _, otherPlayer in ipairs(game.Players:GetPlayers()) do
+        if otherPlayer ~= Player then
+            monitorPlayerDeath(otherPlayer)
+        end
+    end
+    
+    -- Monitor new players
+    game.Players.PlayerAdded:Connect(function(otherPlayer)
+        monitorPlayerDeath(otherPlayer)
+    end)
+end
 
 -- Timer Update Loop
 task.spawn(function()
@@ -1460,12 +1722,25 @@ task.spawn(function()
             kpmLabel.Text = string.format("KPM: %.1f | Rate: %.1f/h", killStats.killsPerMinute, killStats.killRate)
         end
         
+        -- Check leaderboard kills every 5 seconds
+        if tick() - killStats.lastLeaderboardCheck > 5 then
+            local leaderboardKills = checkLeaderboardKills()
+            if leaderboardKills > killStats.leaderboardKills then
+                killStats.leaderboardKills = leaderboardKills
+                leaderboardLabel.Text = "Leaderboard: " .. killStats.leaderboardKills
+                syncStatusLabel.Text = "Sync: Updated"
+            else
+                syncStatusLabel.Text = "Sync: Standby"
+            end
+            killStats.lastLeaderboardCheck = tick()
+        end
+        
         task.wait(1)
     end
 end)
 
--- Function to record a kill
-local function recordKill(playerName)
+-- Enhanced record kill function
+function recordKill(playerName)
     killStats.totalKills = killStats.totalKills + 1
     killStats.sessionKills = killStats.sessionKills + 1
     killStats.killStreak = killStats.killStreak + 1
@@ -1480,28 +1755,13 @@ local function recordKill(playerName)
     sessionKillsLabel.Text = "Session Kills: " .. killStats.sessionKills
     streakLabel.Text = string.format("Streak: %d | Best: %d", killStats.killStreak, killStats.bestStreak)
     lastKillLabel.Text = "Last Kill: " .. playerName
-    statusLabel.Text = "Status: Active"
+    statusLabel.Text = "Status: Kill!"
+    syncStatusLabel.Text = "Sync: Kill Detected"
     
     -- Reset status after 3 seconds
     task.wait(3)
     statusLabel.Text = "Status: Idle"
-end
-
--- Enhanced kill function with kill recording
-local originalKillPlayer = killPlayer
-killPlayer = function(target)
-    if not isPlayerAlive(target) then return end
-    local character = checkCharacter()
-    if character and character:FindFirstChild("LeftHand") then
-        pcall(function()
-            firetouchinterest(target.Character.HumanoidRootPart, character.LeftHand, 0)
-            firetouchinterest(target.Character.HumanoidRootPart, character.LeftHand, 1)
-            gettool()
-            
-            -- Record the kill
-            recordKill(target.Name)
-        end)
-    end
+    syncStatusLabel.Text = "Sync: Standby"
 end
 
 -- Reset streak when you die
@@ -1510,10 +1770,15 @@ Player.CharacterAdded:Connect(function()
     streakLabel.Text = string.format("Streak: %d | Best: %d", killStats.killStreak, killStats.bestStreak)
 end)
 
--- Add GUI toggle to KillerTab
-KillerTab:AddToggle("Show Kill Counter", true, function(bool)
+-- Initialize death detection
+setupDeathDetection()
+
+-- Add GUI toggle to KillerTab (starts OFF by default)
+KillerTab:AddToggle("Show Kill Counter", false, function(bool)
     killGui.Enabled = bool
 end)
+
+KillerTab:AddLabel("Kill Counter starts OFF - toggle above to show")
 
 KillerTab:AddButton("Reset Session Stats", function()
     killStats.sessionKills = 0
@@ -1523,6 +1788,17 @@ KillerTab:AddButton("Reset Session Stats", function()
     streakLabel.Text = "Streak: 0 | Best: " .. killStats.bestStreak
     kpmLabel.Text = "KPM: 0.0 | Rate: 0.0/h"
     statusLabel.Text = "Session Reset"
+    syncStatusLabel.Text = "Sync: Reset"
     task.wait(1)
     statusLabel.Text = "Status: Idle"
+    syncStatusLabel.Text = "Sync: Standby"
+end)
+
+KillerTab:AddButton("Force Sync Leaderboard", function()
+    local leaderboardKills = checkLeaderboardKills()
+    killStats.leaderboardKills = leaderboardKills
+    leaderboardLabel.Text = "Leaderboard: " .. killStats.leaderboardKills
+    syncStatusLabel.Text = "Sync: Manual Update"
+    task.wait(2)
+    syncStatusLabel.Text = "Sync: Standby"
 end)
