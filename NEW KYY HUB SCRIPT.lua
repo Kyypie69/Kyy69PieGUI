@@ -1,4 +1,4 @@
---[[EleriumV2xKYY (ver.69) - Minified]]
+--[[EleriumV2xKYY (ver.69)]]--
 local Library=loadstring(game:HttpGet("https://raw.githubusercontent.com/Kyypie69/Library.UI/refs/heads/main/KYY.luau"))()
 local Win=Library.new({MainColor=Color3.fromRGB(138,43,226),ToggleKey=Enum.KeyCode.Insert,MinSize=Vector2.new(450,320),CanResize=false})
 local Player=game:GetService("Players").LocalPlayer
@@ -259,7 +259,7 @@ RebirthTab:AddToggle("Fast Rebirth",false,function(v)
 end)
 
 RebirthTab:AddToggle("Hide Frames",false,function(s) if s then hideFrames() end end)
-RebirthTab:AddButton("Anti AFK",function() rebAntiAfkEnabled=true end)
+RebirthTab:AddButton("Anti AFK",function() rebAntiAfkEnabled=false end)
 RebirthTab:AddButton("Equip 8× Swift Samurai",function() equipEight("Swift Samurai") end)
 RebirthTab:AddButton("Anti Lag",antiLag)
 
@@ -383,7 +383,7 @@ StrengthTab:AddToggle("Fast Strength",false,function(v)
 end)
 
 StrengthTab:AddToggle("Hide Frames",false,function(s) if s then hideFrames() end end)
-StrengthTab:AddButton("Anti AFK",function() strAntiAfkEnabled=true end)
+StrengthTab:AddButton("Anti AFK",function() strAntiAfkEnabled=false end)
 StrengthTab:AddButton("Equip 8× Swift Samurai",function() equipEight("Swift Samurai") end)
 StrengthTab:AddButton("Anti Lag",antiLag)
 StrengthTab:AddButton("TP Jungle Squat",tpJungleSquat)
@@ -412,7 +412,7 @@ StrengthTab:AddToggle("Auto Tropical Shake",false,function(s)
     if s then toolActivate("Tropical Shake","tropicalShake") end
 end)
 
-KillerTab:AddToggle("Remove Attack Animations", false, function(bool)
+KillerTab:AddToggle("Remove Punch Animations", false, function(bool)
     if bool then
         local blockedAnimations = {
             ["rbxassetid://3638729053"] = true,
@@ -601,7 +601,7 @@ local function ensureEggEquipped()
     end
 end
 
-KillerTab:AddToggle("NaN (Egg+NaN+Punch Combo)",false,function(bool)
+KillerTab:AddToggle("NaN Punch Combo)",false,function(bool)
     comboActive=bool
     if bool then
         if RS:FindFirstChild("rEvents") and RS.rEvents:FindFirstChild("changeSpeedSizeRemote") then
@@ -695,7 +695,7 @@ game.Players.PlayerRemoving:Connect(function()
 end)
 
 -- Kill toggles
-KillerTab:AddToggle("Kill Everyone",false,function(bool)
+KillerTab:AddToggle("Kill All",false,function(bool)
     _G.killAll=bool
     if bool then
         if not _G.killAllConnection then
@@ -799,7 +799,7 @@ local function stopSpectate()
     end
 end
 
-KillerTab:AddToggle("Spectate",false,function(bool)
+KillerTab:AddToggle("View Player",false,function(bool)
     spectating=bool
     if bool then
         if selectedPlayerToSpectate then
@@ -824,7 +824,7 @@ local function createSpectateDropdown()
         end
     end
     
-    specdropdown=KillerTab:AddDropdown("Spectate Player",playerOptions,function(selectedText)
+    specdropdown=KillerTab:AddDropdown("View Player",playerOptions,function(selectedText)
         for _,player in ipairs(game.Players:GetPlayers()) do
             local optionText=player.DisplayName.." | "..player.Name
             if selectedText==optionText then
@@ -1022,11 +1022,11 @@ Player.CharacterRemoving:Connect(function(character)
     if not antiKnockbackEnabled then return end
 end)
 
-KillerTab:AddToggle("Anti Fling",false,function(bool)
+KillerTab:AddToggle("Anti Knock Back",false,function(bool)
     updateAntiKnockback(bool)
 end)
 
-KillerTab:AddLabel("Prevents being flung by other players")
+KillerTab:AddLabel("Prevents being fling by players")
 
 -- Update loops
 task.spawn(function()
@@ -1425,11 +1425,11 @@ end)
 
 setupDeathDetection()
 
-KillerTab:AddToggle("Show Kill Counter",false,function(bool)
+KillerTab:AddToggle("Kill Counter",false,function(bool)
     killGui.Enabled=bool
 end)
 
-KillerTab:AddLabel("Kill Counter starts OFF - toggle above to show")
+KillerTab:AddLabel("Kill Counter Session")
 
 KillerTab:AddButton("Reset Session Stats",function()
     killStats.sessionKills=0
@@ -1445,7 +1445,7 @@ KillerTab:AddButton("Reset Session Stats",function()
     syncStatusLabel.Text="Sync: Standby"
 end)
 
-KillerTab:AddButton("Force Sync Leaderboard",function()
+KillerTab:AddButton("Sync Leaderboard",function()
     local leaderboardKills=checkLeaderboardKills()
     killStats.leaderboardKills=leaderboardKills
     leaderboardLabel.Text="Leaderboard: "..killStats.leaderboardKills
@@ -1459,7 +1459,7 @@ FarmTab:AddLabel("Auto Farm Tools")
 local SelectedTool=nil
 local AutoFarm=false
 
-local toolOptions={"Weight","Pushups","Situps","Handstands","Punch","Stomp","Ground Slam"}
+local toolOptions={"Punch","Weight","Pushups","Situps","Handstands","Stomp","Ground Slam"}
 local toolDropdown=FarmTab:AddDropdown("Select Tool",toolOptions,function(Value)
     SelectedTool=Value
 end)
@@ -1587,7 +1587,7 @@ task.spawn(function()
     end
 end)
 
-FarmTab:AddTextBox("Rebirth Target","Enter number",function(Value)
+FarmTab:AddTextBox("Rebirth Target","0",function(Value)
     targetRebirths=tonumber(Value) or 0
 end)
 
@@ -1859,9 +1859,9 @@ end)
 getgenv().Lighting=game:GetService'Lighting'
 getgenv().RunService=game:GetService'RunService'
 
-local ColorCorrection=true
-local Correction=true
-local SunRays=true
+local ColorCorrection=false
+local Correction=false
+local SunRays=false
 
 Skybox=Instance.new("Sky",Lighting)
 Skybox.SkyboxBk="rbxassetid://153743489"
@@ -1975,4 +1975,5 @@ end)
 local BloomEffect=Instance.new("BloomEffect",Lighting)
 BloomEffect.Intensity=0.3
 BloomEffect.Size=0.5
+
 BloomEffect.Threshold=0.8
