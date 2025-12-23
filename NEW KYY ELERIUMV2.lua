@@ -259,7 +259,7 @@ RebirthTab:AddToggle("Fast Rebirth",false,function(v)
 end)
 
 RebirthTab:AddToggle("Hide Frames",false,function(s) if s then hideFrames() end end)
-RebirthTab:AddButton("Anti AFK",function() rebAntiAfkEnabled=true end)
+RebirthTab:AddButton("Anti AFK",function() rebAntiAfkEnabled=false end)
 RebirthTab:AddButton("Equip 8× Swift Samurai",function() equipEight("Swift Samurai") end)
 RebirthTab:AddButton("Anti Lag",antiLag)
 
@@ -383,7 +383,7 @@ StrengthTab:AddToggle("Fast Strength",false,function(v)
 end)
 
 StrengthTab:AddToggle("Hide Frames",false,function(s) if s then hideFrames() end end)
-StrengthTab:AddButton("Anti AFK",function() strAntiAfkEnabled=true end)
+StrengthTab:AddButton("Anti AFK",function() strAntiAfkEnabled=false end)
 StrengthTab:AddButton("Equip 8× Swift Samurai",function() equipEight("Swift Samurai") end)
 StrengthTab:AddButton("Anti Lag",antiLag)
 StrengthTab:AddButton("TP Jungle Squat",tpJungleSquat)
@@ -431,7 +431,7 @@ local function ensureEggEquipped()
     end
 end
 
-KillerTab:AddToggle("NaN (Egg+NaN+Punch Combo)",false,function(bool)
+KillerTab:AddToggle("NaN Punch Combo)",false,function(bool)
     comboActive=bool
     if bool then
         if RS:FindFirstChild("rEvents") and RS.rEvents:FindFirstChild("changeSpeedSizeRemote") then
@@ -852,7 +852,7 @@ Player.CharacterRemoving:Connect(function(character)
     if not antiKnockbackEnabled then return end
 end)
 
-KillerTab:AddToggle("Anti Fling",false,function(bool)
+KillerTab:AddToggle("Anti Knock Back",false,function(bool)
     updateAntiKnockback(bool)
 end)
 
@@ -1259,7 +1259,7 @@ KillerTab:AddToggle("Show Kill Counter",false,function(bool)
     killGui.Enabled=bool
 end)
 
-KillerTab:AddLabel("Kill Counter starts OFF - toggle above to show")
+KillerTab:AddLabel("Kill Counter Session")
 
 KillerTab:AddButton("Reset Session Stats",function()
     killStats.sessionKills=0
@@ -1275,7 +1275,7 @@ KillerTab:AddButton("Reset Session Stats",function()
     syncStatusLabel.Text="Sync: Standby"
 end)
 
-KillerTab:AddButton("Force Sync Leaderboard",function()
+KillerTab:AddButton("Sync Leaderboard",function()
     local leaderboardKills=checkLeaderboardKills()
     killStats.leaderboardKills=leaderboardKills
     leaderboardLabel.Text="Leaderboard: "..killStats.leaderboardKills
@@ -1289,7 +1289,7 @@ FarmTab:AddLabel("Auto Farm Tools")
 local SelectedTool=nil
 local AutoFarm=false
 
-local toolOptions={"Weight","Pushups","Situps","Handstands","Punch","Stomp","Ground Slam"}
+local toolOptions={"Punch","Weight","Pushups","Situps","Handstands","Stomp","Ground Slam"}
 local toolDropdown=FarmTab:AddDropdown("Select Tool",toolOptions,function(Value)
     SelectedTool=Value
 end)
