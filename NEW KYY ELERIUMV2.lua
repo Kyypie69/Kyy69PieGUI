@@ -1691,7 +1691,7 @@ getgenv().RunService=game:GetService'RunService'
 
 local ColorCorrection=false
 local Correction=false
-local SunRays=false
+local SunRays=true
 
 Skybox=Instance.new("Sky",Lighting)
 Skybox.SkyboxBk="rbxassetid://153743489"
@@ -1750,8 +1750,8 @@ BloomEffect.Threshold=0.8
 getgenv().Lighting=game:GetService'Lighting'
 getgenv().RunService=game:GetService'RunService'
 
-local ColorCorrection=true
-local Correction=true
+local ColorCorrection=false
+local Correction=false
 local SunRays=true
 
 Skybox=Instance.new("Sky",Lighting)
