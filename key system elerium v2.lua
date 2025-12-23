@@ -28,7 +28,7 @@ end
 
 local function executeScript()
     pcall(function()
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/Kyypie69/Kyy69PieGUI/refs/heads/main/OBFUSCATED.lua"))()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/Kyypie69/Kyy69PieGUI/refs/heads/main/OBFUSCATED.lua "))()
     end)
 end
 
@@ -43,30 +43,55 @@ local function createGUI()
     screenGui.ResetOnSpawn = false
     
     local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(0, 380, 0, 260) -- Increased height for Discord button
+    frame.Size = UDim2.new(0, 380, 0, 260)
     frame.Position = UDim2.new(0.5, -190, 0.5, -130)
-    frame.BackgroundColor3 = Color3.fromRGB(135, 206, 235) -- Sky blue base
+    frame.BackgroundColor3 = Color3.fromRGB(255, 255, 255) -- Start with white
     frame.BorderSizePixel = 0
     frame.Active = true
     frame.Draggable = true
     frame.Parent = screenGui
     
-    -- Add glowing effect
+    -- Add glowing effect with white/black blinking
     local glow = Instance.new("ImageLabel")
     glow.Size = UDim2.new(1, 20, 1, 20)
     glow.Position = UDim2.new(0, -10, 0, -10)
     glow.BackgroundTransparency = 1
     glow.Image = "rbxassetid://6142219928" -- Glow texture
-    glow.ImageColor3 = Color3.fromRGB(135, 206, 235)
+    glow.ImageColor3 = Color3.fromRGB(255, 255, 255)
     glow.ImageTransparency = 0.7
     glow.Parent = frame
+    
+    -- Create slow blinking/fading effect
+    local function createBlinkEffect()
+        while true do
+            -- Fade to black
+            local tween1 = TweenService:Create(frame, TweenInfo.new(2, Enum.EasingStyle.Sine), {BackgroundColor3 = Color3.fromRGB(0, 0, 0)})
+            local tween1glow = TweenService:Create(glow, TweenInfo.new(2, Enum.EasingStyle.Sine), {ImageColor3 = Color3.fromRGB(0, 0, 0)})
+            tween1:Play()
+            tween1glow:Play()
+            tween1.Completed:Wait()
+            
+            wait(0.5)
+            
+            -- Fade to white
+            local tween2 = TweenService:Create(frame, TweenInfo.new(2, Enum.EasingStyle.Sine), {BackgroundColor3 = Color3.fromRGB(255, 255, 255)})
+            local tween2glow = TweenService:Create(glow, TweenInfo.new(2, Enum.EasingStyle.Sine), {ImageColor3 = Color3.fromRGB(255, 255, 255)})
+            tween2:Play()
+            tween2glow:Play()
+            tween2.Completed:Wait()
+            
+            wait(0.5)
+        end
+    end
+    
+    spawn(createBlinkEffect)
     
     local corner = Instance.new("UICorner")
     corner.CornerRadius = UDim.new(0, 12)
     corner.Parent = frame
     
     local stroke = Instance.new("UIStroke")
-    stroke.Color = Color3.fromRGB(100, 149, 237) -- Cornflower blue
+    stroke.Color = Color3.fromRGB(128, 128, 128) -- Gray stroke for both colors
     stroke.Thickness = 3
     stroke.Parent = frame
     
@@ -191,7 +216,7 @@ local function createGUI()
     
     discordBtn.MouseButton1Click:Connect(function()
         pcall(function()
-            setclipboard("https://discord.gg/VVn8t3jfeg") -- Replace with your Discord invite
+            setclipboard("https://discord.gg/VVn8t3jfeg ") -- Replace with your Discord invite
         end)
         
         status.Text = "Discord link copied!"
