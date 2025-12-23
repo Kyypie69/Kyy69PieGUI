@@ -590,76 +590,127 @@ KillerTab:AddToggle("Kill Target",false,function(bool)
     end
 end)
 
--- Spectate system
-local spectating=false
-local selectedPlayerToSpectate=nil
-local currentTargetConnection=nil
+local RunService = game:GetService("RunService")
+local camera = workspace.CurrentCamera
+local originalCameraSubject = nil
+local originalCameraType = nil
+local spectateConnection = nil
+local targetPlayer = nil
+local spectating = false
+local selectedPlayerToSpectate = nil
+local currentTargetConnection = nil
 
+-- Fixed spectate function
 local function updateSpectateTarget(player)
     if currentTargetConnection then
         currentTargetConnection:Disconnect()
-        currentTargetConnection=nil
+        currentTargetConnection = nil
     end
     
     if player and player.Character then
-        local humanoid=player.Character:FindFirstChildOfClass("Humanoid")
+        targetPlayer = player
+        
+        -- Get the humanoid for camera subject
+        local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
         if humanoid then
-            camera.CameraSubject=humanoid
-            currentTargetConnection=player.CharacterAdded:Connect(function(newChar)
+            -- Store original camera settings
+            if not originalCameraSubject then
+                originalCameraSubject = camera.CameraSubject
+                originalCameraType = camera.CameraType
+            end
+            
+            -- Set camera to follow the target
+            camera.CameraType = Enum.CameraType.Custom
+            camera.CameraSubject = humanoid
+            
+            -- Set up connection for character respawns
+            currentTargetConnection = player.CharacterAdded:Connect(function(newChar)
                 task.wait(0.5)
-                local newHumanoid=newChar:FindFirstChildOfClass("Humanoid")
+                local newHumanoid = newChar:FindFirstChildOfClass("Humanoid")
                 if newHumanoid and spectating then
-                    camera.CameraSubject=newHumanoid
+                    camera.CameraSubject = newHumanoid
                 end
             end)
+            
+            print("Spectating: " .. player.Name)
+        else
+            print("No humanoid found for: " .. player.Name)
+        end
+    else
+        -- Reset camera if no valid target
+        if spectating then
+            stopSpectate()
         end
     end
 end
 
 local function stopSpectate()
-    spectating=false
+    spectating = false
+    targetPlayer = nil
+    
     if currentTargetConnection then
         currentTargetConnection:Disconnect()
-        currentTargetConnection=nil
+        currentTargetConnection = nil
     end
-    local localPlayer=game.Players.LocalPlayer
-    if localPlayer.Character then
-        local humanoid=localPlayer.Character:FindFirstChildOfClass("Humanoid")
-        if humanoid then camera.CameraSubject=humanoid end
+    
+    if originalCameraSubject then
+        camera.CameraSubject = originalCameraSubject
+        camera.CameraType = originalCameraType or Enum.CameraType.Custom
+        originalCameraSubject = nil
+        originalCameraType = nil
+    else
+        -- Fallback to local player
+        local localPlayer = game.Players.LocalPlayer
+        if localPlayer.Character then
+            local humanoid = localPlayer.Character:FindFirstChildOfClass("Humanoid")
+            if humanoid then
+                camera.CameraSubject = humanoid
+                camera.CameraType = Enum.CameraType.Custom
+            end
+        end
     end
+    
+    print("Spectate stopped")
 end
 
-KillerTab:AddToggle("Spectate",false,function(bool)
-    spectating=bool
+KillerTab:AddToggle("Spectate", false, function(bool)
+    spectating = bool
+    print("Spectate: " .. tostring(bool))
+    
     if bool then
         if selectedPlayerToSpectate then
             updateSpectateTarget(selectedPlayerToSpectate)
         else
-            spectating=false
+            print("No player selected for spectating")
+            spectating = false
         end
     else
         stopSpectate()
     end
 end)
 
--- Spectate dropdown
-local specdropdown=nil
+local specdropdown = nil
 
 local function createSpectateDropdown()
-    local players=game.Players:GetPlayers()
-    local playerOptions={}
-    for _,player in ipairs(players) do
-        if player~=Player then
-            table.insert(playerOptions,player.DisplayName.." | "..player.Name)
+    -- Get initial player list
+    local players = game.Players:GetPlayers()
+    local playerOptions = {}
+    
+    for _, player in ipairs(players) do
+        if player ~= Player then
+            table.insert(playerOptions, player.DisplayName .. " | " .. player.Name)
         end
     end
     
-    specdropdown=KillerTab:AddDropdown("Spectate Player",playerOptions,function(selectedText)
-        for _,player in ipairs(game.Players:GetPlayers()) do
-            local optionText=player.DisplayName.." | "..player.Name
-            if selectedText==optionText then
-                selectedPlayerToSpectate=player
-                if spectating then updateSpectateTarget(player) end
+    specdropdown = KillerTab:AddDropdown("Spectate Player", playerOptions, function(selectedText)
+        for _, player in ipairs(game.Players:GetPlayers()) do
+            local optionText = player.DisplayName .. " | " .. player.Name
+            if selectedText == optionText then
+                selectedPlayerToSpectate = player
+                if spectating then
+                    updateSpectateTarget(player)
+                end
+                print("Selected player for spectate: " .. player.Name)
                 break
             end
         end
@@ -668,28 +719,36 @@ local function createSpectateDropdown()
     return specdropdown
 end
 
-createSpectateDropdown()
-
 local function refreshSpectateDropdown()
-    local players=game.Players:GetPlayers()
-    local playerOptions={}
-    for _,player in ipairs(players) do
-        if player~=Player then
-            table.insert(playerOptions,player.DisplayName.." | "..player.Name)
+    local players = game.Players:GetPlayers()
+    local playerOptions = {}
+    
+    for _, player in ipairs(players) do
+        if player ~= Player then
+            table.insert(playerOptions, player.DisplayName .. " | " .. player.Name)
         end
     end
-    if specdropdown then specdropdown:UpdateDropdown(playerOptions) end
+    
+    -- Update dropdown using proper KYY library method
+    if specdropdown then
+        specdropdown:UpdateDropdown(playerOptions)
+        print("Spectate dropdown refreshed with " .. #playerOptions .. " players")
+    end
 end
 
-game.Players.PlayerAdded:Connect(function()
+createSpectateDropdown()
+
+game.Players.PlayerAdded:Connect(function(player)
     task.wait(0.5)
     refreshSpectateDropdown()
 end)
 
 game.Players.PlayerRemoving:Connect(function(player)
-    if selectedPlayerToSpectate and selectedPlayerToSpectate==player then
-        selectedPlayerToSpectate=nil
-        if spectating then stopSpectate() end
+    if selectedPlayerToSpectate and selectedPlayerToSpectate == player then
+        selectedPlayerToSpectate = nil
+        if spectating then
+            stopSpectate()
+        end
     end
     refreshSpectateDropdown()
 end)
