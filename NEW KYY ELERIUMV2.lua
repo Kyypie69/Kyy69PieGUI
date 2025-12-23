@@ -1766,12 +1766,12 @@ local SunsetColorCorrection=Instance.new("ColorCorrectionEffect",Lighting)
 SunsetColorCorrection.TintColor=Color3.fromRGB(255,180,120)
 SunsetColorCorrection.Brightness=0.2
 SunsetColorCorrection.Contrast=0.4
-SunsetColorCorrection.Enabled=true
+SunsetColorCorrection.Enabled=false
 
 local SunsetSunRays=Instance.new("SunRaysEffect",Lighting)
 SunsetSunRays.Intensity=0.6
 SunsetSunRays.Spread=0.9
-SunsetSunRays.Enabled=true
+SunsetSunRays.Enabled=false
 
 local SunsetAtmosphere=Instance.new("Atmosphere",Lighting)
 SunsetAtmosphere.Density=0.4
@@ -1785,7 +1785,7 @@ Lighting.Ambient=Color3.fromRGB(180,120,80)
 Lighting.OutdoorAmbient=Color3.fromRGB(200,140,100)
 Lighting.ClockTime=18.5
 Lighting.GeographicLatitude=20
-Lighting.GlobalShadows=true
+Lighting.GlobalShadows=false
 Lighting.ShadowSoftness=0.5
 
 local timeOffset=0
