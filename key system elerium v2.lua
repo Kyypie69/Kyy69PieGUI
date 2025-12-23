@@ -191,7 +191,7 @@ local function createGUI()
     
     discordBtn.MouseButton1Click:Connect(function()
         pcall(function()
-            setclipboard("https://discord.gg/lualabstudios") -- Replace with your Discord invite
+            setclipboard("https://discord.gg/VVn8t3jfeg") -- Replace with your Discord invite
         end)
         
         status.Text = "Discord link copied!"
