@@ -1744,124 +1744,211 @@ task.spawn(function()
     end
 end)
 
--- Lighting
-getgenv().Lighting=game:GetService'Lighting'
-getgenv().RunService=game:GetService'RunService'
+-- Lighting Change
+getgenv().Lighting = game:GetService'Lighting'
+getgenv().RunService = game:GetService'RunService'
 
-local ColorCorrection=false
-local Correction=false
-local SunRays=true
+local ColorCorrection = true
+local Correction = true
+local SunRays = true
+-- Change it to On and Off (true & false)
 
-Skybox=Instance.new("Sky",Lighting)
-Skybox.SkyboxBk="rbxassetid://153743489"
-Skybox.SkyboxDn="rbxassetid://153743503"
-Skybox.SkyboxFt="rbxassetid://153743479"
-Skybox.SkyboxLf="rbxassetid://153743492"
-Skybox.SkyboxRt="rbxassetid://153743485"
-Skybox.SkyboxUp="rbxassetid://153743499"
+-- Sunset Desert Skybox with vibrant colors
+Skybox = Instance.new("Sky", Lighting)
+Skybox.SkyboxBk = "rbxassetid://153743489"  -- Desert sunset back
+Skybox.SkyboxDn = "rbxassetid://153743503"  -- Desert sand below
+Skybox.SkyboxFt = "rbxassetid://153743479"  -- Desert horizon front
+Skybox.SkyboxLf = "rbxassetid://153743492"  -- Desert landscape left
+Skybox.SkyboxRt = "rbxassetid://153743485"  -- Desert landscape right
+Skybox.SkyboxUp = "rbxassetid://153743499"  -- Desert sky above
 
-local SunsetColorCorrection=Instance.new("ColorCorrectionEffect",Lighting)
-SunsetColorCorrection.TintColor=Color3.fromRGB(255,180,120)
-SunsetColorCorrection.Brightness=0.2
-SunsetColorCorrection.Contrast=0.4
-SunsetColorCorrection.Enabled=true
+-- Sunset Color Correction for dramatic warm tones
+local SunsetColorCorrection = Instance.new("ColorCorrectionEffect", Lighting)
+SunsetColorCorrection.TintColor = Color3.fromRGB(255, 180, 120)  -- Warm sunset orange
+SunsetColorCorrection.Brightness = 0.2
+SunsetColorCorrection.Contrast = 0.4
+SunsetColorCorrection.Enabled = true
 
-local SunsetSunRays=Instance.new("SunRaysEffect",Lighting)
-SunsetSunRays.Intensity=0.6
-SunsetSunRays.Spread=0.9
-SunsetSunRays.Enabled=true
+-- Enhanced Sunset Sun Rays for 4D depth
+local SunsetSunRays = Instance.new("SunRaysEffect", Lighting)
+SunsetSunRays.Intensity = 0.6  -- Stronger for sunset
+SunsetSunRays.Spread = 0.9
+SunsetSunRays.Enabled = true
 
-local SunsetAtmosphere=Instance.new("Atmosphere",Lighting)
-SunsetAtmosphere.Density=0.4
-SunsetAtmosphere.Offset=0
-SunsetAtmosphere.Color=Color3.fromRGB(255,150,100)
-SunsetAtmosphere.Decay=Color3.fromRGB(255,120,80)
-SunsetAtmosphere.Glare=0.6
-SunsetAtmosphere.Haze=0.8
+-- Sunset Atmosphere with 4D movement
+local SunsetAtmosphere = Instance.new("Atmosphere", Lighting)
+SunsetAtmosphere.Density = 0.4
+SunsetAtmosphere.Offset = 0
+SunsetAtmosphere.Color = Color3.fromRGB(255, 150, 100)  -- Orange sunset
+SunsetAtmosphere.Decay = Color3.fromRGB(255, 120, 80)   -- Deeper orange decay
+SunsetAtmosphere.Glare = 0.6  -- Enhanced glare for sunset
+SunsetAtmosphere.Haze = 0.8
 
-Lighting.Ambient=Color3.fromRGB(180,120,80)
-Lighting.OutdoorAmbient=Color3.fromRGB(200,140,100)
-Lighting.ClockTime=18.5
-Lighting.GeographicLatitude=20
-Lighting.GlobalShadows=true
-Lighting.ShadowSoftness=0.5
+-- Sunset Lighting Properties
+Lighting.Ambient = Color3.fromRGB(180, 120, 80)      -- Warm sunset ambient
+Lighting.OutdoorAmbient = Color3.fromRGB(200, 140, 100)  -- Enhanced outdoor ambient
+Lighting.ClockTime = 18.5  -- Golden hour sunset time
+Lighting.GeographicLatitude = 20  -- Lower latitude for dramatic sunset
+Lighting.GlobalShadows = true
+Lighting.ShadowSoftness = 0.5  -- Softer shadows for sunset
 
-local timeOffset=0
-local sunsetPhase=0
+-- 4D Sunset Effects with dynamic movement
+local timeOffset = 0
+local sunsetPhase = 0
 RunService.Stepped:Connect(function()
-    timeOffset=timeOffset+0.015
-    sunsetPhase=sunsetPhase+0.008
-    local sunsetIntensity=math.sin(sunsetPhase)*0.3+0.7
-    SunsetAtmosphere.Density=0.4+math.sin(timeOffset)*0.1
-    SunsetAtmosphere.Haze=0.8+math.cos(timeOffset*0.7)*0.15
-    SunsetAtmosphere.Glare=0.6+math.sin(timeOffset*1.2)*0.2
-    SunsetColorCorrection.TintColor=Color3.fromRGB(255,180+math.sin(timeOffset*0.5)*20,120+math.cos(timeOffset*0.3)*15)
-    SunsetSunRays.Intensity=0.6+math.sin(timeOffset*2)*0.1
-    Lighting.ClockTime=18.5+math.sin(timeOffset*0.1)*0.2
+   timeOffset = timeOffset + 0.015
+   sunsetPhase = sunsetPhase + 0.008
+   
+   -- Dynamic sunset progression
+   local sunsetIntensity = math.sin(sunsetPhase) * 0.3 + 0.7
+   
+   -- 4D Atmospheric movement
+   SunsetAtmosphere.Density = 0.4 + math.sin(timeOffset) * 0.1
+   SunsetAtmosphere.Haze = 0.8 + math.cos(timeOffset * 0.7) * 0.15
+   SunsetAtmosphere.Glare = 0.6 + math.sin(timeOffset * 1.2) * 0.2
+   
+   -- Dynamic color shifting for 4D effect
+   SunsetColorCorrection.TintColor = Color3.fromRGB(
+      255, 
+      180 + math.sin(timeOffset * 0.5) * 20, 
+      120 + math.cos(timeOffset * 0.3) * 15
+   )
+   
+   -- Enhanced sun rays movement
+   SunsetSunRays.Intensity = 0.6 + math.sin(timeOffset * 2) * 0.1
+   
+   -- Subtle time progression for sunset movement
+   Lighting.ClockTime = 18.5 + math.sin(timeOffset * 0.1) * 0.2
+   
+    if Lighting then
+      if Lighting:FindFirstChild"ColorCorrection" then
+         if not ColorCorrection then
+            Lighting:WaitForChild"ColorCorrection":Destroy()
+         else
+            return nil
+         end
+      elseif Lighting:FindFirstChild"Correction" then
+         if not Correction then
+            Lighting:WaitForChild"Correction":Destroy()
+         else
+            return nil
+         end
+      elseif Lighting:FindFirstChildOfClass"SunRaysEffect" then
+         if not SunRays then
+            Lighting:WaitForChild"SunRaysEffect":Destroy()
+         else
+            return nil
+         end
+      end
+   end
 end)
 
-local BloomEffect=Instance.new("BloomEffect",Lighting)
-BloomEffect.Intensity=0.3
-BloomEffect.Size=0.5
-BloomEffect.Threshold=0.8
+-- Additional 4D Depth Layer
+local BloomEffect = Instance.new("BloomEffect", Lighting)
+BloomEffect.Intensity = 0.3
+BloomEffect.Size = 0.5
+BloomEffect.Threshold = 0.8
 
--- Second lighting system (duplicate for toggle functionality)
-getgenv().Lighting=game:GetService'Lighting'
-getgenv().RunService=game:GetService'RunService'
+getgenv().Lighting = game:GetService'Lighting'
+getgenv().RunService = game:GetService'RunService'
 
-local ColorCorrection=false
-local Correction=false
-local SunRays=true
+local ColorCorrection = false
+local Correction = false
+local SunRays = false
+-- Change it to On and Off (true & false)
 
-Skybox=Instance.new("Sky",Lighting)
-Skybox.SkyboxBk="rbxassetid://153743489"
-Skybox.SkyboxDn="rbxassetid://153743503"
-Skybox.SkyboxFt="rbxassetid://153743479"
-Skybox.SkyboxLf="rbxassetid://153743492"
-Skybox.SkyboxRt="rbxassetid://153743485"
-Skybox.SkyboxUp="rbxassetid://153743499"
+-- Sunset Desert Skybox with vibrant colors
+Skybox = Instance.new("Sky", Lighting)
+Skybox.SkyboxBk = "rbxassetid://153743489"  -- Desert sunset back
+Skybox.SkyboxDn = "rbxassetid://153743503"  -- Desert sand below
+Skybox.SkyboxFt = "rbxassetid://153743479"  -- Desert horizon front
+Skybox.SkyboxLf = "rbxassetid://153743492"  -- Desert landscape left
+Skybox.SkyboxRt = "rbxassetid://153743485"  -- Desert landscape right
+Skybox.SkyboxUp = "rbxassetid://153743499"  -- Desert sky above
 
-local SunsetColorCorrection=Instance.new("ColorCorrectionEffect",Lighting)
-SunsetColorCorrection.TintColor=Color3.fromRGB(255,180,120)
-SunsetColorCorrection.Brightness=0.2
-SunsetColorCorrection.Contrast=0.4
-SunsetColorCorrection.Enabled=false
+-- Sunset Color Correction for dramatic warm tones
+local SunsetColorCorrection = Instance.new("ColorCorrectionEffect", Lighting)
+SunsetColorCorrection.TintColor = Color3.fromRGB(255, 180, 120)  -- Warm sunset orange
+SunsetColorCorrection.Brightness = 0.2
+SunsetColorCorrection.Contrast = 0.4
+SunsetColorCorrection.Enabled = true
 
-local SunsetSunRays=Instance.new("SunRaysEffect",Lighting)
-SunsetSunRays.Intensity=0.6
-SunsetSunRays.Spread=0.9
-SunsetSunRays.Enabled=false
+-- Enhanced Sunset Sun Rays for 4D depth
+local SunsetSunRays = Instance.new("SunRaysEffect", Lighting)
+SunsetSunRays.Intensity = 0.6  -- Stronger for sunset
+SunsetSunRays.Spread = 0.9
+SunsetSunRays.Enabled = true
 
-local SunsetAtmosphere=Instance.new("Atmosphere",Lighting)
-SunsetAtmosphere.Density=0.4
-SunsetAtmosphere.Offset=0
-SunsetAtmosphere.Color=Color3.fromRGB(255,150,100)
-SunsetAtmosphere.Decay=Color3.fromRGB(255,120,80)
-SunsetAtmosphere.Glare=0.6
-SunsetAtmosphere.Haze=0.8
+-- Sunset Atmosphere with 4D movement
+local SunsetAtmosphere = Instance.new("Atmosphere", Lighting)
+SunsetAtmosphere.Density = 0.4
+SunsetAtmosphere.Offset = 0
+SunsetAtmosphere.Color = Color3.fromRGB(255, 150, 100)  -- Orange sunset
+SunsetAtmosphere.Decay = Color3.fromRGB(255, 120, 80)   -- Deeper orange decay
+SunsetAtmosphere.Glare = 0.6  -- Enhanced glare for sunset
+SunsetAtmosphere.Haze = 0.8
 
-Lighting.Ambient=Color3.fromRGB(180,120,80)
-Lighting.OutdoorAmbient=Color3.fromRGB(200,140,100)
-Lighting.ClockTime=18.5
-Lighting.GeographicLatitude=20
-Lighting.GlobalShadows=false
-Lighting.ShadowSoftness=0.5
+-- Sunset Lighting Properties
+Lighting.Ambient = Color3.fromRGB(180, 120, 80)      -- Warm sunset ambient
+Lighting.OutdoorAmbient = Color3.fromRGB(200, 140, 100)  -- Enhanced outdoor ambient
+Lighting.ClockTime = 18.5  -- Golden hour sunset time
+Lighting.GeographicLatitude = 20  -- Lower latitude for dramatic sunset
+Lighting.GlobalShadows = true
+Lighting.ShadowSoftness = 0.5  -- Softer shadows for sunset
 
-local timeOffset=0
-local sunsetPhase=0
+-- 4D Sunset Effects with dynamic movement
+local timeOffset = 0
+local sunsetPhase = 0
 RunService.Stepped:Connect(function()
-    timeOffset=timeOffset+0.015
-    sunsetPhase=sunsetPhase+0.008
-    local sunsetIntensity=math.sin(sunsetPhase)*0.3+0.7
-    SunsetAtmosphere.Density=0.4+math.sin(timeOffset)*0.1
-    SunsetAtmosphere.Haze=0.8+math.cos(timeOffset*0.7)*0.15
-    SunsetAtmosphere.Glare=0.6+math.sin(timeOffset*1.2)*0.2
-    SunsetColorCorrection.TintColor=Color3.fromRGB(255,180+math.sin(timeOffset*0.5)*20,120+math.cos(timeOffset*0.3)*15)
-    SunsetSunRays.Intensity=0.6+math.sin(timeOffset*2)*0.1
-    Lighting.ClockTime=18.5+math.sin(timeOffset*0.1)*0.2
+   timeOffset = timeOffset + 0.015
+   sunsetPhase = sunsetPhase + 0.008
+   
+   -- Dynamic sunset progression
+   local sunsetIntensity = math.sin(sunsetPhase) * 0.3 + 0.7
+   
+   -- 4D Atmospheric movement
+   SunsetAtmosphere.Density = 0.4 + math.sin(timeOffset) * 0.1
+   SunsetAtmosphere.Haze = 0.8 + math.cos(timeOffset * 0.7) * 0.15
+   SunsetAtmosphere.Glare = 0.6 + math.sin(timeOffset * 1.2) * 0.2
+   
+   -- Dynamic color shifting for 4D effect
+   SunsetColorCorrection.TintColor = Color3.fromRGB(
+      255, 
+      180 + math.sin(timeOffset * 0.5) * 20, 
+      120 + math.cos(timeOffset * 0.3) * 15
+   )
+   
+   -- Enhanced sun rays movement
+   SunsetSunRays.Intensity = 0.6 + math.sin(timeOffset * 2) * 0.1
+   
+   -- Subtle time progression for sunset movement
+   Lighting.ClockTime = 18.5 + math.sin(timeOffset * 0.1) * 0.2
+   
+   if Lighting then
+      if Lighting:FindFirstChild"ColorCorrection" then
+         if not ColorCorrection then
+            Lighting:WaitForChild"ColorCorrection":Destroy()
+         else
+            return nil
+         end
+      elseif Lighting:FindFirstChild"Correction" then
+         if not Correction then
+            Lighting:WaitForChild"Correction":Destroy()
+         else
+            return nil
+         end
+      elseif Lighting:FindFirstChildOfClass"SunRaysEffect" then
+         if not SunRays then
+            Lighting:WaitForChild"SunRaysEffect":Destroy()
+         else
+            return nil
+         end
+      end
+   end
 end)
 
-local BloomEffect=Instance.new("BloomEffect",Lighting)
-BloomEffect.Intensity=0.3
-BloomEffect.Size=0.5
-BloomEffect.Threshold=0.8
+-- Additional 4D Depth Layer
+local BloomEffect = Instance.new("BloomEffect", Lighting)
+BloomEffect.Intensity = 0.3
+BloomEffect.Size = 0.5
+BloomEffect.Threshold = 0.8
