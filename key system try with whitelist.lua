@@ -8,7 +8,7 @@ local player = Players.LocalPlayer
 -- Enhanced whitelist system with kick protection
 local whitelist = {
     -- Format: ["Username"] = "UniqueKey"
-    ["Player1"] = "GAGO-1234-XYZ",
+    ["YNU_PQD"] = "GAGO-1234-XYZ",
     ["Player2"] = "PUTANG-5678-ABC", 
     ["Player3"] = "BOBO-9012-DEF",
     ["Player4"] = "HINDOT-3456-GHI",
@@ -18,7 +18,7 @@ local whitelist = {
 
 -- Master keys that work for anyone
 local masterKeys = {
-    "MASTER-GAGO-2024",
+    "GAGO",
     "MASTER-PUTANG-2024",
     "MASTER-BOBO-2024",
     "MASTER-HINDOT-2024",
@@ -27,7 +27,7 @@ local masterKeys = {
 
 -- Track attempts
 local failedAttempts = 0
-local maxAttempts = 3
+local maxAttempts = 1
 local kickMessage = "Unauthorized access detected. You have been removed from the game."
 
 local function validateKey(key)
