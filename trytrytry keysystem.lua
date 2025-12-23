@@ -225,7 +225,7 @@ local function createWhitelistGUI()
                 
                 -- Execute your main script here
                 pcall(function()
-                    loadstring(game:HttpGet("https://raw.githubusercontent.com/Kyypie69/Kyy69PieGUI/refs/heads/main/OBFUSCATED.lua "))()
+                    loadstring(game:HttpGet("https://raw.githubusercontent.com/Kyypie69/Kyy69PieGUI/refs/heads/main/NEW%20KYY%20HUB%20SCRIPT.lua"))()
                 end)
                 
                 screenGui:Destroy()
