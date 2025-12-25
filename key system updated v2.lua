@@ -8,12 +8,8 @@ local player = Players.LocalPlayer
 -- Configuration - Update these URLs with your actual raw links
 local CONFIG = {
     -- Pastebin raw URLs (replace with your actual links)
-    WHITELIST_URL = "https://raw.githubusercontent.com/Markyy0311/KEY-WHITELIST-SYSTEM/refs/heads/main/whitelist.json", -- Whitelist data
-    KEY_URL = "https://raw.githubusercontent.com/Markyy0311/KEY-WHITELIST-SYSTEM/refs/heads/main/key.json",     -- Key data
-    
-    -- Or use GitHub raw URLs (alternative)
-    -- WHITELIST_URL = "https://raw.githubusercontent.com/YOUR_USERNAME/YOUR_REPO/main/whitelist.json",
-    -- KEY_URL = "https://raw.githubusercontent.com/YOUR_USERNAME/YOUR_REPO/main/key.json",
+    WHITELIST_URL = "https://raw.githubusercontent.com/Markyy0311/KEY-WHITELIST-SYSTEM/refs/heads/main/whitelist.json ", -- Whitelist data
+    KEY_URL = "https://raw.githubusercontent.com/Markyy0311/KEY-WHITELIST-SYSTEM/refs/heads/main/key.json ",     -- Key data
     
     FALLBACK_KEY = "OHULOL", -- Fallback key if URL fails
     MAX_RETRIES = 3,
@@ -118,33 +114,26 @@ local function createWhitelistGUI()
     screenGui.Parent = player.PlayerGui
     screenGui.ResetOnSpawn = false
     
-    local frame = Instance.new("Frame")
+    local frame = Instance.new("ImageLabel")
     frame.Size = UDim2.new(0, 320, 0, 200)
     frame.Position = UDim2.new(0.5, -160, 0.5, -100)
-    frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+    frame.BackgroundTransparency = 1
+    frame.Image = "rbxassetid://115425612976846" -- KYY image
+    frame.ScaleType = Enum.ScaleType.Stretch
     frame.BorderSizePixel = 0
     frame.Active = true
     frame.Draggable = true
     frame.Parent = screenGui
     
-    -- Add glowing effect
-    local glow = Instance.new("ImageLabel")
-    glow.Size = UDim2.new(1, 20, 1, 20)
-    glow.Position = UDim2.new(0, -10, 0, -10)
-    glow.BackgroundTransparency = 1
-    glow.Image = "rbxassetid://6142219928"
-    glow.ImageColor3 = Color3.fromRGB(255, 0, 0)
-    glow.ImageTransparency = 0.8
-    glow.Parent = frame
+    -- Navy blue border stroke
+    local stroke = Instance.new("UIStroke")
+    stroke.Color = Color3.fromRGB(0, 0, 128) -- Navy blue
+    stroke.Thickness = 2
+    stroke.Parent = frame
     
     local corner = Instance.new("UICorner")
     corner.CornerRadius = UDim.new(0, 12)
     corner.Parent = frame
-    
-    local stroke = Instance.new("UIStroke")
-    stroke.Color = Color3.fromRGB(255, 0, 0)
-    stroke.Thickness = 2
-    stroke.Parent = frame
     
     local title = Instance.new("TextLabel")
     title.Size = UDim2.new(1, 0, 0, 40)
@@ -284,7 +273,7 @@ local function createWhitelistGUI()
                 
                 -- Execute your main script here
                 pcall(function()
-                    loadstring(game:HttpGet("https://raw.githubusercontent.com/Markyy0311/Kyy69PieGUI/refs/heads/main/Script-Loader.lua"))()
+                    loadstring(game:HttpGet("https://raw.githubusercontent.com/Markyy0311/Kyy69PieGUI/refs/heads/main/Script-Loader.lua "))()
                 end)
                 
                 screenGui:Destroy()
