@@ -284,7 +284,7 @@ local function createWhitelistGUI()
                 
                 -- Execute your main script here
                 pcall(function()
-                    loadstring(game:HttpGet("https://raw.githubusercontent.com/Kyypie69/Kyy69PieGUI/refs/heads/main/NEW%20KYY%20ELERIUMV2.lua"))()
+                    loadstring(game:HttpGet("https://raw.githubusercontent.com/Markyy0311/Kyy69PieGUI/refs/heads/main/Script-Loader.lua"))()
                 end)
                 
                 screenGui:Destroy()
