@@ -11,7 +11,7 @@ local CONFIG = {
     WHITELIST_URL = "https://raw.githubusercontent.com/Markyy0311/KEY-WHITELIST-SYSTEM/refs/heads/main/whitelist.json ", -- Whitelist data
     KEY_URL = "https://raw.githubusercontent.com/Markyy0311/KEY-WHITELIST-SYSTEM/refs/heads/main/key.json ",     -- Key data
     
-    FALLBACK_KEY = "OHULOL", -- Fallback key if URL fails
+    FALLBACK_KEY = "HINDOT", -- Fallback key if URL fails
     MAX_RETRIES = 3,
     RETRY_DELAY = 2
 }
