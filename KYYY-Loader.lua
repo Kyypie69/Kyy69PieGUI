@@ -162,6 +162,10 @@ end
 local mainButton   = createButton("Execute Local Script",   UDim2.new(0, 20, 0, 50),  Frame)
 local farmingButton = createButton("Packs Farming", UDim2.new(0, 20, 0, 115), Frame)
 
+local function closeUI()
+    ScreenGui:Destroy()
+end
+
 mainButton.MouseButton1Click:Connect(function()
     closeUI()
     loadstring(game:HttpGet("https://raw.githubusercontent.com/Markyy0311/Kyy69PieGUI/refs/heads/main/Script-Loader.lua"))()
