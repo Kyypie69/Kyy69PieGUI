@@ -159,7 +159,7 @@ local function createButton(name, position, parent)
 end
 
 -- create the buttons
-local mainButton   = createButton("Execute Local Script",   UDim2.new(0, 20, 0, 50),  Frame)
+local mainButton   = createButton("Local Farming",   UDim2.new(0, 20, 0, 50),  Frame)
 local farmingButton = createButton("Packs Farming", UDim2.new(0, 20, 0, 115), Frame)
 
 local function closeUI()
