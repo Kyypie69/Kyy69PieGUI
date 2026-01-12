@@ -392,10 +392,10 @@ end)
 --------------------------------------------------------
 --  ANTI-AFK  (universal, shared by Rebirth & Strength)
 --------------------------------------------------------
--- GUI already created above – we just reuse it
 local Players            = game:GetService("Players")
 local UIS                = game:GetService("UserInputService")
 local GuiService         = game:GetService("GuiService")
+local RunService         = game:GetService("RunService")
 
 local player             = Players.LocalPlayer
 local rebAntiAfkEnabled  = false   -- toggled in Rebirth tab
@@ -404,6 +404,7 @@ local strAntiAfkEnabled  = false   -- toggled in Strength tab
 -- build the overlay exactly like you had it
 local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
 gui.Name = "AntiAFKOverlay"
+gui.ResetOnSpawn = false
 
 local textLabel = Instance.new("TextLabel", gui)
 textLabel.Size = UDim2.new(0, 200, 0, 50)
@@ -455,4 +456,80 @@ task.spawn(function()
         end
         task.wait(0.8)
     end
+end)
+
+-- ACTUAL ANTI-AFK INPUT SIMULATION
+local function simulateActivity()
+    -- Simulate random key presses every 30-60 seconds
+    local keys = {Enum.KeyCode.W, Enum.KeyCode.A, Enum.KeyCode.S, Enum.KeyCode.D, Enum.KeyCode.Space}
+    local randomKey = keys[math.random(1, #keys)]
+    
+    -- Simulate key press
+    UIS:SendKeyEvent(true, randomKey, false, game)
+    task.wait(0.1)
+    UIS:SendKeyEvent(false, randomKey, false, game)
+    
+    -- Simulate mouse movement
+    local centerX, centerY = 500, 300
+    local deltaX, deltaY = math.random(-50, 50), math.random(-50, 50)
+    
+    -- Move mouse slightly
+    mousemoverel(deltaX, deltaY)
+    task.wait(0.1)
+    mousemoverel(-deltaX, -deltaY)
+end
+
+-- Main anti-afk loop
+local antiAfkLoop = nil
+local function startAntiAfk()
+    if antiAfkLoop then antiAfkLoop:Disconnect() end
+    
+    antiAfkLoop = RunService.Heartbeat:Connect(function()
+        if (rebAntiAfkEnabled or strAntiAfkEnabled) then
+            -- Simulate activity every 30-45 seconds randomly
+            if tick() % 40 < 1 then
+                simulateActivity()
+            end
+        end
+    end)
+end
+
+-- Initialize anti-afk
+startAntiAfk()
+
+-- Also simulate periodic camera movement
+task.spawn(function()
+    while true do
+        if rebAntiAfkEnabled or strAntiAfkEnabled then
+            -- Small camera rotation
+            local camera = workspace.CurrentCamera
+            if camera then
+                local originalCFrame = camera.CFrame
+                local offset = CFrame.Angles(math.rad(math.random(-5, 5)), math.rad(math.random(-5, 5)), 0)
+                camera.CFrame = originalCFrame * offset
+                task.wait(0.1)
+                camera.CFrame = originalCFrame
+            end
+        end
+        task.wait(math.random(25, 35))
+    end
+end)
+
+-- Update the button functions to properly enable anti-afk
+-- Rebirth tab Anti AFK button
+RebirthTab:RemoveButton("Anti AFK") -- Remove old button
+RebirthTab:AddButton("Anti AFK",function()
+    rebAntiAfkEnabled = true
+    strAntiAfkEnabled = false -- Only enable for rebirth tab
+    textLabel.Text = "ANTI AFK - REBIRTH"
+    textLabel.TextColor3 = Color3.fromRGB(50, 255, 50)
+end)
+
+-- Strength tab Anti AFK button  
+StrengthTab:RemoveButton("Anti AFK") -- Remove old button
+StrengthTab:AddButton("Anti AFK",function()
+    strAntiAfkEnabled = true
+    rebAntiAfkEnabled = false -- Only enable for strength tab
+    textLabel.Text = "ANTI AFK - STRENGTH"
+    textLabel.TextColor3 = Color3.fromRGB(255, 150, 50)
 end)
