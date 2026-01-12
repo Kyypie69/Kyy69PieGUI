@@ -159,15 +159,15 @@ local function createButton(name, position, parent)
 end
 
 -- create the buttons
-local mainButton   = createButton("Local Script",   UDim2.new(0, 20, 0, 50),  Frame)
+local mainButton   = createButton("Execute Local Script",   UDim2.new(0, 20, 0, 50),  Frame)
 local farmingButton = createButton("Packs Farming", UDim2.new(0, 20, 0, 115), Frame)
 
 mainButton.MouseButton1Click:Connect(function()
     closeUI()
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/Markyy0311/Kyy69PieGUI/refs/heads/main/Script-Loader.lua "))()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/Markyy0311/Kyy69PieGUI/refs/heads/main/Script-Loader.lua"))()
 end)
 
 farmingButton.MouseButton1Click:Connect(function()
     closeUI()
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/imhenne187/SilenceV2/refs/heads/main/src/SilenceV2Farming.luau "))()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/Markyy0311/Kyy69PieGUI/refs/heads/main/Sxript-Loader2.lua"))()
 end)
