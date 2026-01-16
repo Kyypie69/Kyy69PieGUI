@@ -9,8 +9,8 @@ local content, isReady = Players:GetUserThumbnailAsync(userId, thumbType, thumbS
 
 -- PINK-THEMED NOTIFICATIONS
 game:GetService("StarterGui"):SetCore("SendNotification",{  
-    Title = "JOY HUB",     
-    Text = "Welcome",
+    Title = "🌺 JOY 🌺",     
+    Text = "Welcome!",
     Icon = "",
     Duration = 3,
     Color = "DarkPink"
@@ -19,25 +19,19 @@ game:GetService("StarterGui"):SetCore("SendNotification",{
 wait(3)
 
 game:GetService("StarterGui"):SetCore("SendNotification",{  
-    Title = "Hello",     
+    Title = "Hello ✨",     
     Text = player.Name,
     Icon = content,
     Duration = 2,
     Color = "DarkPink"
 })
 
-wait(1)
-game:GetService("StarterGui"):SetCore("SendNotification", {
-    Title = "Joy HUB", 
-    Text = "Script Loaded..", 
-    Duration = 6,
-    Color = "DarkPink"
-})
+wait(3)
 
-wait(5)
+local windowTitle = "🌺 JOY 🌺 - Legends Of Speed"
 
 local X = Material.Load({
-    Title = "🌺 JOY 🌺 - Legends Of Speed",
+    Title = windowTitle,
     Style = 3,
     SizeX = 500,
     SizeY = 300,
@@ -60,10 +54,32 @@ local creditsTab = X.New({Title = "Credits"})
 -- MAIN TAB
 mainTab.Label({Text = "Main Features"})
 
+-- FIXED: Claim All Chest functionality
 mainTab.Button({
-    Text = "Claim All Chest [Coming Soon]",
+    Text = "Claim All Chest",
     Callback = function()
-        print("Claim All Chest - Coming Soon")
+        local chests = workspace:FindFirstChild("Chests") or workspace:FindFirstChild("chests")
+        if chests then
+            for _, chest in pairs(chests:GetChildren()) do
+                if chest:IsA("BasePart") then
+                    game:GetService("ReplicatedStorage"):WaitForChild("rEvents"):WaitForChild("chestEvent"):FireServer("collectChest", chest.Name)
+                    wait(0.1)
+                end
+            end
+            game:GetService("StarterGui"):SetCore("SendNotification", {
+                Title = "Chests",     
+                Text = "Claimed all available chests!",
+                Duration = 2,
+                Color = "Pink"
+            })
+        else
+            game:GetService("StarterGui"):SetCore("SendNotification", {
+                Title = "Error",     
+                Text = "No chests found!",
+                Duration = 2,
+                Color = "Pink"
+            })
+        end
     end
 })
 
@@ -81,21 +97,7 @@ mainTab.Button({
     end
 })
 
-mainTab.Toggle({
-    Text = "Spam Chat (Joy Hub)",
-    Callback = function(Value)
-        _G.Chat = Value
-        if Value then
-            spawn(function()
-                while _G.Chat do
-                    wait(1)
-                    game:GetService("ReplicatedStorage").DefaultChatSystemChatEvents.SayMessageRequest:FireServer("Joy On Top", "All")
-                end
-            end)
-        end
-    end,
-    Enabled = false
-})
+-- REMOVED: Spam Chat toggle as requested
 
 local playerList = {}
 for i,v in pairs(game:GetService("Players"):GetPlayers()) do
@@ -135,7 +137,7 @@ mainTab.Slider({
 })
 
 -- AUTO FARM TAB
-farmTab.Label({Text = "Auto Farm Settings"})
+farmTab.Label({Text = "Auto Farm"})
 
 local selectedOrb = ""
 local selectedFarmLocation = "City"
@@ -145,7 +147,7 @@ farmTab.Dropdown({
     Callback = function(Value)
         selectedOrb = Value
     end,
-    Options = {"Red Orbs", "Yellow Orbs", "Gems", "Ethereal Orbs"}
+    Options = {"Red Orbs", "Blue Orbs", "Orange Orbs", "Yellow Orbs", "Ethereal Orbs", "Gems"}
 })
 
 farmTab.Dropdown({
@@ -153,7 +155,7 @@ farmTab.Dropdown({
     Callback = function(Value)
         selectedFarmLocation = Value
     end,
-    Options = {"City", "Snow City", "Magma City", "Jungle City", "Speed City"}
+    Options = {"City", "Snow City", "Magma City", "Speed Jungle"} -- REMOVED: Jungle City, Speed City | ADDED: Jungle Cave / Speed Jungle
 })
 
 -- NEW: Hide Frames Toggle
@@ -180,12 +182,16 @@ farmTab.Toggle({
                     wait()
                     for i = 1, 50 do
                         if selectedOrb == "Red Orbs" then
+                            game:GetService("ReplicatedStorage").rEvents.orbEvent:FireServer("collectOrb", "Yellow Orb", selectedFarmLocation)
+                        elseif selectedOrb == "Blue Orbs" then
+                            game:GetService("ReplicatedStorage").rEvents.orbEvent:FireServer("collectOrb", "Yellow Orb", selectedFarmLocation)
+                        elseif selectedOrb == "Orange Orbs" then
                             game:GetService("ReplicatedStorage").rEvents.orbEvent:FireServer("collectOrb", "Red Orb", selectedFarmLocation)
                         elseif selectedOrb == "Yellow Orbs" then
-                            game:GetService("ReplicatedStorage").rEvents.orbEvent:FireServer("collectOrb", "Yellow Orb", selectedFarmLocation)
-                        elseif selectedOrb == "Gems" then
                             game:GetService("ReplicatedStorage").rEvents.orbEvent:FireServer("collectOrb", "Gem", selectedFarmLocation)
                         elseif selectedOrb == "Ethereal Orbs" then
+                            game:GetService("ReplicatedStorage").rEvents.orbEvent:FireServer("collectOrb", "Yellow Orb", selectedFarmLocation)
+                        elseif selectedOrb == "Gems" then
                             game:GetService("ReplicatedStorage").rEvents.orbEvent:FireServer("collectOrb", "Ethereal Orb", selectedFarmLocation)
                         end
                     end
@@ -410,12 +416,13 @@ raceTab.Toggle({
 teleportTab.Label({Text = "Location Teleports"})
 
 local locations = {
-    ["City"] = Vector3.new(-9687.1923828125, 59.072853088378906, 3096.58837890625),
-    ["Snow City"] = Vector3.new(-9677.6640625, 59.072853088378906, 3783.736572265625),
-    ["Magma City"] = Vector3.new(-11053.3837890625, 217.0328369140625, 4896.10986328125),
-    ["Legends Highway"] = Vector3.new(-13097.8583984375, 217.0328369140625, 5904.84716796875),
-    ["Space"] = Vector3.new(-336.0252380371094, 3.942866802215576, 592.1419067382812),
-    ["Desert"] = Vector3.new(2508.404296875, 14.834074974060059, 4352.73388671875)
+    ["City"] = Vector3.new(-9687.19, 59.07, 3096.59),
+    ["Snow City"] = Vector3.new(-9677.66, 59.07, 3783.74),
+    ["Magma City"] = Vector3.new(-11053.38, 217.03, 4896.11),
+    ["Legends Highway"] = Vector3.new(-13097.86, 217.03, 5904.85),
+    ["Space"] = Vector3.new(-336.03, 3.94, 592.14),
+    ["Desert"] = Vector3.new(2508.40, 14.83, 4352.73),
+    ["Speed Jungle"] = Vector3.new(-15271.71, 398.20, 5574.44, -1.00, -0.00, -0.02, -0.00, 1.00, 0.00, 0.02, 0.00, -1.00) -- Actual Speed Jungle entrance after Jungle Cave
 }
 
 for locationName, position in pairs(locations) do
@@ -436,7 +443,7 @@ crystalTab.Dropdown({
     Callback = function(Value)
         selectedCrystal = Value
     end,
-    Options = {"Electro Legends Crystal", "Lava Crystal", "Inferno Crystal", "Snow Crystal", "Electro Crystal", "Space Crystal", "Desert Crystal"}
+    Options = {"Jungle Crystal", "Electro Legends Crystal", "Lava Crystal", "Inferno Crystal", "Snow Crystal", "Electro Crystal", "Space Crystal", "Desert Crystal"} -- ADDED: Jungle Crystal
 })
 
 crystalTab.Toggle({
@@ -593,14 +600,37 @@ miscTab.Button({
     end
 })
 
+-- FIXED: Destroy GUI button - now properly finds and destroys the GUI
 miscTab.Button({
     Text = "Destroy GUI",
     Callback = function()
+        -- Try to find GUI by the title name first
+        local guiName = windowTitle
         for i,v in pairs(game.CoreGui:GetChildren()) do
-            if v.Name:find("Material") then
+            if v.Name == guiName then
                 v:Destroy()
+                print("GUI destroyed successfully!")
+                return
             end
         end
+        
+        -- Fallback: Check for OldInstance global
+        if getgenv().OldInstance then
+            getgenv().OldInstance:Destroy()
+            print("GUI destroyed via OldInstance!")
+            return
+        end
+        
+        -- Last resort: Look for any ScreenGui with similar naming
+        for i,v in pairs(game.CoreGui:GetChildren()) do
+            if v:IsA("ScreenGui") and (v.Name:find("JOY") or v.Name:find("Joy")) then
+                v:Destroy()
+                print("GUI destroyed via fallback search!")
+                return
+            end
+        end
+        
+        print("Could not find GUI to destroy!")
     end
 })
 
@@ -610,7 +640,7 @@ creditsTab.Label({Text = "Discord: KYY"})
 creditsTab.Button({
     Text = "Copy Discord Link",
     Callback = function()
-        setclipboard('https://discord.gg/WMAHNafHqZ     ')
+        setclipboard('https://discord.gg/WMAHNafHqZ       ')
     end
 })
 
@@ -618,7 +648,7 @@ creditsTab.Label({Text = "Roblox: KYYY"})
 creditsTab.Button({
     Text = "Copy Roblox Profile Link",
     Callback = function()
-        setclipboard("https://www.roblox.com/users/2815154822/profile     ")
+        setclipboard("https://www.roblox.com/users/2815154822/profile       ")
     end
 })
 
