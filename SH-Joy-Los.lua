@@ -1,0 +1,735 @@
+-- Converted to KyypieUI Library
+local LIB_URL = "https://raw.githubusercontent.com/Kyypie69/Library.UI/refs/heads/main/KyypieUI.lua"
+local ok, Library = pcall(function()
+    local source = game:HttpGet(LIB_URL)
+    return loadstring(source)()
+end)
+
+if not ok then
+    error("Failed to load UI library: " .. tostring(Library))
+end
+
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+local userId = player.UserId
+local thumbType = Enum.ThumbnailType.HeadShot
+local thumbSize = Enum.ThumbnailSize.Size420x420
+local content, isReady = Players:GetUserThumbnailAsync(userId, thumbType, thumbSize)
+
+-- PINK-THEMED NOTIFICATIONS
+game:GetService("StarterGui"):SetCore("SendNotification",{  
+    Title = "🌺 JOY 🌺",     
+    Text = "Welcome!",
+    Icon = "",
+    Duration = 3,
+})
+
+wait(3)
+
+game:GetService("StarterGui"):SetCore("SendNotification",{  
+    Title = "Hello ✨",     
+    Text = player.Name,
+    Icon = content,
+    Duration = 2,
+})
+
+wait(3)
+
+local Window = Library:CreateWindow({
+    Title = "🌺 JOY 🌺 - Legends Of Speed",
+    SubTitle = "Version 6.9 | by Markyy",
+    Size = UDim2.fromOffset(550, 400),
+    TabWidth = 150,
+    Theme = "Crimson",
+    Acrylic = false,
+})
+
+-- REFORMATTED TABS
+local Home        = Window:AddTab({ Title = "Main",          Icon = "home" })
+local farmingTab  = Window:AddTab({ Title = "Farming",       Icon = "leaf" })
+local Rebirths    = Window:AddTab({ Title = "Rebirths",      Icon = "repeat" })
+local Killer      = Window:AddTab({ Title = "Race",          Icon = "flag" })
+local Shop        = Window:AddTab({ Title = "Crystals",      Icon = "gem" })
+local Misc        = Window:AddTab({ Title = "Miscellaneous", Icon = "menu" })
+local Settings    = Window:AddTab({ Title = "Credits",       Icon = "info" })
+
+-- MAIN SECTION
+local mainSection = Home:AddSection("Main Features")
+
+-- FIXED: Claim All Chest functionality
+mainSection:AddButton({
+    Title = "Claim All Chest",
+    Description = "Collects all available chests in the game",
+    Callback = function()
+        local chests = workspace:FindFirstChild("Chests") or workspace:FindFirstChild("chests")
+        if chests then
+            for _, chest in pairs(chests:GetChildren()) do
+                if chest:IsA("BasePart") then
+                    game:GetService("ReplicatedStorage"):WaitForChild("rEvents"):WaitForChild("chestEvent"):FireServer("collectChest", chest.Name)
+                    wait(0.1)
+                end
+            end
+            game:GetService("StarterGui"):SetCore("SendNotification", {
+                Title = "Chests",     
+                Text = "Claimed all available chests!",
+                Duration = 2,
+            })
+        else
+            game:GetService("StarterGui"):SetCore("SendNotification", {
+                Title = "Error",     
+                Text = "No chests found!",
+                Duration = 2,
+            })
+        end
+    end
+})
+
+mainSection:AddButton({
+    Title = "Disable Trading",
+    Description = "Disables trading functionality",
+    Callback = function()
+        game:GetService("ReplicatedStorage").rEvents.tradingEvent:FireServer("disableTrading")
+    end
+})
+
+mainSection:AddButton({
+    Title = "Enable Trading",
+    Description = "Enables trading functionality",
+    Callback = function()
+        game:GetService("ReplicatedStorage").rEvents.tradingEvent:FireServer("enableTrading")
+    end
+})
+
+-- FIXED DROPDOWN: Create with proper initial values
+local teleportDropdown
+local function createTeleportDropdown()
+    local playerList = {}
+    for _, v in pairs(Players:GetPlayers()) do
+        if v ~= player then
+            table.insert(playerList, v.Name)
+        end
+    end
+    table.sort(playerList)
+    
+    if #playerList == 0 then
+        playerList = {"No players found"}
+    end
+    
+    -- Create dropdown with ID and options table
+    teleportDropdown = mainSection:AddDropdown("TeleportPlayer", {
+        Title = "Teleport To Player",
+        Description = "Select a player to teleport to",
+        Values = playerList,
+        Default = 1,
+        Callback = function(Value)
+            local targetPlayer = Players:FindFirstChild(Value)
+            if targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                local character = player.Character
+                if character and character:FindFirstChild("HumanoidRootPart") then
+                    character.HumanoidRootPart.CFrame = targetPlayer.Character.HumanoidRootPart.CFrame * CFrame.new(0, 2, 1)
+                end
+            else
+                warn("Target player or character not found!")
+            end
+        end
+    })
+    
+    return teleportDropdown
+end
+
+-- Create initial dropdown
+createTeleportDropdown()
+
+-- Update function to refresh player list
+local function updatePlayerList()
+    -- Remove old dropdown and create new one
+    if teleportDropdown then
+        -- Find and remove the old dropdown instance
+        local dropdownInstance = teleportDropdown.Instance
+        if dropdownInstance then
+            dropdownInstance:Destroy()
+        end
+    end
+    
+    -- Recreate dropdown with updated values
+    createTeleportDropdown()
+end
+
+-- Auto-update when players join or leave
+Players.PlayerAdded:Connect(updatePlayerList)
+Players.PlayerRemoving:Connect(updatePlayerList)
+
+-- FIXED SLIDER: Added proper parameters with ID
+mainSection:AddSlider("WalkSpeed", {
+    Title = "Walk Speed",
+    Description = "Adjust your character's walk speed",
+    Default = 16,
+    Min = 16,
+    Max = 1000,
+    Rounding = 0,
+    Callback = function(Value)
+        if player.Character and player.Character:FindFirstChild("Humanoid") then
+            player.Character.Humanoid.WalkSpeed = Value
+        end
+    end
+})
+
+mainSection:AddSlider("JumpPower", {
+    Title = "Jump Power",
+    Description = "Adjust your character's jump power",
+    Default = 50,
+    Min = 50,
+    Max = 1000,
+    Rounding = 0,
+    Callback = function(Value)
+        if player.Character and player.Character:FindFirstChild("Humanoid") then
+            player.Character.Humanoid.JumpPower = Value
+        end
+    end
+})
+
+-- AUTO FARM SECTION
+local farmSection = farmingTab:AddSection("Auto Farm")
+
+local selectedOrb = "Red Orbs"
+local selectedFarmLocation = "City"
+
+-- FIXED DROPDOWNS: Added proper ID and structure
+farmSection:AddDropdown("OrbType", {
+    Title = "Select Orbs",
+    Description = "Choose which orb type to farm",
+    Values = {"Red Orbs", "Blue Orbs", "Orange Orbs", "Yellow Orbs", "Ethereal Orbs", "Gems"},
+    Default = 1,
+    Callback = function(Value)
+        selectedOrb = Value
+        print("Selected orb: " .. selectedOrb)
+    end
+})
+
+farmSection:AddDropdown("FarmLocation", {
+    Title = "Select Location",
+    Description = "Choose farming location",
+    Values = {"City", "Snow City", "Magma City", "Speed Jungle"},
+    Default = 1,
+    Callback = function(Value)
+        selectedFarmLocation = Value
+        print("Selected location: " .. selectedFarmLocation)
+    end
+})
+
+-- FIXED TOGGLE: Added ID parameter
+farmSection:AddToggle("HideFrames", {
+    Title = "Hide Frames",
+    Description = "Hide certain UI elements",
+    Default = false,
+    Callback = function(Value)
+        local rSto = game:GetService("ReplicatedStorage")
+        for _, obj in pairs(rSto:GetChildren()) do
+            if obj.Name:match("Frame$") then
+                obj.Visible = not Value
+            end
+        end
+    end
+})
+
+-- FIXED TOGGLE: Added ID parameter
+farmSection:AddToggle("FarmOrbs", {
+    Title = "Farm Selected Orbs",
+    Description = "Automatically farm selected orb types",
+    Default = false,
+    Callback = function(Value)
+        _G.FarmOrbs = Value
+        if Value and selectedOrb ~= "" then
+            spawn(function()
+                while _G.FarmOrbs do
+                    wait()
+                    for i = 1, 50 do
+                        if selectedOrb == "Red Orbs" then
+                            game:GetService("ReplicatedStorage").rEvents.orbEvent:FireServer("collectOrb", "Yellow Orb", selectedFarmLocation)
+                        elseif selectedOrb == "Blue Orbs" then
+                            game:GetService("ReplicatedStorage").rEvents.orbEvent:FireServer("collectOrb", "Yellow Orb", selectedFarmLocation)
+                        elseif selectedOrb == "Orange Orbs" then
+                            game:GetService("ReplicatedStorage").rEvents.orbEvent:FireServer("collectOrb", "Red Orb", selectedFarmLocation)
+                        elseif selectedOrb == "Yellow Orbs" then
+                            game:GetService("ReplicatedStorage").rEvents.orbEvent:FireServer("collectOrb", "Gem", selectedFarmLocation)
+                        elseif selectedOrb == "Ethereal Orbs" then
+                            game:GetService("ReplicatedStorage").rEvents.orbEvent:FireServer("collectOrb", "Yellow Orb", selectedFarmLocation)
+                        elseif selectedOrb == "Gems" then
+                            game:GetService("ReplicatedStorage").rEvents.orbEvent:FireServer("collectOrb", "Ethereal Orb", selectedFarmLocation)
+                        end
+                    end
+                end
+            end)
+        end
+    end
+})
+
+-- FIXED TOGGLE: Added ID parameter
+farmSection:AddToggle("AutoHoops", {
+    Title = "Auto Collect Hoops",
+    Description = "Automatically collect hoops",
+    Default = false,
+    Callback = function(Value)
+        _G.AutoHoops = Value
+        if Value then
+            spawn(function()
+                while _G.AutoHoops do
+                    wait(0.1)
+                    local success, err = pcall(function()
+                        if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                            local hoopFolder = workspace:FindFirstChild("Hoops")
+                            if hoopFolder then
+                                for _, child in ipairs(hoopFolder:GetChildren()) do
+                                    if child.Name == "Hoop" and child:IsA("BasePart") then
+                                        child.CFrame = player.Character.HumanoidRootPart.CFrame
+                                    end
+                                end
+                            end
+                        end
+                    end)
+                    if not success then
+                        warn("Hoop collection error: " .. tostring(err))
+                    end
+                end
+            end)
+        end
+    end
+})
+
+-- REBIRTH SECTION
+local rebirthSection = Rebirths:AddSection("Auto Rebirth")
+
+-- FIXED INPUT: Added ID parameter
+rebirthSection:AddInput("TargetRebirth", {
+    Title = "Target Rebirth",
+    Description = "Set target rebirth (0 = unlimited)",
+    Default = "0",
+    Numeric = true,
+    Finished = true,
+    Callback = function(Value)
+        local num = tonumber(Value)
+        if num and num >= 0 then
+            _G.TargetRebirth = math.floor(num)
+            print("Target Rebirth set to: " .. _G.TargetRebirth)
+        else
+            _G.TargetRebirth = 0
+            print("Invalid input, set to 0 (unlimited)")
+        end
+    end
+})
+
+-- FIXED TOGGLE: Added ID parameter
+rebirthSection:AddToggle("AutoRebirthTarget", {
+    Title = "Auto Rebirth (Target)",
+    Description = "Auto rebirth until target reached",
+    Default = false,
+    Callback = function(Value)
+        _G.AutoRebirthTarget = Value
+        if Value then
+            _G.AutoRebirthNormal = false
+            spawn(function()
+                while _G.AutoRebirthTarget do
+                    wait(0.5)
+                    if _G.TargetRebirth > 0 then
+                        local leaderstats = player:FindFirstChild("leaderstats")
+                        if leaderstats then
+                            local rebirths = leaderstats:FindFirstChild("Rebirths") or leaderstats:FindFirstChild("Rebirth")
+                            if rebirths then
+                                local currentRebirths = tonumber(rebirths.Value) or 0
+                                if currentRebirths >= _G.TargetRebirth then
+                                    _G.AutoRebirthTarget = false
+                                    game:GetService("StarterGui"):SetCore("SendNotification",{  
+                                        Title = "Auto Rebirth",     
+                                        Text = "Target reached: " .. currentRebirths .. " rebirths!",
+                                        Duration = 3,
+                                    })
+                                    print("Auto Rebirth stopped: Target " .. _G.TargetRebirth .. " reached")
+                                    break
+                                end
+                            end
+                        end
+                    end
+                    local success = pcall(function()
+                        game.ReplicatedStorage.rEvents.rebirthEvent:FireServer("rebirthRequest")
+                    end)
+                    if not success then
+                        warn("Rebirth event failed")
+                        wait(1)
+                    end
+                end
+            end)
+        end
+    end
+})
+
+-- FIXED TOGGLE: Added ID parameter
+rebirthSection:AddToggle("AutoRebirthNormal", {
+    Title = "Auto Rebirth (Normal)",
+    Description = "Auto rebirth continuously",
+    Default = false,
+    Callback = function(Value)
+        _G.AutoRebirthNormal = Value
+        if Value then
+            _G.AutoRebirthTarget = false
+            spawn(function()
+                while _G.AutoRebirthNormal do
+                    wait(0.5)
+                    local success = pcall(function()
+                        game.ReplicatedStorage.rEvents.rebirthEvent:FireServer("rebirthRequest")
+                    end)
+                    if not success then
+                        warn("Rebirth event failed")
+                        wait(1)
+                    end
+                end
+            end)
+        end
+    end
+})
+
+-- RACE SECTION
+local raceSection = Killer:AddSection("Auto Race Settings")
+
+_G.RaceMethod = "Teleport"
+
+raceSection:AddDropdown("RaceMethod", {
+    Title = "Race Method",
+    Description = "Choose race completion method",
+    Values = {"Teleport", "Smooth"},
+    Default = 1,
+    Callback = function(Value)
+        _G.RaceMethod = Value
+    end
+})
+
+-- FIXED TOGGLE: Added ID parameter
+raceSection:AddToggle("AutoRace", {
+    Title = "Auto Race",
+    Description = "Automatically complete races",
+    Default = false,
+    Callback = function(Value)
+        _G.AutoRace = Value
+        if Value then
+            spawn(function()
+                local raceFired = false
+                local teleported = false
+                while _G.AutoRace do
+                    wait()
+                    local raceTimer = game:GetService("ReplicatedStorage"):FindFirstChild("raceTimer")
+                    local raceStarted = game:GetService("ReplicatedStorage"):FindFirstChild("raceStarted")
+                    if _G.RaceMethod == "Teleport" then
+                        local char = game.Players.LocalPlayer.Character
+                        if char and char:FindFirstChild("HumanoidRootPart") then
+                            char:MoveTo(Vector3.new(1686.07, 36.31, -5946.63))
+                            wait(0.1)
+                            char:MoveTo(Vector3.new(48.31, 36.31, -8680.45))
+                            wait(0.1)
+                            char:MoveTo(Vector3.new(1001.33, 36.31, -10986.21))
+                            wait(0.1)
+                        end
+                        if raceTimer and raceTimer:IsA("IntValue") and raceTimer.Value <= 0 then
+                            wait(0.5)
+                            game:GetService("ReplicatedStorage"):WaitForChild("rEvents"):WaitForChild("raceEvent"):FireServer("joinRace")
+                        end
+                    elseif _G.RaceMethod == "Smooth" then
+                        if raceTimer and raceTimer:IsA("IntValue") and raceTimer.Value <= 0 and not raceFired then
+                            wait(0.5)
+                            game:GetService("ReplicatedStorage"):WaitForChild("rEvents"):WaitForChild("raceEvent"):FireServer("joinRace")
+                            raceFired = true
+                            teleported = false
+                        end
+                        if raceStarted and raceStarted:IsA("BoolValue") and raceStarted.Value == true and not teleported then
+                            local finishParts = workspace:GetDescendants()
+                            local closestPart = nil
+                            local minDist = math.huge
+                            local char = game.Players.LocalPlayer.Character
+                            if char and char:FindFirstChild("HumanoidRootPart") then
+                                for _, part in ipairs(finishParts) do
+                                    if part:IsA("BasePart") and part.Name == "finishPart" then
+                                        local dist = (char.HumanoidRootPart.Position - part.Position).Magnitude
+                                        if dist < minDist then
+                                            minDist = dist
+                                            closestPart = part
+                                        end
+                                    end
+                                end
+                                if closestPart then
+                                    char:MoveTo(closestPart.Position)
+                                    teleported = true
+                                end
+                            end
+                        end
+                        if raceStarted and raceStarted:IsA("BoolValue") and raceStarted.Value == false then
+                            raceFired = false
+                        end
+                    end
+                    wait(0.05)
+                end
+            end)
+        end
+    end
+})
+
+-- FIXED TOGGLE: Added ID parameter
+raceSection:AddToggle("AutoFillRace", {
+    Title = "Auto Fill Race",
+    Description = "Auto join race when available",
+    Default = false,
+    Callback = function(Value)
+        _G.AutoFillRace = Value
+        if Value then
+            spawn(function()
+                local raceEvent = game:GetService("ReplicatedStorage").rEvents.raceEvent
+                while _G.AutoFillRace do
+                    wait(0.01)
+                    raceEvent:FireServer("joinRace")
+                end
+            end)
+        end
+    end
+})
+
+-- CRYSTAL SECTION
+local crystalSection = Shop:AddSection("Crystal Opening")
+
+local selectedCrystal = "Jungle Crystal"
+crystalSection:AddDropdown("CrystalType", {
+    Title = "Select Crystal",
+    Description = "Choose crystal to open",
+    Values = {"Jungle Crystal", "Electro Legends Crystal", "Lava Crystal", "Inferno Crystal", "Snow Crystal", "Electro Crystal", "Space Crystal", "Desert Crystal"},
+    Default = 1,
+    Callback = function(Value)
+        selectedCrystal = Value
+        print("Selected crystal: " .. selectedCrystal)
+    end
+})
+
+-- FIXED TOGGLE: Added ID parameter
+crystalSection:AddToggle("AutoCrystal", {
+    Title = "Auto Open Crystal",
+    Description = "Automatically open selected crystals",
+    Default = false,
+    Callback = function(Value)
+        _G.AutoCrystal = Value
+        if Value and selectedCrystal ~= "" then
+            spawn(function()
+                while _G.AutoCrystal do
+                    wait()
+                    game:GetService("ReplicatedStorage").rEvents.openCrystalRemote:InvokeServer("openCrystal", selectedCrystal)
+                end
+            end)
+        end
+    end
+})
+
+-- MISC SECTION (includes teleports)
+local miscSection = Misc:AddSection("Miscellaneous Features")
+
+miscSection:AddButton({
+    Title = "Disable Jump",
+    Description = "Set jump power to 0",
+    Callback = function()
+        if player.Character and player.Character:FindFirstChild("Humanoid") then
+            player.Character.Humanoid.JumpPower = 0
+        end
+    end
+})
+
+miscSection:AddButton({
+    Title = "Enable Jump",
+    Description = "Restore jump power to 50",
+    Callback = function()
+        if player.Character and player.Character:FindFirstChild("Humanoid") then
+            player.Character.Humanoid.JumpPower = 50
+        end
+    end
+})
+
+-- Location Teleports (moved to Misc tab)
+local teleportSection = Misc:AddSection("Location Teleports")
+
+local locations = {
+    ["City"] = Vector3.new(-9687.19, 59.07, 3096.59),
+    ["Snow City"] = Vector3.new(-9677.66, 59.07, 3783.74),
+    ["Magma City"] = Vector3.new(-11053.38, 217.03, 4896.11),
+    ["Legends Highway"] = Vector3.new(-13097.86, 217.03, 5904.85),
+    ["Space"] = Vector3.new(-336.03, 3.94, 592.14),
+    ["Desert"] = Vector3.new(2508.40, 14.83, 4352.73),
+    ["Speed Jungle"] = Vector3.new(-15271.71, 398.20, 5574.44, -1.00, -0.00, -0.02, -0.00, 1.00, 0.00, 0.02, 0.00, -1.00)
+}
+
+for locationName, position in pairs(locations) do
+    teleportSection:AddButton({
+        Title = locationName,
+        Description = "Teleport to " .. locationName,
+        Callback = function()
+            if player.Character then
+                player.Character:MoveTo(position)
+            end
+        end
+    })
+end
+
+-- UPDATED ANTI AFK BUTTON
+miscSection:AddButton({
+    Title = "Anti AFK",
+    Description = "Prevents being kicked for AFK",
+    Callback = function()
+        local VirtualUser = game:GetService("VirtualUser")
+        
+        local gui = Instance.new("ScreenGui")
+        gui.Parent = player.PlayerGui
+        
+        local textLabel = Instance.new("TextLabel")
+        textLabel.Size = UDim2.new(0, 200, 0, 50)
+        textLabel.Position = UDim2.new(0.5, -100, 0, -50)
+        textLabel.TextColor3 = Color3.fromRGB(50, 255, 50)
+        textLabel.Font = Enum.Font.GothamBold
+        textLabel.TextSize = 20
+        textLabel.BackgroundTransparency = 1
+        textLabel.TextTransparency = 1
+        textLabel.Text = "ANTI AFK"
+        textLabel.Parent = gui
+        
+        local timerLabel = Instance.new("TextLabel")
+        timerLabel.Size = UDim2.new(0, 200, 0, 30)
+        timerLabel.Position = UDim2.new(0.5, -100, 0, -20)
+        timerLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+        timerLabel.Font = Enum.Font.GothamBold
+        timerLabel.TextSize = 18
+        timerLabel.BackgroundTransparency = 1
+        timerLabel.TextTransparency = 1
+        timerLabel.Text = "00:00:00"
+        timerLabel.Parent = gui
+        
+        local startTime = tick()
+        
+        task.spawn(function()
+            while true do
+                local elapsed = tick() - startTime
+                local hours = math.floor(elapsed / 3600)
+                local minutes = math.floor((elapsed % 3600) / 60)
+                local seconds = math.floor(elapsed % 60)
+                timerLabel.Text = string.format("%02d:%02d:%02d", hours, minutes, seconds)
+                task.wait(1)
+            end
+        end)
+        
+        task.spawn(function()
+            while true do
+                for i = 0, 1, 0.01 do
+                    textLabel.TextTransparency = 1 - i
+                    timerLabel.TextTransparency = 1 - i
+                    task.wait(0.015)
+                end
+                task.wait(1.5)
+                for i = 0, 1, 0.01 do
+                    textLabel.TextTransparency = i
+                    timerLabel.TextTransparency = i
+                    task.wait(0.015)
+                end
+                task.wait(0.8)
+            end
+        end)
+        
+        player.Idled:Connect(function()
+            VirtualUser:CaptureController()
+            VirtualUser:ClickButton2(Vector2.new())
+            print("AFK prevention completed!")
+        end)
+    end
+})
+
+miscSection:AddButton({
+    Title = "FPS Boost",
+    Description = "Improves game performance",
+    Callback = function()
+        local decalsyeeted = true
+        local g = game
+        local w = g.Workspace
+        local l = g.Lighting
+        local t = w.Terrain
+        t.WaterWaveSize = 0
+        t.WaterWaveSpeed = 0
+        t.WaterReflectance = 0
+        t.WaterTransparency = 0
+        l.GlobalShadows = false
+        l.FogEnd = 9e9
+        l.Brightness = 0
+        settings().Rendering.QualityLevel = "Level01"
+        for i, v in pairs(g:GetDescendants()) do
+            if v:IsA("Part") or v:IsA("Union") or v:IsA("CornerWedgePart") or v:IsA("TrussPart") then
+                v.Material = "Plastic"
+                v.Reflectance = 0
+            elseif v:IsA("Decal") or v:IsA("Texture") and decalsyeeted then
+                v.Transparency = 1
+            elseif v:IsA("ParticleEmitter") or v:IsA("Trail") then
+                v.Lifetime = NumberRange.new(0)
+            elseif v:IsA("Explosion") then
+                v.BlastPressure = 1
+                v.BlastRadius = 1
+            elseif v:IsA("Fire") or v:IsA("SpotLight") or v:IsA("Smoke") then
+                v.Enabled = false
+            elseif v:IsA("MeshPart") then
+                v.Material = "Plastic"
+                v.Reflectance = 0
+                v.TextureID = 10385902758728957
+            end
+        end
+        for i, e in pairs(l:GetChildren()) do
+            if e:IsA("BlurEffect") or e:IsA("SunRaysEffect") or e:IsA("ColorCorrectionEffect") or e:IsA("BloomEffect") or e:IsA("DepthOfFieldEffect") then
+                e.Enabled = false
+            end
+        end
+    end
+})
+
+miscSection:AddButton({
+    Title = "Infinite Jump",
+    Description = "Jump infinitely by pressing space",
+    Callback = function()
+        game:GetService("UserInputService").JumpRequest:Connect(function()
+            if player.Character and player.Character:FindFirstChildOfClass("Humanoid") then
+                player.Character:FindFirstChildOfClass("Humanoid"):ChangeState("Jumping")
+            end
+        end)
+    end
+})
+
+-- Destroy GUI button
+miscSection:AddButton({
+    Title = "Destroy GUI",
+    Description = "Closes the JOY GUI",
+    Callback = function()
+        Library:Destroy()
+        print("GUI destroyed successfully!")
+    end
+})
+
+-- CREDITS SECTION
+local creditsSection = Settings:AddSection("Credits")
+
+creditsSection:AddParagraph({
+    Title = "Credits: Markyy",
+    Content = "Roblox: KYYY\nDiscord: KYY"
+})
+
+creditsSection:AddButton({
+    Title = "Copy Discord Link",
+    Description = "Join the Discord server",
+    Callback = function()
+        setclipboard('https://discord.gg/WMAHNafHqZ')
+    end
+})
+
+creditsSection:AddButton({
+    Title = "Copy Roblox Profile Link",
+    Description = "Visit the creator's profile",
+    Callback = function()
+        setclipboard("https://www.roblox.com/users/2815154822/profile")
+    end
+})
+
+-- Initialize the window
+Window:SelectTab(1)
+print("Joy HUB Loaded Successfully!")
