@@ -1,5 +1,5 @@
 -- Converted to KyypieUI Library
-local LIB_URL = "https://raw.githubusercontent.com/Kyypie69/Library.UI/refs/heads/main/KyypieUI.lua"
+local LIB_URL = "https://raw.githubusercontent.com/Kyypie69/Library.UI/refs/heads/main/KyypieUI.lua  "
 local ok, Library = pcall(function()
     local source = game:HttpGet(LIB_URL)
     return loadstring(source)()
@@ -37,10 +37,10 @@ wait(3)
 
 local Window = Library:CreateWindow({
     Title = "🌺 JOY 🌺 - Legends Of Speed",
-    SubTitle = "Version 6.9 | by Markyy",
+    SubTitle = "Made | by Markyy",
     Size = UDim2.fromOffset(550, 400),
     TabWidth = 150,
-    Theme = "Crimson",
+    Theme = "HotPink",
     Acrylic = false,
 })
 
@@ -49,6 +49,7 @@ local Home        = Window:AddTab({ Title = "Main",          Icon = "home" })
 local farmingTab  = Window:AddTab({ Title = "Farming",       Icon = "leaf" })
 local Rebirths    = Window:AddTab({ Title = "Rebirths",      Icon = "repeat" })
 local Killer      = Window:AddTab({ Title = "Race",          Icon = "flag" })
+local TeleportTab = Window:AddTab({ Title = "Locations",     Icon = "map" }) -- NEW TELEPORT TAB
 local Shop        = Window:AddTab({ Title = "Crystals",      Icon = "gem" })
 local Misc        = Window:AddTab({ Title = "Miscellaneous", Icon = "menu" })
 local Settings    = Window:AddTab({ Title = "Credits",       Icon = "info" })
@@ -163,7 +164,7 @@ Players.PlayerRemoving:Connect(updatePlayerList)
 mainSection:AddSlider("WalkSpeed", {
     Title = "Walk Speed",
     Description = "Adjust your character's walk speed",
-    Default = 16,
+    Default = 1000000,
     Min = 16,
     Max = 1000,
     Rounding = 0,
@@ -177,13 +178,34 @@ mainSection:AddSlider("WalkSpeed", {
 mainSection:AddSlider("JumpPower", {
     Title = "Jump Power",
     Description = "Adjust your character's jump power",
-    Default = 50,
+    Default = 1000000,
     Min = 50,
     Max = 1000,
     Rounding = 0,
     Callback = function(Value)
         if player.Character and player.Character:FindFirstChild("Humanoid") then
             player.Character.Humanoid.JumpPower = Value
+        end
+    end
+})
+
+-- MOVED TO MAIN TAB: Infinite Jump Toggle
+mainSection:AddToggle("InfiniteJump", {
+    Title = "Infinite Jump",
+    Description = "Jump infinitely by pressing space",
+    Default = false,
+    Callback = function(Value)
+        if Value then
+            _G.InfiniteJumpConn = game:GetService("UserInputService").JumpRequest:Connect(function()
+                if player.Character and player.Character:FindFirstChildOfClass("Humanoid") then
+                    player.Character:FindFirstChildOfClass("Humanoid"):ChangeState("Jumping")
+                end
+            end)
+        else
+            if _G.InfiniteJumpConn then
+                _G.InfiniteJumpConn:Disconnect()
+                _G.InfiniteJumpConn = nil
+            end
         end
     end
 })
@@ -243,19 +265,19 @@ farmSection:AddToggle("FarmOrbs", {
             spawn(function()
                 while _G.FarmOrbs do
                     wait()
-                    for i = 1, 50 do
+                    for i = 1, 200 do
                         if selectedOrb == "Red Orbs" then
-                            game:GetService("ReplicatedStorage").rEvents.orbEvent:FireServer("collectOrb", "Yellow Orb", selectedFarmLocation)
-                        elseif selectedOrb == "Blue Orbs" then
-                            game:GetService("ReplicatedStorage").rEvents.orbEvent:FireServer("collectOrb", "Yellow Orb", selectedFarmLocation)
-                        elseif selectedOrb == "Orange Orbs" then
                             game:GetService("ReplicatedStorage").rEvents.orbEvent:FireServer("collectOrb", "Red Orb", selectedFarmLocation)
+                        elseif selectedOrb == "Blue Orbs" then
+                            game:GetService("ReplicatedStorage").rEvents.orbEvent:FireServer("collectOrb", "Blue Orb", selectedFarmLocation)
+                        elseif selectedOrb == "Orange Orbs" then
+                            game:GetService("ReplicatedStorage").rEvents.orbEvent:FireServer("collectOrb", "Orange Orb", selectedFarmLocation)
                         elseif selectedOrb == "Yellow Orbs" then
-                            game:GetService("ReplicatedStorage").rEvents.orbEvent:FireServer("collectOrb", "Gem", selectedFarmLocation)
-                        elseif selectedOrb == "Ethereal Orbs" then
                             game:GetService("ReplicatedStorage").rEvents.orbEvent:FireServer("collectOrb", "Yellow Orb", selectedFarmLocation)
-                        elseif selectedOrb == "Gems" then
+                        elseif selectedOrb == "Ethereal Orbs" then
                             game:GetService("ReplicatedStorage").rEvents.orbEvent:FireServer("collectOrb", "Ethereal Orb", selectedFarmLocation)
+                        elseif selectedOrb == "Gems" then
+                            game:GetService("ReplicatedStorage").rEvents.orbEvent:FireServer("collectOrb", "Gem", selectedFarmLocation)
                         end
                     end
                 end
@@ -522,7 +544,7 @@ crystalSection:AddToggle("AutoCrystal", {
     end
 })
 
--- MISC SECTION (includes teleports)
+-- MISC SECTION (teleport section moved to new tab)
 local miscSection = Misc:AddSection("Miscellaneous Features")
 
 miscSection:AddButton({
@@ -545,8 +567,8 @@ miscSection:AddButton({
     end
 })
 
--- Location Teleports (moved to Misc tab)
-local teleportSection = Misc:AddSection("Location Teleports")
+-- Location Teleports (moved to new Window tab)
+local teleportSection = TeleportTab:AddSection("Location Teleports")
 
 local locations = {
     ["City"] = Vector3.new(-9687.19, 59.07, 3096.59),
@@ -640,59 +662,95 @@ miscSection:AddButton({
     end
 })
 
+
+local miscSection = Misc:AddSection("FPS Boost")
+
 miscSection:AddButton({
-    Title = "FPS Boost",
-    Description = "Improves game performance",
+    Title = "Remove Effects",
+    Description = "Toggle off particles, trails, smoke, fire, sparkles",
     Callback = function()
-        local decalsyeeted = true
-        local g = game
-        local w = g.Workspace
-        local l = g.Lighting
-        local t = w.Terrain
-        t.WaterWaveSize = 0
-        t.WaterWaveSpeed = 0
-        t.WaterReflectance = 0
-        t.WaterTransparency = 0
-        l.GlobalShadows = false
-        l.FogEnd = 9e9
-        l.Brightness = 0
-        settings().Rendering.QualityLevel = "Level01"
-        for i, v in pairs(g:GetDescendants()) do
-            if v:IsA("Part") or v:IsA("Union") or v:IsA("CornerWedgePart") or v:IsA("TrussPart") then
-                v.Material = "Plastic"
-                v.Reflectance = 0
-            elseif v:IsA("Decal") or v:IsA("Texture") and decalsyeeted then
-                v.Transparency = 1
-            elseif v:IsA("ParticleEmitter") or v:IsA("Trail") then
-                v.Lifetime = NumberRange.new(0)
-            elseif v:IsA("Explosion") then
-                v.BlastPressure = 1
-                v.BlastRadius = 1
-            elseif v:IsA("Fire") or v:IsA("SpotLight") or v:IsA("Smoke") then
+        for _, v in pairs(game:GetDescendants()) do
+            if v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Smoke") or v:IsA("Fire") or v:IsA("Sparkles") or v:IsA("Beam") then
                 v.Enabled = false
-            elseif v:IsA("MeshPart") then
-                v.Material = "Plastic"
-                v.Reflectance = 0
-                v.TextureID = 10385902758728957
-            end
-        end
-        for i, e in pairs(l:GetChildren()) do
-            if e:IsA("BlurEffect") or e:IsA("SunRaysEffect") or e:IsA("ColorCorrectionEffect") or e:IsA("BloomEffect") or e:IsA("DepthOfFieldEffect") then
-                e.Enabled = false
             end
         end
     end
 })
 
 miscSection:AddButton({
-    Title = "Infinite Jump",
-    Description = "Jump infinitely by pressing space",
+    Title = "Remove Decals & Textures",
+    Description = "Delete all decals and textures from workspace",
     Callback = function()
-        game:GetService("UserInputService").JumpRequest:Connect(function()
-            if player.Character and player.Character:FindFirstChildOfClass("Humanoid") then
-                player.Character:FindFirstChildOfClass("Humanoid"):ChangeState("Jumping")
+        for _, v in pairs(workspace:GetDescendants()) do
+            if v:IsA("Texture") or v:IsA("Decal") then
+                v:Destroy()
             end
-        end)
+        end
+    end
+})
+
+miscSection:AddButton({
+    Title = "Mute All Sounds",
+    Description = "Set volume to 0 for all Sound objects",
+    Callback = function()
+        for _, v in pairs(game:GetDescendants()) do
+            if v:IsA("Sound") then
+                v.Volume = 0
+            end
+        end
+    end
+})
+
+miscSection:AddButton({
+    Title = "Low Lighting Mode",
+    Description = "Disable shadows and increase fog for performance",
+    Callback = function()
+        local lighting = game:GetService("Lighting")
+        lighting.GlobalShadows = false
+        lighting.FogEnd = 9e9
+        lighting.Brightness = 0.5
+    end
+})
+
+miscSection:AddButton({
+    Title = "Remove Accessories",
+    Description = "Delete hats, gear, and accessories from character",
+    Callback = function()
+        local player = game.Players.LocalPlayer
+        if player.Character then
+            for _, v in pairs(player.Character:GetChildren()) do
+                if v:IsA("Accessory") or v:IsA("Hat") or v:IsA("Shirt") or v:IsA("Pants") then
+                    v:Destroy()
+                end
+            end
+        end
+    end
+})
+
+miscSection:AddButton({
+    Title = "Stop Animations",
+    Description = "Stop all player animations",
+    Callback = function()
+        local player = game.Players.LocalPlayer
+        if player.Character and player.Character:FindFirstChild("Humanoid") then
+            local humanoid = player.Character.Humanoid
+            for _, anim in pairs(humanoid:GetPlayingAnimationTracks()) do
+                anim:Stop()
+            end
+        end
+    end
+})
+
+
+miscSection:AddButton({
+    Title = "Simplify Materials",
+    Description = "Convert parts to SmoothPlastic material",
+    Callback = function()
+        for _, v in pairs(workspace:GetDescendants()) do
+            if v:IsA("BasePart") and not v.Parent:FindFirstChild("Humanoid") then
+                v.Material = Enum.Material.SmoothPlastic
+            end
+        end
     end
 })
 
@@ -718,7 +776,7 @@ creditsSection:AddButton({
     Title = "Copy Discord Link",
     Description = "Join the Discord server",
     Callback = function()
-        setclipboard('https://discord.gg/WMAHNafHqZ')
+        setclipboard('https://discord.gg/WMAHNafHqZ  ')
     end
 })
 
@@ -726,7 +784,7 @@ creditsSection:AddButton({
     Title = "Copy Roblox Profile Link",
     Description = "Visit the creator's profile",
     Callback = function()
-        setclipboard("https://www.roblox.com/users/2815154822/profile")
+        setclipboard("https://www.roblox.com/users/2815154822/profile  ")
     end
 })
 
