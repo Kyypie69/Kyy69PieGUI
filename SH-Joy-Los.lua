@@ -1,5 +1,5 @@
 -- Converted to KyypieUI Library
-local LIB_URL = "https://raw.githubusercontent.com/Kyypie69/Library.UI/refs/heads/main/KyypieUI.lua  "
+local LIB_URL = "https://raw.githubusercontent.com/Kyypie69/Library.UI/refs/heads/main/KyypieUI.lua    "
 local ok, Library = pcall(function()
     local source = game:HttpGet(LIB_URL)
     return loadstring(source)()
@@ -18,7 +18,7 @@ local content, isReady = Players:GetUserThumbnailAsync(userId, thumbType, thumbS
 
 -- PINK-THEMED NOTIFICATIONS
 game:GetService("StarterGui"):SetCore("SendNotification",{  
-    Title = "🌺 JOY 🌺",     
+    Title = "KYYY HUB",     
     Text = "Welcome!",
     Icon = "",
     Duration = 3,
@@ -36,11 +36,11 @@ game:GetService("StarterGui"):SetCore("SendNotification",{
 wait(3)
 
 local Window = Library:CreateWindow({
-    Title = "🌺 JOY 🌺 - Legends Of Speed",
+    Title = "MARKYY x KYYY - Legends Of Speed",
     SubTitle = "Made | by Markyy",
     Size = UDim2.fromOffset(550, 400),
     TabWidth = 150,
-    Theme = "HotPink",
+    Theme = "Combat",
     Acrylic = false,
 })
 
@@ -49,7 +49,7 @@ local Home        = Window:AddTab({ Title = "Main",          Icon = "home" })
 local farmingTab  = Window:AddTab({ Title = "Farming",       Icon = "leaf" })
 local Rebirths    = Window:AddTab({ Title = "Rebirths",      Icon = "repeat" })
 local Killer      = Window:AddTab({ Title = "Race",          Icon = "flag" })
-local TeleportTab = Window:AddTab({ Title = "Locations",     Icon = "map" }) -- NEW TELEPORT TAB
+local TeleportTab = Window:AddTab({ Title = "Locations",     Icon = "map" })
 local Shop        = Window:AddTab({ Title = "Crystals",      Icon = "gem" })
 local Misc        = Window:AddTab({ Title = "Miscellaneous", Icon = "menu" })
 local Settings    = Window:AddTab({ Title = "Credits",       Icon = "info" })
@@ -116,7 +116,6 @@ local function createTeleportDropdown()
         playerList = {"No players found"}
     end
     
-    -- Create dropdown with ID and options table
     teleportDropdown = mainSection:AddDropdown("TeleportPlayer", {
         Title = "Teleport To Player",
         Description = "Select a player to teleport to",
@@ -143,16 +142,12 @@ createTeleportDropdown()
 
 -- Update function to refresh player list
 local function updatePlayerList()
-    -- Remove old dropdown and create new one
     if teleportDropdown then
-        -- Find and remove the old dropdown instance
         local dropdownInstance = teleportDropdown.Instance
         if dropdownInstance then
             dropdownInstance:Destroy()
         end
     end
-    
-    -- Recreate dropdown with updated values
     createTeleportDropdown()
 end
 
@@ -210,13 +205,19 @@ mainSection:AddToggle("InfiniteJump", {
     end
 })
 
--- AUTO FARM SECTION
+-- AUTO FARM SECTION - UPDATED WITH FAST COLLECTING & PERFORMANCE CONTROLS
 local farmSection = farmingTab:AddSection("Auto Farm")
 
 local selectedOrb = "Red Orbs"
 local selectedFarmLocation = "City"
+local collectionSpeed = 10 -- Default speed
+local fpsCap = 60 -- Default FPS cap
+local pingThreshold = 1000 -- Default ping threshold
+local pingProtection = false
 
--- FIXED DROPDOWNS: Added proper ID and structure
+-- Cache remote event for better performance
+local orbEvent = game:GetService("ReplicatedStorage"):WaitForChild("rEvents"):WaitForChild("orbEvent")
+
 farmSection:AddDropdown("OrbType", {
     Title = "Select Orbs",
     Description = "Choose which orb type to farm",
@@ -239,7 +240,226 @@ farmSection:AddDropdown("FarmLocation", {
     end
 })
 
--- FIXED TOGGLE: Added ID parameter
+-- NEW: Collection Speed Dropdown (300x, 600x, 900x)
+farmSection:AddDropdown("CollectionSpeed", {
+    Title = "Collection Speed",
+    Description = "Select collection multiplier (Higher = Faster)",
+    Values = {"300x Collecting", "600x Collecting", "900x Collecting"},
+    Default = 5,
+    Callback = function(Value)
+        if Value == "300x Collecting" then
+            collectionSpeed = 100
+        elseif Value == "600x Collecting" then
+            collectionSpeed = 200
+        elseif Value == "900x Collecting" then
+            collectionSpeed = 300
+        end
+        print("Collection speed set to: " .. collectionSpeed .. "x")
+    end
+})
+
+-- NEW: FPS Cap Dropdown (60-120)
+farmSection:AddDropdown("FPSCap", {
+    Title = "Max FPS Cap",
+    Description = "Limit FPS while farming (reduces lag)",
+    Values = {"60 FPS", "120 FPS", "Unlimited"},
+    Default = 1,
+    Callback = function(Value)
+        if Value == "60 FPS" then
+            fpsCap = 60
+        elseif Value == "120 FPS" then
+            fpsCap = 120
+        else
+            fpsCap = 0 -- Unlimited
+        end
+        print("FPS Cap set to: " .. Value)
+    end
+})
+
+-- Connection Enhancer Toggle
+local connectionEnhancer = false
+farmSection:AddToggle("ConnectionEnhancer", {
+    Title = "Connection Enhancer",
+    Description = "Optimizes network connection for faster orb collection",
+    Default = false,
+    Callback = function(Value)
+        connectionEnhancer = Value
+        if Value then
+            settings().Network.IncomingReplicationLag = 0
+            if game:GetService("NetworkClient") then
+                pcall(function()
+                    game:GetService("NetworkClient"):SetOutgoingKBPSLimit(0)
+                end)
+            end
+            print("Connection Enhancer Activated")
+        end
+    end
+})
+
+-- Ping Stabilizer Toggle
+local pingStabilizer = false
+farmSection:AddToggle("PingStabilizer", {
+    Title = "Ping Stabilizer",
+    Description = "Stabilizes ping for consistent farming speed",
+    Default = false,
+    Callback = function(Value)
+        pingStabilizer = Value
+        if Value then
+            pcall(function()
+                game:GetService("PhysicsService"):SetSubsteps(1)
+                settings().Physics.PhysicsEnvironmentalThrottle = Enum.EnviromentalPhysicsThrottle.Disabled
+            end)
+            print("Ping Stabilizer Activated")
+        end
+    end
+})
+
+-- NEW: Ping Protection Toggle (1000ms threshold)
+farmSection:AddToggle("PingProtection", {
+    Title = "Ping Protection (1000ms)",
+    Description = "Pauses collection if ping exceeds 1000ms",
+    Default = false,
+    Callback = function(Value)
+        pingProtection = Value
+        if Value then
+            game:GetService("StarterGui"):SetCore("SendNotification", {
+                Title = "Ping Protection",     
+                Text = "Active: Max 1000ms threshold",
+                Duration = 1,
+            })
+        end
+    end
+})
+
+-- Function to get current ping
+local function getCurrentPing()
+    local stats = game:GetService("Stats")
+    if stats and stats.Network then
+        local ping = stats.Network.ServerStatsItem["Data Ping"]
+        if ping then
+            return ping:GetValue()
+        end
+    end
+    return 0
+end
+
+-- ENHANCED FAST FARM ORBS WITH FPS CAP & PING PROTECTION (NO NOTIFICATIONS)
+farmSection:AddToggle("FarmOrbs", {
+    Title = "Farm Selected Orbs",
+    Description = "Automatically farm selected orb types at high speed",
+    Default = false,
+    Callback = function(Value)
+        _G.FarmOrbs = Value
+        if Value and selectedOrb ~= "" then
+            -- Apply FPS cap when farming starts
+            if fpsCap > 60 then
+                pcall(function()
+                    setfpscap(fpsCap)
+                end)
+                print("FPS capped at: " .. fpsCap)
+            end
+            
+            spawn(function()
+                -- Pre-determine orb type string for performance
+                local orbType = "Red Orb"
+                if selectedOrb == "Red Orbs" then
+                    orbType = "Red Orb"
+                elseif selectedOrb == "Blue Orbs" then
+                    orbType = "Blue Orb"
+                elseif selectedOrb == "Orange Orbs" then
+                    orbType = "Orange Orb"
+                elseif selectedOrb == "Yellow Orbs" then
+                    orbType = "Yellow Orb"
+                elseif selectedOrb == "Ethereal Orbs" then
+                    orbType = "Ethereal Orb"
+                elseif selectedOrb == "Gems" then
+                    orbType = "Gem"
+                end
+
+                while _G.FarmOrbs do
+                    game:GetService("RunService").Heartbeat:Wait()
+                    
+                    -- Check ping if protection is enabled (SILENT - NO NOTIFICATION)
+                    local currentPing = getCurrentPing()
+                    if pingProtection and currentPing > pingThreshold then
+                        -- Skip this cycle if ping is too high (silently)
+                        task.wait(0.5) -- Wait a bit before checking again
+                        continue
+                    end
+                    
+                    -- Batch fire based on collection speed
+                    for i = 1, collectionSpeed do
+                        task.spawn(function()
+                            orbEvent:FireServer("collectOrb", orbType, selectedFarmLocation)
+                        end)
+                    end
+                    
+                    -- Ping stabilizer delay adjustment
+                    if pingStabilizer then
+                        task.wait(0.01)
+                    end
+                end
+                
+                -- Reset FPS cap when farming stops
+                pcall(function()
+                    setfpscap(60) -- Reset to unlimited
+                end)
+                print("FPS cap reset to unlimited")
+            end)
+        else
+            -- Reset FPS cap if toggle turned off manually
+            pcall(function()
+                setfpscap(60)
+            end)
+        end
+    end
+})
+
+-- Enhanced Auto Hoops with Connection Optimizer
+farmSection:AddToggle("AutoHoops", {
+    Title = "Auto Collect Hoops",
+    Description = "Automatically collect hoops with enhanced speed",
+    Default = false,
+    Callback = function(Value)
+        _G.AutoHoops = Value
+        if Value then
+            spawn(function()
+                local hoopFolder = workspace:WaitForChild("Hoops")
+                local lastUpdate = 0
+                
+                while _G.AutoHoops do
+                    local currentTime = tick()
+                    
+                    if currentTime - lastUpdate >= 0.1 then
+                        lastUpdate = currentTime
+                        
+                        local success, err = pcall(function()
+                            if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                                local hrp = player.Character.HumanoidRootPart
+                                
+                                for _, child in ipairs(hoopFolder:GetChildren()) do
+                                    if child.Name == "Hoop" and child:IsA("BasePart") then
+                                        task.spawn(function()
+                                            child.CFrame = hrp.CFrame
+                                        end)
+                                    end
+                                end
+                            end
+                        end)
+                        
+                        if not success then
+                            warn("Hoop collection error: " .. tostring(err))
+                        end
+                    end
+                    
+                    task.wait()
+                end
+            end)
+        end
+    end
+})
+
+-- Hide Frames Toggle
 farmSection:AddToggle("HideFrames", {
     Title = "Hide Frames",
     Description = "Hide certain UI elements",
@@ -254,74 +474,9 @@ farmSection:AddToggle("HideFrames", {
     end
 })
 
--- FIXED TOGGLE: Added ID parameter
-farmSection:AddToggle("FarmOrbs", {
-    Title = "Farm Selected Orbs",
-    Description = "Automatically farm selected orb types",
-    Default = false,
-    Callback = function(Value)
-        _G.FarmOrbs = Value
-        if Value and selectedOrb ~= "" then
-            spawn(function()
-                while _G.FarmOrbs do
-                    wait()
-                    for i = 1, 200 do
-                        if selectedOrb == "Red Orbs" then
-                            game:GetService("ReplicatedStorage").rEvents.orbEvent:FireServer("collectOrb", "Red Orb", selectedFarmLocation)
-                        elseif selectedOrb == "Blue Orbs" then
-                            game:GetService("ReplicatedStorage").rEvents.orbEvent:FireServer("collectOrb", "Blue Orb", selectedFarmLocation)
-                        elseif selectedOrb == "Orange Orbs" then
-                            game:GetService("ReplicatedStorage").rEvents.orbEvent:FireServer("collectOrb", "Orange Orb", selectedFarmLocation)
-                        elseif selectedOrb == "Yellow Orbs" then
-                            game:GetService("ReplicatedStorage").rEvents.orbEvent:FireServer("collectOrb", "Yellow Orb", selectedFarmLocation)
-                        elseif selectedOrb == "Ethereal Orbs" then
-                            game:GetService("ReplicatedStorage").rEvents.orbEvent:FireServer("collectOrb", "Ethereal Orb", selectedFarmLocation)
-                        elseif selectedOrb == "Gems" then
-                            game:GetService("ReplicatedStorage").rEvents.orbEvent:FireServer("collectOrb", "Gem", selectedFarmLocation)
-                        end
-                    end
-                end
-            end)
-        end
-    end
-})
-
--- FIXED TOGGLE: Added ID parameter
-farmSection:AddToggle("AutoHoops", {
-    Title = "Auto Collect Hoops",
-    Description = "Automatically collect hoops",
-    Default = false,
-    Callback = function(Value)
-        _G.AutoHoops = Value
-        if Value then
-            spawn(function()
-                while _G.AutoHoops do
-                    wait(0.1)
-                    local success, err = pcall(function()
-                        if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-                            local hoopFolder = workspace:FindFirstChild("Hoops")
-                            if hoopFolder then
-                                for _, child in ipairs(hoopFolder:GetChildren()) do
-                                    if child.Name == "Hoop" and child:IsA("BasePart") then
-                                        child.CFrame = player.Character.HumanoidRootPart.CFrame
-                                    end
-                                end
-                            end
-                        end
-                    end)
-                    if not success then
-                        warn("Hoop collection error: " .. tostring(err))
-                    end
-                end
-            end)
-        end
-    end
-})
-
 -- REBIRTH SECTION
 local rebirthSection = Rebirths:AddSection("Auto Rebirth")
 
--- FIXED INPUT: Added ID parameter
 rebirthSection:AddInput("TargetRebirth", {
     Title = "Target Rebirth",
     Description = "Set target rebirth (0 = unlimited)",
@@ -340,7 +495,6 @@ rebirthSection:AddInput("TargetRebirth", {
     end
 })
 
--- FIXED TOGGLE: Added ID parameter
 rebirthSection:AddToggle("AutoRebirthTarget", {
     Title = "Auto Rebirth (Target)",
     Description = "Auto rebirth until target reached",
@@ -384,7 +538,6 @@ rebirthSection:AddToggle("AutoRebirthTarget", {
     end
 })
 
--- FIXED TOGGLE: Added ID parameter
 rebirthSection:AddToggle("AutoRebirthNormal", {
     Title = "Auto Rebirth (Normal)",
     Description = "Auto rebirth continuously",
@@ -424,7 +577,6 @@ raceSection:AddDropdown("RaceMethod", {
     end
 })
 
--- FIXED TOGGLE: Added ID parameter
 raceSection:AddToggle("AutoRace", {
     Title = "Auto Race",
     Description = "Automatically complete races",
@@ -492,7 +644,6 @@ raceSection:AddToggle("AutoRace", {
     end
 })
 
--- FIXED TOGGLE: Added ID parameter
 raceSection:AddToggle("AutoFillRace", {
     Title = "Auto Fill Race",
     Description = "Auto join race when available",
@@ -526,7 +677,6 @@ crystalSection:AddDropdown("CrystalType", {
     end
 })
 
--- FIXED TOGGLE: Added ID parameter
 crystalSection:AddToggle("AutoCrystal", {
     Title = "Auto Open Crystal",
     Description = "Automatically open selected crystals",
@@ -544,7 +694,7 @@ crystalSection:AddToggle("AutoCrystal", {
     end
 })
 
--- MISC SECTION (teleport section moved to new tab)
+-- MISC SECTION
 local miscSection = Misc:AddSection("Miscellaneous Features")
 
 miscSection:AddButton({
@@ -567,7 +717,7 @@ miscSection:AddButton({
     end
 })
 
--- Location Teleports (moved to new Window tab)
+-- Location Teleports
 local teleportSection = TeleportTab:AddSection("Location Teleports")
 
 local locations = {
@@ -592,7 +742,7 @@ for locationName, position in pairs(locations) do
     })
 end
 
--- UPDATED ANTI AFK BUTTON
+-- ANTI AFK BUTTON
 miscSection:AddButton({
     Title = "Anti AFK",
     Description = "Prevents being kicked for AFK",
@@ -662,10 +812,10 @@ miscSection:AddButton({
     end
 })
 
+-- FPS Boost Section
+local fpsSection = Misc:AddSection("FPS Boost")
 
-local miscSection = Misc:AddSection("FPS Boost")
-
-miscSection:AddButton({
+fpsSection:AddButton({
     Title = "Remove Effects",
     Description = "Toggle off particles, trails, smoke, fire, sparkles",
     Callback = function()
@@ -677,7 +827,7 @@ miscSection:AddButton({
     end
 })
 
-miscSection:AddButton({
+fpsSection:AddButton({
     Title = "Remove Decals & Textures",
     Description = "Delete all decals and textures from workspace",
     Callback = function()
@@ -689,7 +839,7 @@ miscSection:AddButton({
     end
 })
 
-miscSection:AddButton({
+fpsSection:AddButton({
     Title = "Mute All Sounds",
     Description = "Set volume to 0 for all Sound objects",
     Callback = function()
@@ -701,7 +851,7 @@ miscSection:AddButton({
     end
 })
 
-miscSection:AddButton({
+fpsSection:AddButton({
     Title = "Low Lighting Mode",
     Description = "Disable shadows and increase fog for performance",
     Callback = function()
@@ -712,7 +862,7 @@ miscSection:AddButton({
     end
 })
 
-miscSection:AddButton({
+fpsSection:AddButton({
     Title = "Remove Accessories",
     Description = "Delete hats, gear, and accessories from character",
     Callback = function()
@@ -727,7 +877,7 @@ miscSection:AddButton({
     end
 })
 
-miscSection:AddButton({
+fpsSection:AddButton({
     Title = "Stop Animations",
     Description = "Stop all player animations",
     Callback = function()
@@ -741,8 +891,7 @@ miscSection:AddButton({
     end
 })
 
-
-miscSection:AddButton({
+fpsSection:AddButton({
     Title = "Simplify Materials",
     Description = "Convert parts to SmoothPlastic material",
     Callback = function()
@@ -776,7 +925,7 @@ creditsSection:AddButton({
     Title = "Copy Discord Link",
     Description = "Join the Discord server",
     Callback = function()
-        setclipboard('https://discord.gg/WMAHNafHqZ  ')
+        setclipboard('https://discord.gg/WMAHNafHqZ    ')
     end
 })
 
@@ -784,10 +933,10 @@ creditsSection:AddButton({
     Title = "Copy Roblox Profile Link",
     Description = "Visit the creator's profile",
     Callback = function()
-        setclipboard("https://www.roblox.com/users/2815154822/profile  ")
+        setclipboard("https://www.roblox.com/users/2815154822/profile    ")
     end
 })
 
 -- Initialize the window
 Window:SelectTab(1)
-print("Joy HUB Loaded Successfully!")
+print("KYYYY HUB Loaded Successfully!")
