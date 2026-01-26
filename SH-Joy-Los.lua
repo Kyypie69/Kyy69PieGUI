@@ -1,4 +1,3 @@
--- Converted to KyypieUI Library
 local LIB_URL = "https://raw.githubusercontent.com/Kyypie69/Library.UI/refs/heads/main/KyypieUI.lua    "
 local ok, Library = pcall(function()
     local source = game:HttpGet(LIB_URL)
@@ -16,7 +15,6 @@ local thumbType = Enum.ThumbnailType.HeadShot
 local thumbSize = Enum.ThumbnailSize.Size420x420
 local content, isReady = Players:GetUserThumbnailAsync(userId, thumbType, thumbSize)
 
--- PINK-THEMED NOTIFICATIONS
 game:GetService("StarterGui"):SetCore("SendNotification",{  
     Title = "KYYY HUB",     
     Text = "Welcome!",
@@ -38,13 +36,12 @@ wait(3)
 local Window = Library:CreateWindow({
     Title = "MARKYY x KYYY - Legends Of Speed",
     SubTitle = "Made | by Markyy",
-    Size = UDim2.fromOffset(550, 400),
-    TabWidth = 150,
+    Size = UDim2.fromOffset(480, 340),
+    TabWidth = 130,
     Theme = "Combat",
     Acrylic = false,
 })
 
--- REFORMATTED TABS
 local Home        = Window:AddTab({ Title = "Main",          Icon = "home" })
 local farmingTab  = Window:AddTab({ Title = "Farming",       Icon = "leaf" })
 local Rebirths    = Window:AddTab({ Title = "Rebirths",      Icon = "repeat" })
@@ -57,7 +54,6 @@ local Settings    = Window:AddTab({ Title = "Credits",       Icon = "info" })
 -- MAIN SECTION
 local mainSection = Home:AddSection("Main Features")
 
--- FIXED: Claim All Chest functionality
 mainSection:AddButton({
     Title = "Claim All Chest",
     Description = "Collects all available chests in the game",
@@ -101,7 +97,6 @@ mainSection:AddButton({
     end
 })
 
--- FIXED DROPDOWN: Create with proper initial values
 local teleportDropdown
 local function createTeleportDropdown()
     local playerList = {}
@@ -137,10 +132,8 @@ local function createTeleportDropdown()
     return teleportDropdown
 end
 
--- Create initial dropdown
 createTeleportDropdown()
 
--- Update function to refresh player list
 local function updatePlayerList()
     if teleportDropdown then
         local dropdownInstance = teleportDropdown.Instance
@@ -151,11 +144,9 @@ local function updatePlayerList()
     createTeleportDropdown()
 end
 
--- Auto-update when players join or leave
 Players.PlayerAdded:Connect(updatePlayerList)
 Players.PlayerRemoving:Connect(updatePlayerList)
 
--- FIXED SLIDER: Added proper parameters with ID
 mainSection:AddSlider("WalkSpeed", {
     Title = "Walk Speed",
     Description = "Adjust your character's walk speed",
@@ -184,7 +175,6 @@ mainSection:AddSlider("JumpPower", {
     end
 })
 
--- MOVED TO MAIN TAB: Infinite Jump Toggle
 mainSection:AddToggle("InfiniteJump", {
     Title = "Infinite Jump",
     Description = "Jump infinitely by pressing space",
@@ -205,7 +195,6 @@ mainSection:AddToggle("InfiniteJump", {
     end
 })
 
--- AUTO FARM SECTION - UPDATED WITH FAST COLLECTING & PERFORMANCE CONTROLS
 local farmSection = farmingTab:AddSection("Auto Farm")
 
 local selectedOrb = "Red Orbs"
@@ -215,7 +204,6 @@ local fpsCap = 60 -- Default FPS cap
 local pingThreshold = 1000 -- Default ping threshold
 local pingProtection = false
 
--- Cache remote event for better performance
 local orbEvent = game:GetService("ReplicatedStorage"):WaitForChild("rEvents"):WaitForChild("orbEvent")
 
 farmSection:AddDropdown("OrbType", {
@@ -240,7 +228,6 @@ farmSection:AddDropdown("FarmLocation", {
     end
 })
 
--- NEW: Collection Speed Dropdown (300x, 600x, 900x)
 farmSection:AddDropdown("CollectionSpeed", {
     Title = "Collection Speed",
     Description = "Select collection multiplier (Higher = Faster)",
@@ -258,7 +245,6 @@ farmSection:AddDropdown("CollectionSpeed", {
     end
 })
 
--- NEW: FPS Cap Dropdown (60-120)
 farmSection:AddDropdown("FPSCap", {
     Title = "Max FPS Cap",
     Description = "Limit FPS while farming (reduces lag)",
@@ -276,7 +262,7 @@ farmSection:AddDropdown("FPSCap", {
     end
 })
 
--- Connection Enhancer Toggle
+
 local connectionEnhancer = false
 farmSection:AddToggle("ConnectionEnhancer", {
     Title = "Connection Enhancer",
@@ -296,7 +282,6 @@ farmSection:AddToggle("ConnectionEnhancer", {
     end
 })
 
--- Ping Stabilizer Toggle
 local pingStabilizer = false
 farmSection:AddToggle("PingStabilizer", {
     Title = "Ping Stabilizer",
@@ -314,7 +299,6 @@ farmSection:AddToggle("PingStabilizer", {
     end
 })
 
--- NEW: Ping Protection Toggle (1000ms threshold)
 farmSection:AddToggle("PingProtection", {
     Title = "Ping Protection (1000ms)",
     Description = "Pauses collection if ping exceeds 1000ms",
@@ -331,7 +315,6 @@ farmSection:AddToggle("PingProtection", {
     end
 })
 
--- Function to get current ping
 local function getCurrentPing()
     local stats = game:GetService("Stats")
     if stats and stats.Network then
@@ -343,7 +326,6 @@ local function getCurrentPing()
     return 0
 end
 
--- ENHANCED FAST FARM ORBS WITH FPS CAP & PING PROTECTION (NO NOTIFICATIONS)
 farmSection:AddToggle("FarmOrbs", {
     Title = "Farm Selected Orbs",
     Description = "Automatically farm selected orb types at high speed",
@@ -351,7 +333,6 @@ farmSection:AddToggle("FarmOrbs", {
     Callback = function(Value)
         _G.FarmOrbs = Value
         if Value and selectedOrb ~= "" then
-            -- Apply FPS cap when farming starts
             if fpsCap > 60 then
                 pcall(function()
                     setfpscap(fpsCap)
@@ -360,7 +341,6 @@ farmSection:AddToggle("FarmOrbs", {
             end
             
             spawn(function()
-                -- Pre-determine orb type string for performance
                 local orbType = "Red Orb"
                 if selectedOrb == "Red Orbs" then
                     orbType = "Red Orb"
@@ -379,35 +359,29 @@ farmSection:AddToggle("FarmOrbs", {
                 while _G.FarmOrbs do
                     game:GetService("RunService").Heartbeat:Wait()
                     
-                    -- Check ping if protection is enabled (SILENT - NO NOTIFICATION)
                     local currentPing = getCurrentPing()
                     if pingProtection and currentPing > pingThreshold then
-                        -- Skip this cycle if ping is too high (silently)
                         task.wait(0.5) -- Wait a bit before checking again
                         continue
                     end
                     
-                    -- Batch fire based on collection speed
                     for i = 1, collectionSpeed do
                         task.spawn(function()
                             orbEvent:FireServer("collectOrb", orbType, selectedFarmLocation)
                         end)
                     end
                     
-                    -- Ping stabilizer delay adjustment
                     if pingStabilizer then
                         task.wait(0.01)
                     end
                 end
                 
-                -- Reset FPS cap when farming stops
                 pcall(function()
                     setfpscap(60) -- Reset to unlimited
                 end)
                 print("FPS cap reset to unlimited")
             end)
         else
-            -- Reset FPS cap if toggle turned off manually
             pcall(function()
                 setfpscap(60)
             end)
@@ -415,7 +389,6 @@ farmSection:AddToggle("FarmOrbs", {
     end
 })
 
--- Enhanced Auto Hoops with Connection Optimizer
 farmSection:AddToggle("AutoHoops", {
     Title = "Auto Collect Hoops",
     Description = "Automatically collect hoops with enhanced speed",
@@ -459,7 +432,7 @@ farmSection:AddToggle("AutoHoops", {
     end
 })
 
--- Hide Frames Toggle
+
 farmSection:AddToggle("HideFrames", {
     Title = "Hide Frames",
     Description = "Hide certain UI elements",
@@ -474,7 +447,7 @@ farmSection:AddToggle("HideFrames", {
     end
 })
 
--- REBIRTH SECTION
+
 local rebirthSection = Rebirths:AddSection("Auto Rebirth")
 
 rebirthSection:AddInput("TargetRebirth", {
@@ -562,7 +535,7 @@ rebirthSection:AddToggle("AutoRebirthNormal", {
     end
 })
 
--- RACE SECTION
+
 local raceSection = Killer:AddSection("Auto Race Settings")
 
 _G.RaceMethod = "Teleport"
@@ -662,7 +635,7 @@ raceSection:AddToggle("AutoFillRace", {
     end
 })
 
--- CRYSTAL SECTION
+
 local crystalSection = Shop:AddSection("Crystal Opening")
 
 local selectedCrystal = "Jungle Crystal"
@@ -694,7 +667,7 @@ crystalSection:AddToggle("AutoCrystal", {
     end
 })
 
--- MISC SECTION
+
 local miscSection = Misc:AddSection("Miscellaneous Features")
 
 miscSection:AddButton({
@@ -717,7 +690,7 @@ miscSection:AddButton({
     end
 })
 
--- Location Teleports
+
 local teleportSection = TeleportTab:AddSection("Location Teleports")
 
 local locations = {
@@ -742,7 +715,7 @@ for locationName, position in pairs(locations) do
     })
 end
 
--- ANTI AFK BUTTON
+
 miscSection:AddButton({
     Title = "Anti AFK",
     Description = "Prevents being kicked for AFK",
@@ -812,7 +785,7 @@ miscSection:AddButton({
     end
 })
 
--- FPS Boost Section
+
 local fpsSection = Misc:AddSection("FPS Boost")
 
 fpsSection:AddButton({
@@ -903,7 +876,7 @@ fpsSection:AddButton({
     end
 })
 
--- Destroy GUI button
+
 miscSection:AddButton({
     Title = "Destroy GUI",
     Description = "Closes the JOY GUI",
@@ -913,7 +886,7 @@ miscSection:AddButton({
     end
 })
 
--- CREDITS SECTION
+
 local creditsSection = Settings:AddSection("Credits")
 
 creditsSection:AddParagraph({
@@ -937,6 +910,5 @@ creditsSection:AddButton({
     end
 })
 
--- Initialize the window
 Window:SelectTab(1)
 print("KYYYY HUB Loaded Successfully!")
