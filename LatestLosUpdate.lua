@@ -590,12 +590,12 @@ function startOrbFarm(farmKey)
         
         pcall(function()
             -- Batch remote calls to reduce network overhead
-            local batchSize = math.floor(currentSpeed / 200)
+            local batchSize = math.floor(currentSpeed / 600)
             if networkStats.currentPing > settings.maxPingThreshold then
                 batchSize = math.max(1, math.floor(batchSize * 0.5)) -- Reduce batch size during high ping
             end
             
-            for i = 1, batchSize do
+            for i = 1, 300 batchSize do
                 orbRemote:FireServer("collectOrb", orbNameMap[config.orb], config.city)
                 
                 -- Small delay between batches if ping is high
