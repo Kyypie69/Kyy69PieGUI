@@ -180,7 +180,7 @@ farmTab.Toggle({
             spawn(function()
                 while _G.FarmOrbs do
                     wait()
-                    for i = 1, 50 do
+                    for i = 1, 200 do
                         if selectedOrb == "Red Orbs" then
                             game:GetService("ReplicatedStorage").rEvents.orbEvent:FireServer("collectOrb", "Yellow Orb", selectedFarmLocation)
                         elseif selectedOrb == "Blue Orbs" then
